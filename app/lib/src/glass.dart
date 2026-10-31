@@ -184,7 +184,7 @@ class _GlassPainter extends CustomPainter {
     // 1) Koyu cam
     canvas.drawPath(
       path,
-      Paint()..color = Color.fromRGBO(12, 10, 8, (t == null ? darkness : 0.20) * k),
+      Paint()..color = Color.fromRGBO(12, 10, 8, (t == null ? darkness : 0.30) * k),
     );
 
     // 2) Renk ya da sol üstten gelen parlaklık
@@ -204,7 +204,7 @@ class _GlassPainter extends CustomPainter {
             colors: [
               t.withValues(alpha: 0.30 * k),
               t.withValues(alpha: 0.06 * k),
-              Color.fromRGBO(12, 10, 8, 0.34 * k),
+              Color.fromRGBO(12, 10, 8, 0.40 * k),
             ],
             stops: const [0, 0.45, 0.75],
           );
