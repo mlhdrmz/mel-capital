@@ -18,12 +18,15 @@ env:
 jobs:
   kontrol:
     name: Kod denetimi, testler ve web önizlemesi
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: write
     defaults:
       run:
+        shell: bash
         working-directory: app
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
       - uses: subosito/flutter-action@v2
         with:
           flutter-version: ${{ env.FLUTTER_VERSION }}
@@ -32,25 +35,69 @@ jobs:
       - run: flutter --version
       - run: flutter pub get
       - name: Kod denetimi
-        run: flutter analyze --no-fatal-infos --no-fatal-warnings
+        run: |
+          set +e
+          flutter analyze --no-fatal-infos --no-fatal-warnings > ../analyze.txt 2>&1
+          status=$?
+          cat ../analyze.txt
+          grep -E "•" ../analyze.txt > ../analyze-issues.txt || true
+          if [ -s ../analyze-issues.txt ]; then
+            python3 ../tool/annotate.py warning "Kod denetimi" ../analyze-issues.txt 120
+          fi
+          if [ $status -ne 0 ]; then
+            python3 ../tool/annotate.py error "Kod denetimi hatası" ../analyze.txt 120
+            exit $status
+          fi
       - name: Testler
-        run: flutter test
+        run: |
+          set +e
+          flutter test 2>&1 | tee ../test.txt
+          status=${PIPESTATUS[0]}
+          if [ $status -ne 0 ]; then
+            python3 ../tool/annotate.py error "Testler" ../test.txt 120
+            exit $status
+          fi
       - name: Web önizlemesi
-        run: flutter build web --release --no-web-resources-cdn
-      - uses: actions/upload-artifact@v4
-        with:
-          name: web-onizleme
-          path: app/build/web
-          retention-days: 7
+        run: |
+          set +e
+          flutter build web --release --no-web-resources-cdn 2>&1 | tee ../web.txt
+          status=${PIPESTATUS[0]}
+          if [ $status -ne 0 ]; then
+            python3 ../tool/annotate.py error "Web derlemesi" ../web.txt 80
+            exit $status
+          fi
+      - name: Ekran görüntüleri
+        continue-on-error: true
+        run: |
+          mkdir -p ../ekran
+          python3 -m pip install --quiet playwright
+          python3 -m playwright install --with-deps chromium > /dev/null
+          python3 ../tool/screenshots.py build/web ../ekran
+          python3 ../tool/annotate.py notice "Ekran görüntüleri" ../ekran/rapor.txt 40
+      - name: Ekran görüntülerini ayrı dala koy
+        if: github.event_name == 'push'
+        working-directory: ekran
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          [ -f rapor.txt ] || exit 0
+          echo "${GITHUB_SHA}" > surum.txt
+          git init -q
+          git checkout -q -b ekran-goruntuleri
+          git add -A
+          git -c user.name="mel-capital-ci" -c user.email="ci@users.noreply.github.com" commit -qm "Ekran görüntüleri ${GITHUB_SHA::7}"
+          git push -qf "https://x-access-token:${GH_TOKEN}@github.com/${GITHUB_REPOSITORY}.git" ekran-goruntuleri
 
   windows:
     name: Windows
     runs-on: windows-latest
+    permissions:
+      contents: write
     defaults:
       run:
         working-directory: app
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
       - uses: subosito/flutter-action@v2
         with:
           flutter-version: ${{ env.FLUTTER_VERSION }}
@@ -58,12 +105,31 @@ jobs:
           cache: true
       - run: flutter pub get
       - name: Windows derlemesi
-        run: flutter build windows --release
+        shell: pwsh
+        run: |
+          flutter build windows --release 2>&1 | Tee-Object -FilePath ../build.txt
+          if ($LASTEXITCODE -ne 0) {
+            python ../tool/annotate.py error "Windows derlemesi" ../build.txt 120
+            exit 1
+          }
       - name: Paketle
         shell: pwsh
         run: Compress-Archive -Path build/windows/x64/runner/Release/* -DestinationPath ../MelCapital-Windows.zip
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v5
         with:
           name: MelCapital-Windows
           path: MelCapital-Windows.zip
           retention-days: 30
+      - name: Önizleme sürümünü yayınla
+        if: github.event_name == 'push'
+        shell: bash
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          gh release delete onizleme --repo "$GITHUB_REPOSITORY" --cleanup-tag --yes || true
+          gh release create onizleme ../MelCapital-Windows.zip \
+            --repo "$GITHUB_REPOSITORY" \
+            --target "$GITHUB_SHA" \
+            --prerelease \
+            --title "Mel Capital — önizleme" \
+            --notes "Son derleme (${GITHUB_SHA::7}). Zip'i bir klasöre açıp MelCapital.exe'yi çalıştırın. Henüz örnek verilerle çalışan bir önizlemedir."

@@ -7,7 +7,21 @@ import 'src/theme.dart';
 
 void main() {
   WidgetsFlutterBinding.ensureInitialized();
-  runApp(MelCapitalApp(state: AppState()));
+  runApp(MelCapitalApp(state: _initialState()));
+}
+
+/// Web önizlemesinde `?sekme=plan&dil=en` ile istenen ekran açılır (tasarım kontrolü için).
+AppState _initialState() {
+  if (!kIsWeb) return AppState();
+  final query = Uri.base.queryParameters;
+  final lang = query['dil'];
+  final state = AppState(
+    initialLocale: lang == null ? null : Locale(lang == 'tr' ? 'tr' : 'en'),
+  );
+  for (final tab in AppTab.values) {
+    if (tab.name == query['sekme']) state.setTab(tab);
+  }
+  return state;
 }
 
 class MelCapitalApp extends StatelessWidget {
