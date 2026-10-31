@@ -1,0 +1,13 @@
+# Mel Capital — kod denetimi ayarları.
+analyzer:
+  exclude:
+    - build/**
+  language:
+    strict-raw-types: true
+
+linter:
+  rules:
+    - avoid_print
+    - prefer_const_constructors
+    - prefer_final_fields
+    - unnecessary_new

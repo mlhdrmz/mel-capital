@@ -1,0 +1,69 @@
+name: Derleme
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: derleme-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  FLUTTER_VERSION: '3.47.9'
+
+jobs:
+  kontrol:
+    name: Kod denetimi, testler ve web önizlemesi
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: app
+    steps:
+      - uses: actions/checkout@v4
+      - uses: subosito/flutter-action@v2
+        with:
+          flutter-version: ${{ env.FLUTTER_VERSION }}
+          channel: stable
+          cache: true
+      - run: flutter --version
+      - run: flutter pub get
+      - name: Kod denetimi
+        run: flutter analyze --no-fatal-infos --no-fatal-warnings
+      - name: Testler
+        run: flutter test
+      - name: Web önizlemesi
+        run: flutter build web --release --no-web-resources-cdn
+      - uses: actions/upload-artifact@v4
+        with:
+          name: web-onizleme
+          path: app/build/web
+          retention-days: 7
+
+  windows:
+    name: Windows
+    runs-on: windows-latest
+    defaults:
+      run:
+        working-directory: app
+    steps:
+      - uses: actions/checkout@v4
+      - uses: subosito/flutter-action@v2
+        with:
+          flutter-version: ${{ env.FLUTTER_VERSION }}
+          channel: stable
+          cache: true
+      - run: flutter pub get
+      - name: Windows derlemesi
+        run: flutter build windows --release
+      - name: Paketle
+        shell: pwsh
+        run: Compress-Archive -Path build/windows/x64/runner/Release/* -DestinationPath ../MelCapital-Windows.zip
+      - uses: actions/upload-artifact@v4
+        with:
+          name: MelCapital-Windows
+          path: MelCapital-Windows.zip
+          retention-days: 30
