@@ -4,6 +4,8 @@ import 'glass.dart';
 import 'i18n.dart';
 import 'native_window.dart';
 import 'pages.dart';
+import 'pages/corrupt.dart';
+import 'pages/welcome.dart';
 import 'state.dart';
 import 'theme.dart';
 
@@ -27,31 +29,52 @@ const Map<AppTab, IconData> _icons = {
   AppTab.ayarlar: Icons.settings_outlined,
 };
 
-/// Ana iskelet: sekmeye göre değişen fotoğraf, üst menü ve sayfa.
+/// Ana iskelet: duruma göre (açılıyor, hoş geldin, veri okunamadı, hazır) fotoğraf, üst menü ve sayfa.
 class Shell extends StatelessWidget {
   const Shell({super.key});
 
   @override
   Widget build(BuildContext context) {
     final st = AppScope.of(context);
+    var tabs = false;
+    var cover = 'lobby';
+    Widget body = const _Loading();
+    switch (st.status) {
+      case AppStatus.loading:
+        break;
+      case AppStatus.welcome:
+        cover = 'lobby';
+        body = const WelcomePage();
+      case AppStatus.corrupt:
+        cover = 'lock';
+        body = const CorruptPage();
+      case AppStatus.ready:
+        if (st.addingProfile) {
+          cover = 'lobby';
+          body = WelcomePage(addingProfile: true, onCancel: () => st.setAddingProfile(false));
+        } else {
+          tabs = true;
+          cover = _covers[st.tab] ?? 'lobby';
+          // Sekme değişince yeni sayfa sıfırdan kurulur; paneller kendileri
+          // buğulanarak belirir (sayfanın üstüne saydamlık konmaz).
+          body = KeyedSubtree(
+            key: ValueKey<String>('${st.profile?.id}/${st.tab.name}'),
+            child: pageFor(st.tab),
+          );
+        }
+    }
     return Scaffold(
       backgroundColor: MC.bg,
       body: Stack(
         fit: StackFit.expand,
         children: [
-          Background(tab: st.tab),
+          Background(cover: cover),
           SafeArea(
             child: Column(
               children: [
-                const TopBar(),
-                Expanded(
-                  // Sekme değişince yeni sayfa sıfırdan kurulur; paneller kendileri
-                  // buğulanarak belirir (sayfanın üstüne saydamlık konmaz).
-                  child: KeyedSubtree(
-                    key: ValueKey<AppTab>(st.tab),
-                    child: pageFor(st.tab),
-                  ),
-                ),
+                TopBar(tabs: tabs),
+                if (st.saveError != null) _SaveError(message: st.saveError!),
+                Expanded(child: body),
               ],
             ),
           ),
@@ -61,15 +84,66 @@ class Shell extends StatelessWidget {
   }
 }
 
-/// Arka plan fotoğrafı; sekme değişince yumuşakça geçer.
-class Background extends StatelessWidget {
-  const Background({super.key, required this.tab});
-
-  final AppTab tab;
+class _Loading extends StatelessWidget {
+  const _Loading();
 
   @override
   Widget build(BuildContext context) {
-    final name = _covers[tab] ?? 'lobby';
+    return const Center(
+      child: SizedBox(
+        width: 28,
+        height: 28,
+        child: CircularProgressIndicator(strokeWidth: 2.4, color: MC.gold),
+      ),
+    );
+  }
+}
+
+class _SaveError extends StatelessWidget {
+  const _SaveError({required this.message});
+
+  final String message;
+
+  @override
+  Widget build(BuildContext context) {
+    final s = S.of(context);
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(28, 4, 28, 4),
+      child: GlassPanel(
+        tint: MC.rose,
+        animate: false,
+        radius: 16,
+        cut: 16,
+        padding: const EdgeInsets.fromLTRB(16, 10, 16, 10),
+        child: Row(
+          children: [
+            const Icon(Icons.error_outline, color: MC.rose, size: 20),
+            const SizedBox(width: 10),
+            Expanded(
+              child: Text(
+                s.pick('Son değişiklik dosyaya yazılamadı; bir sonraki değişiklikte yeniden denenecek. ($message)',
+                    'The last change could not be written to disk; it will be retried with the next change. ($message)'),
+                maxLines: 2,
+                overflow: TextOverflow.ellipsis,
+                style: sans(13),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+/// Arka plan fotoğrafı; sekme değişince yumuşakça geçer.
+class Background extends StatelessWidget {
+  const Background({super.key, required this.cover});
+
+  final String cover;
+
+  @override
+  Widget build(BuildContext context) {
+    final name = cover;
     return AnimatedSwitcher(
       duration: const Duration(milliseconds: 900),
       layoutBuilder: (current, previous) => Stack(
@@ -90,7 +164,10 @@ class Background extends StatelessWidget {
 
 /// Üst menü: marka, sekmeler, tutarları gizle, pencere düğmeleri.
 class TopBar extends StatelessWidget {
-  const TopBar({super.key});
+  const TopBar({super.key, this.tabs = true});
+
+  /// false: yalnızca marka ve pencere düğmeleri (ilk açılış, veri okunamadı).
+  final bool tabs;
 
   @override
   Widget build(BuildContext context) {
@@ -102,7 +179,8 @@ class TopBar extends StatelessWidget {
         children: [
           const _Brand(),
           const SizedBox(width: 18),
-          Expanded(
+          if (!tabs) const Spacer(),
+          if (tabs) Expanded(
             child: Center(
               child: SingleChildScrollView(
                 scrollDirection: Axis.horizontal,
@@ -125,19 +203,22 @@ class TopBar extends StatelessWidget {
               ),
             ),
           ),
-          const SizedBox(width: 12),
-          _SquareButton(
-            icon: st.hidden ? Icons.visibility_off_outlined : Icons.visibility_outlined,
-            tooltip: s.t(st.hidden ? 'top.show' : 'top.hide'),
-            onTap: st.toggleHidden,
-          ),
-          if (NativeWindow.available) ...[
-            Container(
-              width: 1,
-              height: 26,
-              margin: const EdgeInsets.symmetric(horizontal: 12),
-              color: const Color(0x33FFFFFF),
+          if (tabs) ...[
+            const SizedBox(width: 12),
+            _SquareButton(
+              icon: st.hidden ? Icons.visibility_off_outlined : Icons.visibility_outlined,
+              tooltip: s.t(st.hidden ? 'top.show' : 'top.hide'),
+              onTap: st.toggleHidden,
             ),
+          ],
+          if (NativeWindow.available) ...[
+            if (tabs)
+              Container(
+                width: 1,
+                height: 26,
+                margin: const EdgeInsets.symmetric(horizontal: 12),
+                color: const Color(0x33FFFFFF),
+              ),
             _SquareButton(
               icon: Icons.remove,
               tooltip: s.t('win.minimize'),

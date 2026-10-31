@@ -1,7 +1,7 @@
 """Web önizlemesinin ekran görüntülerini alır (tasarımı derleme sunucusunda kontrol etmek için).
 
 Kullanım: python screenshots.py <web klasörü> <çıktı klasörü>
-Uygulama web'de ?sekme=<ad>&dil=<tr|en> parametreleriyle istenen ekranı açar.
+Uygulama web'de ?sekme=<ad>&dil=<tr|en>&banka=<anahtar>&ekran=hosgeldin parametreleriyle istenen ekranı açar.
 """
 import functools
 import http.server
@@ -12,8 +12,17 @@ import threading
 from playwright.sync_api import sync_playwright
 
 TARGETS = [
-    ('ozet', 'tr'), ('harcamalar', 'tr'), ('borclar', 'tr'), ('bankalar', 'tr'),
-    ('plan', 'tr'), ('alisveris', 'tr'), ('ayarlar', 'tr'), ('plan', 'en'),
+    ('ozet_tr', 'sekme=ozet&dil=tr'),
+    ('harcamalar_tr', 'sekme=harcamalar&dil=tr'),
+    ('borclar_tr', 'sekme=borclar&dil=tr'),
+    ('bankalar_tr', 'sekme=bankalar&dil=tr'),
+    ('banka_akbank_tr', 'sekme=bankalar&dil=tr&banka=akbank'),
+    ('plan_tr', 'sekme=plan&dil=tr'),
+    ('alisveris_tr', 'sekme=alisveris&dil=tr'),
+    ('ayarlar_tr', 'sekme=ayarlar&dil=tr'),
+    ('hosgeldin_tr', 'ekran=hosgeldin&dil=tr'),
+    ('ozet_en', 'sekme=ozet&dil=en'),
+    ('plan_en', 'sekme=plan&dil=en'),
 ]
 
 
@@ -27,18 +36,18 @@ def main() -> None:
     report = []
     with sync_playwright() as pw:
         browser = pw.chromium.launch(args=['--use-angle=swiftshader', '--enable-unsafe-swiftshader'])
-        for tab, lang in TARGETS:
+        for name, query in TARGETS:
             page = browser.new_page(viewport={'width': 1600, 'height': 900})
             logs = []
             page.on('console', lambda m, logs=logs: logs.append(f'{m.type}: {m.text}'))
             page.on('pageerror', lambda e, logs=logs: logs.append(f'pageerror: {e}'))
-            page.goto(f'http://127.0.0.1:{port}/?sekme={tab}&dil={lang}')
+            page.goto(f'http://127.0.0.1:{port}/?{query}')
             try:
                 page.wait_for_selector('flutter-view, flt-glass-pane', timeout=60000)
             except Exception as error:  # noqa: BLE001
                 logs.append(f'bekleme: {error}')
             page.wait_for_timeout(5000)
-            name = f'{tab}_{lang}.png'
+            name = f'{name}.png'
             page.screenshot(path=os.path.join(out, name))
             problems = [line for line in logs if line.startswith(('error', 'pageerror', 'bekleme'))]
             report.append(f'{name}: ' + ('sorun yok' if not problems else ' | '.join(problems)[:600]))

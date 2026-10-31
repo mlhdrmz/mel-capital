@@ -168,7 +168,7 @@ NormalizeResult normalizeData(Object? raw) {
     }
     final seen = <String>{};
     final statements = <Json>[];
-    for (var j = 0; j < (sts as List).length; j++) {
+    for (var j = 0; j < sts.length; j++) {
       final s = sts[j];
       if (s is! Map || !isMonth(s['month']) || !_isAmt(s['total'])) {
         errors.add('$w.statements[$j] geçersiz.');
@@ -249,7 +249,7 @@ NormalizeResult normalizeData(Object? raw) {
         'startMonth': x['startMonth'],
         'endMonth': end,
         'day': optDay(x['day'], w, 'day'),
-        'linkedDebtIds': [for (final v in linked as List) if (debtIds.contains(v.toString())) v.toString()],
+        'linkedDebtIds': [for (final v in linked) if (debtIds.contains(v.toString())) v.toString()],
         'note': _str(x['note']),
       }));
   }

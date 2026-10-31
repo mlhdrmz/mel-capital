@@ -2,26 +2,44 @@ import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 
+import 'core/sample.dart';
 import 'src/shell.dart';
 import 'src/state.dart';
 import 'src/theme.dart';
+import 'storage/store.dart';
+import 'storage/store_memory.dart';
 
-void main() {
+Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  runApp(MelCapitalApp(state: _initialState()));
+  if (kIsWeb) {
+    runApp(MelCapitalApp(state: await previewState(Uri.base.queryParameters)));
+    return;
+  }
+  final state = AppState(store: createStore());
+  runApp(MelCapitalApp(state: state));
+  await state.init();
 }
 
-/// Web önizlemesinde `?sekme=plan&dil=en` ile istenen ekran açılır (tasarım kontrolü için).
-AppState _initialState() {
-  if (!kIsWeb) return AppState();
-  final query = Uri.base.queryParameters;
+/// Web önizlemesi (tasarım kontrolü): örnek verili bir profil bellekte açılır.
+///
+/// `?sekme=plan` istenen sekmeyi, `?dil=en` dili, `?ekran=hosgeldin` ilk açılış ekranını,
+/// `?banka=akbank` Bankalar'da o bankanın sayfasını açar.
+Future<AppState> previewState(Map<String, String> query) async {
   final lang = query['dil'];
   final state = AppState(
-    initialLocale: lang == null ? null : Locale(lang == 'tr' ? 'tr' : 'en'),
+    store: MemoryStore(),
+    initialLocale: lang == null ? null : Locale(lang == 'en' ? 'en' : 'tr'),
   );
+  if (query['ekran'] == 'hosgeldin') {
+    await state.init();
+    return state;
+  }
+  await state.createProfile(state.lang == 'tr' ? 'Deniz' : 'Alex', data: await loadSampleJson());
   for (final tab in AppTab.values) {
     if (tab.name == query['sekme']) state.setTab(tab);
   }
+  final bank = query['banka'];
+  if (bank != null) state.preview['banka'] = bank;
   return state;
 }
 
