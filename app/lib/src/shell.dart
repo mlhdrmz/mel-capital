@@ -86,6 +86,15 @@ class Shell extends StatelessWidget {
       ),
     );
     if (!tabs) return scaffold;
+    // Web önizlemesi: ?panel=harcama
+    final panel = st.preview.remove('panel');
+    if (panel != null) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (!context.mounted) return;
+        if (panel == 'harcama') openSpendSheet(context, prefill: {'name': 'Kahve', 'amount': 85, 'category': 'kafe'});
+        if (panel == 'borc') openDebtSheet(context, debt: st.data.debts.isEmpty ? null : st.data.debts.last);
+      });
+    }
     return Focus(autofocus: true, onKeyEvent: (node, event) => _shortcut(context, st, event), child: scaffold);
   }
 

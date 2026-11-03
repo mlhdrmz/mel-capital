@@ -23,7 +23,7 @@ Future<void> main() async {
 /// Web önizlemesi (tasarım kontrolü): örnek verili bir profil bellekte açılır.
 ///
 /// `?sekme=plan` istenen sekmeyi, `?dil=en` dili, `?ekran=hosgeldin` ilk açılış ekranını,
-/// `?banka=akbank` Bankalar'da o bankanın sayfasını açar.
+/// `?banka=akbank` Bankalar'da o bankanın sayfasını, `?panel=harcama` harcama panelini açar.
 Future<AppState> previewState(Map<String, String> query) async {
   final lang = query['dil'];
   final state = AppState(
@@ -40,6 +40,8 @@ Future<AppState> previewState(Map<String, String> query) async {
   }
   final bank = query['banka'];
   if (bank != null) state.preview['banka'] = bank;
+  final panel = query['panel'];
+  if (panel != null) state.preview['panel'] = panel;
   return state;
 }
 

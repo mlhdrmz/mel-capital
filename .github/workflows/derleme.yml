@@ -54,7 +54,10 @@ jobs:
           flutter test 2>&1 | tee ../test.txt
           status=${PIPESTATUS[0]}
           if [ $status -ne 0 ]; then
-            python3 ../tool/annotate.py error "Testler" ../test.txt 120
+            # Geçen testler değil, yalnızca hata ayrıntısı not edilir
+            sed -n '/❌/,$p' ../test.txt | grep -v "^::" > ../test-fail.txt || true
+            [ -s ../test-fail.txt ] || cp ../test.txt ../test-fail.txt
+            python3 ../tool/annotate.py error "Testler" ../test-fail.txt 150 bas
             exit $status
           fi
       - name: Web önizlemesi

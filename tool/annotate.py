@@ -1,6 +1,7 @@
 """Bir çıktı dosyasının son satırlarını GitHub Actions notu (annotation) olarak yazar.
 
-Kullanım: python annotate.py <error|warning|notice> "<başlık>" <dosya> [satır sayısı]
+Kullanım: python annotate.py <error|warning|notice> "<başlık>" <dosya> [satır sayısı] [bas]
+("bas" verilirse son satırlar yerine ilk satırlar yazılır.)
 
 Notlar GitHub API'sinden okunabildiği için, derleme ya da test hatalarının ayrıntısı
 çalışma günlüğünü indirmeden de görülebilir.
@@ -17,13 +18,15 @@ def main() -> None:
     title = sys.argv[2] if len(sys.argv) > 2 else 'Çıktı'
     path = sys.argv[3] if len(sys.argv) > 3 else ''
     count = int(sys.argv[4]) if len(sys.argv) > 4 else 60
+    head = len(sys.argv) > 5 and sys.argv[5] == 'bas'
     try:
         with open(path, encoding='utf-8', errors='replace') as f:
             lines = [line.rstrip() for line in f.read().splitlines()]
     except OSError:
         lines = ['(çıktı dosyası yok)']
     lines = [line for line in lines if line.strip()] or ['(boş)']
-    body = '\n'.join(lines[-count:])[-60000:]
+    body = '\n'.join(lines[:count] if head else lines[-count:])
+    body = body[:60000] if head else body[-60000:]
     safe_title = title.replace('%', '%25').replace(',', '%2C').replace(':', '%3A')
     print(f'::{level} title={safe_title}::{encode(body)}')
 

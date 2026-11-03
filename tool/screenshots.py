@@ -21,6 +21,8 @@ TARGETS = [
     ('alisveris_tr', 'sekme=alisveris&dil=tr'),
     ('ayarlar_tr', 'sekme=ayarlar&dil=tr'),
     ('hosgeldin_tr', 'ekran=hosgeldin&dil=tr'),
+    ('panel_harcama_tr', 'sekme=harcamalar&dil=tr&panel=harcama'),
+    ('panel_borc_tr', 'sekme=borclar&dil=tr&panel=borc'),
     ('ozet_en', 'sekme=ozet&dil=en'),
     ('plan_en', 'sekme=plan&dil=en'),
 ]

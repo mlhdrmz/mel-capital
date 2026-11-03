@@ -24,6 +24,7 @@ class WelcomePage extends StatefulWidget {
 class _WelcomePageState extends State<WelcomePage> {
   final _name = TextEditingController();
   Json? _legacy;
+  String? _legacyError;
   bool _checked = false;
   bool _busy = false;
 
@@ -36,8 +37,16 @@ class _WelcomePageState extends State<WelcomePage> {
     st.store.readLegacyData().then((raw) {
       if (!mounted || raw == null) return;
       final n = normalizeData(raw);
-      if (n.ok) setState(() => _legacy = n.data!.j);
-    }).catchError((Object _) {});
+      setState(() {
+        if (n.ok) {
+          _legacy = n.data!.j;
+        } else {
+          _legacyError = n.errors.take(3).join(' · ');
+        }
+      });
+    }).catchError((Object e) {
+      if (mounted) setState(() => _legacyError = e.toString());
+    });
   }
 
   @override
@@ -150,6 +159,20 @@ class _WelcomePageState extends State<WelcomePage> {
                   ),
                   highlight: true,
                   onTap: _busy ? null : () => _start(() async => _legacy),
+                ),
+                const SizedBox(height: 10),
+              ],
+              if (legacy == null && _legacyError != null) ...[
+                GlassPanel(
+                  tint: MC.rose,
+                  radius: 22,
+                  cut: 22,
+                  padding: const EdgeInsets.fromLTRB(20, 14, 20, 14),
+                  child: Text(
+                    s.pick('Eski Mel Capital verisi bulundu ama okunamadı: $_legacyError. Eski dosyaya dokunulmadı.',
+                        'Old Mel Capital data was found but could not be read: $_legacyError. The old file was not touched.'),
+                    style: sans(13, height: 1.4),
+                  ),
                 ),
                 const SizedBox(height: 10),
               ],
