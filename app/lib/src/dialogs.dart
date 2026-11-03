@@ -167,6 +167,9 @@ class GlassSelect<T> extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    // Aynı değer iki kez gelirse (ör. aynı kimlikli iki kayıt) açılır liste hata verir; ilki kalır.
+    final seen = <T>{};
+    final unique = [for (final e in items) if (seen.add(e.$1)) e];
     final field = Container(
       padding: const EdgeInsets.symmetric(horizontal: 12),
       decoration: BoxDecoration(
@@ -176,14 +179,14 @@ class GlassSelect<T> extends StatelessWidget {
       ),
       child: DropdownButtonHideUnderline(
         child: DropdownButton<T>(
-          value: items.any((e) => e.$1 == value) ? value : null,
+          value: seen.contains(value) ? value : null,
           isExpanded: true,
           dropdownColor: const Color(0xF2201C18),
           borderRadius: BorderRadius.circular(12),
           iconEnabledColor: MC.muted,
           style: sans(14.5),
           items: [
-            for (final e in items)
+            for (final e in unique)
               DropdownMenuItem<T>(value: e.$1, child: Text(e.$2, maxLines: 1, overflow: TextOverflow.ellipsis)),
           ],
           onChanged: onChanged,

@@ -167,8 +167,9 @@ void main() {
 
   testWidgets('bütün düzenleme panelleri açılır', (tester) async {
     final state = await openSample(tester, 'tr');
-    Future<void> openAndClose(Future<void> Function() open) async {
-      await open();
+    // Panel açan işlevler panel kapanana kadar bekleyen bir Future döndürür; beklenmez.
+    Future<void> openAndClose(void Function() open) async {
+      open();
       await tester.pumpAndSettle();
       expect(find.byType(SheetFrame), findsOneWidget);
       expect(tester.takeException(), isNull);
@@ -178,22 +179,22 @@ void main() {
 
     final ctx = tester.element(find.byType(Scaffold).first);
     final d = state.data;
-    await openAndClose(() async => openSpendSheet(ctx, spend: d.spends.first));
-    await openAndClose(() async => openQuickSpendSheet(ctx));
-    await openAndClose(() async => openTransferSheet(ctx));
-    await openAndClose(() async => openCardPaySheet(ctx));
-    await openAndClose(() async => openAccountSheet(ctx, account: d.accounts.first));
-    await openAndClose(() async => openCardSheet(ctx, card: d.cards.first));
-    await openAndClose(() async => openDebtSheet(ctx, debt: d.debts.first));
-    await openAndClose(() async => openDebtSheet(ctx, debt: d.debts.last));
-    await openAndClose(() async => openStatementSheet(ctx, d.debts.first));
-    await openAndClose(() async => openCardBalanceSheet(ctx, d.debts.first));
-    await openAndClose(() async => openSubSheet(ctx, sub: d.subscriptions.first));
-    await openAndClose(() async => openExpenseSheet(ctx, expense: d.recurringExpenses.first));
-    await openAndClose(() async => openIncomeSheet(ctx, income: d.incomes.first));
-    await openAndClose(() async => openIncomeSheet(ctx));
-    await openAndClose(() async => openGoalSheet(ctx, goal: d.goals.first));
-    await openAndClose(() async => openGoalSaveSheet(ctx, d.goals.first));
-    await openAndClose(() async => openFindeksSheet(ctx, entry: d.findeks.first));
+    await openAndClose(() => openSpendSheet(ctx, spend: d.spends.first));
+    await openAndClose(() => openQuickSpendSheet(ctx));
+    await openAndClose(() => openTransferSheet(ctx));
+    await openAndClose(() => openCardPaySheet(ctx));
+    await openAndClose(() => openAccountSheet(ctx, account: d.accounts.first));
+    await openAndClose(() => openCardSheet(ctx, card: d.cards.first));
+    await openAndClose(() => openDebtSheet(ctx, debt: d.debts.first));
+    await openAndClose(() => openDebtSheet(ctx, debt: d.debts.last));
+    await openAndClose(() => openStatementSheet(ctx, d.debts.first));
+    await openAndClose(() => openCardBalanceSheet(ctx, d.debts.first));
+    await openAndClose(() => openSubSheet(ctx, sub: d.subscriptions.first));
+    await openAndClose(() => openExpenseSheet(ctx, expense: d.recurringExpenses.first));
+    await openAndClose(() => openIncomeSheet(ctx, income: d.incomes.first));
+    await openAndClose(() => openIncomeSheet(ctx));
+    await openAndClose(() => openGoalSheet(ctx, goal: d.goals.first));
+    await openAndClose(() => openGoalSaveSheet(ctx, d.goals.first));
+    await openAndClose(() => openFindeksSheet(ctx, entry: d.findeks.first));
   });
 }

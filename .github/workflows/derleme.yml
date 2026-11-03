@@ -55,7 +55,7 @@ jobs:
           status=${PIPESTATUS[0]}
           if [ $status -ne 0 ]; then
             # Geçen testler değil, yalnızca hata ayrıntısı not edilir
-            sed -n '/❌/,$p' ../test.txt | grep -v "^::" > ../test-fail.txt || true
+            sed -n '/❌/,$p' ../test.txt | sed -e 's/^::group:://' -e '/^::/d' > ../test-fail.txt || true
             [ -s ../test-fail.txt ] || cp ../test.txt ../test-fail.txt
             python3 ../tool/annotate.py error "Testler" ../test-fail.txt 150 bas
             exit $status
