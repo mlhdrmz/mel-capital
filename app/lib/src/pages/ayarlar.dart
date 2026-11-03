@@ -523,7 +523,7 @@ class _AboutPanel extends StatelessWidget {
   const _AboutPanel();
 
   Future<void> _install(AppState st) async {
-    final info = st.update;
+    final info = st.newVersion;
     if (info == null) return;
     final done = await st.installUpdate();
     if (!done) {
@@ -536,7 +536,7 @@ class _AboutPanel extends StatelessWidget {
   Widget build(BuildContext context) {
     final st = AppScope.of(context);
     final s = S.of(context);
-    final info = st.update;
+    final info = st.newVersion;
     final version = kBuildLabel.isEmpty
         ? s.pick('Geliştirme derlemesi', 'Development build')
         : s.pick('Sürüm ${buildLabelText(kBuildLabel, 'tr')}', 'Version ${buildLabelText(kBuildLabel, 'en')}');

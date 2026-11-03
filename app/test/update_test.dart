@@ -97,7 +97,7 @@ void main() {
     final state = AppState(store: MemoryStore(), initialLocale: const Locale('tr'), updater: fake, buildNumber: 140);
     await state.init();
     await state.checkForUpdate();
-    expect(state.update?.build, 150);
+    expect(state.newVersion?.build, 150);
     expect(state.updateChecked, isTrue);
     expect(state.updateNeedsNotice, isTrue);
     state.markUpdateNoticed();
@@ -126,13 +126,13 @@ void main() {
     expect(fake.fetches, 0);
     await state.checkForUpdate(manual: true);
     expect(fake.fetches, 1);
-    expect(state.update, isNotNull);
+    expect(state.newVersion, isNotNull);
 
     fake.fail = true;
-    state.update = null;
+    state.newVersion = null;
     await state.checkForUpdate(manual: true);
     expect(state.updateChecked, isFalse);
-    expect(state.update, isNull);
+    expect(state.newVersion, isNull);
 
     // Geliştirme derlemesinde hiç denetlenmez
     final dev = FakeUpdater(latest: release());

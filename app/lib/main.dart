@@ -68,7 +68,7 @@ Future<AppState> previewState(Map<String, String> query) async {
   if (panel != null) state.preview['panel'] = panel;
   // ?guncelleme=var: Ayarlar'daki "yeni sürüm var" görünümü
   if (query['guncelleme'] == 'var') {
-    state.update = UpdateInfo(
+    state.newVersion = UpdateInfo(
       build: 999,
       label: '05.11.2026-14.20',
       pageUrl: kReleasesPage,

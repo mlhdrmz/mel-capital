@@ -371,7 +371,7 @@ class AppState extends ChangeNotifier {
   final int buildNumber;
 
   /// Kullanılandan daha yeni bir sürüm varsa bilgisi.
-  UpdateInfo? update;
+  UpdateInfo? newVersion;
 
   /// Denetim sürüyor mu.
   bool updateChecking = false;
@@ -395,7 +395,7 @@ class AppState extends ChangeNotifier {
     notifyListeners();
     try {
       final raw = await u.fetchLatest();
-      update = parseRelease(raw, current: buildNumber);
+      newVersion = parseRelease(raw, current: buildNumber);
       updateChecked = true;
     } catch (_) {
       updateChecked = false;
@@ -414,10 +414,10 @@ class AppState extends ChangeNotifier {
   }
 
   /// "Yeni sürüm var" haberi bu sürüm için verildi mi (her sürüm için bir kez gösterilir).
-  bool get updateNeedsNotice => update != null && index.updateNotified < update!.build;
+  bool get updateNeedsNotice => newVersion != null && index.updateNotified < newVersion!.build;
 
   void markUpdateNoticed() {
-    final u = update;
+    final u = newVersion;
     if (u == null || index.updateNotified >= u.build) return;
     index.updateNotified = u.build;
     unawaited(_saveIndex());
@@ -427,7 +427,7 @@ class AppState extends ChangeNotifier {
   /// Uygulama kurulum programıyla kurulmamışsa false döner (sürüm sayfası açılmalı).
   Future<bool> installUpdate() async {
     final u = updater;
-    final info = update;
+    final info = newVersion;
     if (u == null || info == null || updateProgress != null) return true;
     if (!u.installed || info.updater == null) return false;
     updateProgress = 0;

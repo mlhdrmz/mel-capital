@@ -296,7 +296,7 @@ class TopBar extends StatelessWidget {
                           label: s.t('tab.${tab.name}'),
                           selected: st.tab == tab,
                           // Yeni sürüm varsa Ayarlar'ın yanında küçük bir nokta
-                          dot: tab == AppTab.ayarlar && st.update != null,
+                          dot: tab == AppTab.ayarlar && st.newVersion != null,
                           onTap: () => st.setTab(tab),
                         ),
                       ),
