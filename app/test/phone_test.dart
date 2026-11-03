@@ -38,11 +38,17 @@ class ErrorLog {
 
   void stop() => FlutterError.onError = _old;
 
+  final List<String> problems = [];
+
+  /// O ana kadarki hataları not eder (test sonunda hepsi birden bildirilir).
   void check(String where) {
     if (errors.isEmpty) return;
-    final text = errors.take(3).map((e) => e.toString()).join('\n---\n');
+    problems.add('== $where\n${errors.take(2).map((e) => e.toString()).join('\n---\n')}');
     errors.clear();
-    fail('$where\n$text');
+  }
+
+  void finish() {
+    if (problems.isNotEmpty) fail(problems.join('\n\n'));
   }
 }
 
@@ -54,6 +60,7 @@ Future<void> withErrors(Future<void> Function(ErrorLog log) body) async {
   } finally {
     log.stop();
   }
+  log.finish();
 }
 
 void main() {

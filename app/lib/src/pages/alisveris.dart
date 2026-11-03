@@ -276,8 +276,9 @@ class _AlisverisPageState extends State<AlisverisPage> {
     final site = siteOf(_url.text);
     final nmLoc = s.isTr ? kMonthsLocTr[int.parse(nm.substring(5, 7)) - 1] : 'In ${monthName(nm, s.lang)}';
 
+    final phone = isPhoneLayout(context);
     return SingleChildScrollView(
-      padding: const EdgeInsets.fromLTRB(28, 14, 28, 56),
+      padding: phone ? const EdgeInsets.fromLTRB(16, 6, 16, 96) : const EdgeInsets.fromLTRB(28, 14, 28, 56),
       child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
         // Açık renkli fotoğrafta okunması için rakamlar cam panelin içinde.
         GlassPanel(
@@ -294,10 +295,20 @@ class _AlisverisPageState extends State<AlisverisPage> {
               Column(crossAxisAlignment: CrossAxisAlignment.start, mainAxisSize: MainAxisSize.min, children: [
                 Text(s.pick('HARCAMA GÜCÜN', 'YOUR SPENDING POWER'), style: sans(11.5, color: MC.eyebrow, weight: FontWeight.w700, letterSpacing: 2.6)),
                 const SizedBox(height: 6),
+                // Dar ekranda büyük rakam sığmazsa küçülür
                 Row(mainAxisSize: MainAxisSize.min, crossAxisAlignment: CrossAxisAlignment.end, children: [
-                  MoneyText(mm.cardAvail, count: true, style: serif(60)),
+                  Flexible(
+                    flex: 3,
+                    child: FittedBox(fit: BoxFit.scaleDown, alignment: Alignment.centerLeft, child: MoneyText(mm.cardAvail, count: true, style: serif(60))),
+                  ),
                   const SizedBox(width: 12),
-                  Padding(padding: const EdgeInsets.only(bottom: 12), child: Text(s.pick('kartlarda boş limit', 'available on cards'), style: sans(15, color: MC.muted))),
+                  Flexible(
+                    flex: 2,
+                    child: Padding(
+                      padding: const EdgeInsets.only(bottom: 12),
+                      child: Text(s.pick('kartlarda boş limit', 'available on cards'), maxLines: 2, style: sans(15, color: MC.muted)),
+                    ),
+                  ),
                 ]),
               ]),
               Column(crossAxisAlignment: CrossAxisAlignment.end, mainAxisSize: MainAxisSize.min, children: [

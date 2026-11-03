@@ -44,7 +44,7 @@ class OzetPage extends StatelessWidget {
     final name = st.profile?.name;
 
     return SingleChildScrollView(
-      padding: const EdgeInsets.fromLTRB(28, 14, 28, 56),
+      padding: isPhoneLayout(context) ? const EdgeInsets.fromLTRB(16, 6, 16, 96) : const EdgeInsets.fromLTRB(28, 14, 28, 56),
       child: LayoutBuilder(
         builder: (context, c) {
           final narrow = c.maxWidth < 900;
