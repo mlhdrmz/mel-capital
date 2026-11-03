@@ -1,10 +1,12 @@
 import 'package:flutter/material.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 import '../../core/constants.dart';
 import '../../core/model.dart';
 import '../../core/normalize.dart';
 import '../../core/sample.dart';
 import '../../core/util.dart';
+import '../../core/version.dart';
 import '../../storage/store.dart';
 import '../dialogs.dart';
 import '../glass.dart';
@@ -12,8 +14,6 @@ import '../i18n.dart';
 import '../state.dart';
 import '../theme.dart';
 import '../ui.dart';
-
-const String kAppVersion = '0.3';
 
 /// Ayarlar: profiller, dil ve görünüm, yedekler, veri.
 class AyarlarPage extends StatelessWidget {
@@ -517,29 +517,147 @@ class _DataPanelState extends State<_DataPanel> {
   }
 }
 
-// ---------------------------------------------------------------- Hakkında
+// ---------------------------------------------------------------- Hakkında ve güncellemeler
 
 class _AboutPanel extends StatelessWidget {
   const _AboutPanel();
+
+  Future<void> _install(AppState st) async {
+    final info = st.update;
+    if (info == null) return;
+    final done = await st.installUpdate();
+    if (!done) {
+      // Kurulum programıyla kurulmamış kopya: yeni sürüm sayfası açılır.
+      await launchUrl(Uri.parse(info.pageUrl), mode: LaunchMode.externalApplication);
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
     final st = AppScope.of(context);
     final s = S.of(context);
+    final info = st.update;
+    final version = kBuildLabel.isEmpty
+        ? s.pick('Geliştirme derlemesi', 'Development build')
+        : s.pick('Sürüm ${buildLabelText(kBuildLabel, 'tr')}', 'Version ${buildLabelText(kBuildLabel, 'en')}');
+    final installed = st.updater?.installed ?? false;
+    final progress = st.updateProgress;
+
+    Widget? status;
+    if (info != null) {
+      final when = info.label.isEmpty ? '' : buildLabelText(info.label, s.lang);
+      status = Container(
+        key: const ValueKey<String>('update-card'),
+        margin: const EdgeInsets.only(top: 4, bottom: 6),
+        padding: const EdgeInsets.fromLTRB(16, 14, 16, 14),
+        decoration: ShapeDecoration(
+          color: MC.gold.withValues(alpha: 0.12),
+          shape: SignatureBorder(cut: 14, radius: 14, side: BorderSide(color: MC.gold.withValues(alpha: 0.55))),
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                const Icon(Icons.new_releases_outlined, color: MC.gold, size: 20),
+                const SizedBox(width: 10),
+                Expanded(
+                  child: Text(
+                    when.isEmpty ? s.pick('Yeni sürüm hazır', 'A new version is ready') : s.pick('Yeni sürüm hazır · $when', 'New version ready · $when'),
+                    style: sans(14.5, weight: FontWeight.w700),
+                  ),
+                ),
+              ],
+            ),
+            if (info.notes.isNotEmpty) ...[
+              const SizedBox(height: 8),
+              Text(info.notes, maxLines: 6, overflow: TextOverflow.ellipsis, style: sans(12.5, color: MC.muted, height: 1.45)),
+            ],
+            const SizedBox(height: 12),
+            if (progress != null && progress < 1) ...[
+              ProgressLine(progress),
+              const SizedBox(height: 6),
+              Text(s.pick('İndiriliyor · %${(progress * 100).round()}', 'Downloading · ${(progress * 100).round()}%'), style: sans(12.5, color: MC.muted)),
+            ] else if (progress == 1)
+              Text(
+                s.pick('Güncelleme başladı. Windows izin isterse "Evet"e bas; Mel Capital birazdan yeni sürümle açılır.',
+                    'The update has started. If Windows asks for permission, click "Yes"; Mel Capital reopens with the new version.'),
+                style: sans(12.5, color: MC.text, height: 1.45),
+              )
+            else
+              Wrap(
+                spacing: 8,
+                runSpacing: 8,
+                children: [
+                  GoldButton(
+                    key: const ValueKey<String>('update-install'),
+                    label: installed ? s.pick('Güncellemeyi kur', 'Install the update') : s.pick('Kurulum dosyasını indir', 'Download the installer'),
+                    icon: installed ? Icons.system_update_alt : Icons.download_outlined,
+                    onTap: () => _install(st),
+                  ),
+                ],
+              ),
+            if (!installed && progress == null) ...[
+              const SizedBox(height: 8),
+              Text(
+                s.pick('Bu kopya kurulum programıyla kurulmamış; yeni sürümü indirdiğin kurulum dosyasıyla kurabilirsin.',
+                    'This copy was not set up with the installer; install the new version with the downloaded setup file.'),
+                style: sans(12, color: MC.dim, height: 1.4),
+              ),
+            ],
+            if (st.updateError != null) ...[
+              const SizedBox(height: 8),
+              Text(s.pick('Güncelleme indirilemedi: ${st.updateError}', 'The update could not be downloaded: ${st.updateError}'),
+                  style: sans(12.5, color: MC.rose, height: 1.4)),
+            ],
+          ],
+        ),
+      );
+    } else if (st.updateChecking) {
+      status = Text(s.pick('Yeni sürüm denetleniyor…', 'Checking for a new version…'), style: sans(12.5, color: MC.muted));
+    } else if (st.updateChecked == true) {
+      status = Text(s.pick('En güncel sürümü kullanıyorsun.', 'You\'re on the latest version.'), style: sans(12.5, color: MC.mint));
+    } else if (st.updateChecked == false) {
+      status = Text(s.pick('Yeni sürüm denetlenemedi; internet bağlantını kontrol et.', 'Could not check for a new version; check your internet connection.'),
+          style: sans(12.5, color: MC.muted));
+    }
+
     return GlassPanel(
       delay: const Duration(milliseconds: 220),
       radius: 30,
       cut: 30,
-      child: SettingRow(
-        title: 'Mel Capital $kAppVersion',
-        help: s.pick('Önizleme sürümü. Veri biçimi eski Mel Capital ile aynıdır (sürüm 4).',
-            'Preview build. The data format is the same as the old Mel Capital (version 4).'),
-        trailing: SmallButton(
-          key: const ValueKey<String>('intro-open'),
-          label: s.pick('Tanıtımı izle', 'Watch the intro'),
-          icon: Icons.slideshow_outlined,
-          onTap: st.openIntro,
-        ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          PanelHead('Mel Capital', subtitle: version),
+          if (status != null) status,
+          if (st.canCheckUpdates)
+            SettingRow(
+              title: s.pick('Yeni sürümü kendiliğinden denetle', 'Check for new versions automatically'),
+              help: s.pick('Açılışta yalnızca sürüm numarasına bakılır; verilerin hiçbir yere gönderilmez.',
+                  'Only the version number is checked at startup; your data is never sent anywhere.'),
+              trailing: GoldSwitch(value: st.index.autoUpdate, onChanged: st.setAutoUpdate),
+            ),
+          Wrap(
+            spacing: 4,
+            runSpacing: 4,
+            children: [
+              if (st.canCheckUpdates)
+                SmallButton(
+                  key: const ValueKey<String>('update-check'),
+                  label: s.pick('Şimdi denetle', 'Check now'),
+                  icon: Icons.refresh,
+                  onTap: st.updateChecking || progress != null ? null : () => st.checkForUpdate(manual: true),
+                ),
+              SmallButton(
+                key: const ValueKey<String>('intro-open'),
+                label: s.pick('Tanıtımı izle', 'Watch the intro'),
+                icon: Icons.slideshow_outlined,
+                onTap: st.openIntro,
+              ),
+            ],
+          ),
+        ],
       ),
     );
   }

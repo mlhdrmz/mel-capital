@@ -35,8 +35,15 @@ class ProfileInfo {
 }
 
 class ProfileIndex {
-  ProfileIndex({this.last, this.lang, this.intro = false, List<String>? tips, List<ProfileInfo>? profiles})
-      : tips = tips ?? [],
+  ProfileIndex({
+    this.last,
+    this.lang,
+    this.intro = false,
+    this.autoUpdate = true,
+    this.updateNotified = 0,
+    List<String>? tips,
+    List<ProfileInfo>? profiles,
+  })  : tips = tips ?? [],
         profiles = profiles ?? [];
 
   factory ProfileIndex.fromJson(Json j) => ProfileIndex(
@@ -44,6 +51,8 @@ class ProfileIndex {
         lang: j['lang'] == 'tr' || j['lang'] == 'en' ? j['lang'] as String : null,
         // Tanıtım alanı olmayan eski dizinler: profil varsa tanıtım görülmüş sayılır.
         intro: j['intro'] == true || (j['intro'] == null && j['profiles'] is List && (j['profiles'] as List).isNotEmpty),
+        autoUpdate: j['autoUpdate'] != false,
+        updateNotified: j['updateNotified'] is int ? j['updateNotified'] as int : 0,
         tips: [
           for (final t in (j['tips'] is List ? j['tips'] as List : const []))
             if (t is String) t,
@@ -62,6 +71,12 @@ class ProfileIndex {
   /// İlk açılış tanıtımı görüldü mü.
   bool intro;
 
+  /// Açılışta yeni sürüm denetlensin mi.
+  bool autoUpdate;
+
+  /// "Yeni sürüm var" haberi verilmiş en son sürümün derleme numarası.
+  int updateNotified;
+
   /// İpucu gösterilmiş sayfalar (sekme adları).
   final List<String> tips;
   final List<ProfileInfo> profiles;
@@ -78,6 +93,8 @@ class ProfileIndex {
         'last': last,
         'lang': lang,
         'intro': intro,
+        'autoUpdate': autoUpdate,
+        'updateNotified': updateNotified,
         'tips': [...tips],
         'profiles': [for (final p in profiles) p.toJson()],
       };

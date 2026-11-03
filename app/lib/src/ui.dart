@@ -542,12 +542,20 @@ void toast(BuildContext context, String message, {VoidCallback? undo, int second
     showToast(ScaffoldMessenger.of(context), S.of(context).lang, message, undo: undo, seconds: seconds);
 
 /// Panel kapandıktan sonra da gösterilebilen bildirim (önceden alınmış [messenger] ile).
-void showToast(ScaffoldMessengerState messenger, String lang, String message, {VoidCallback? undo, int seconds = 3}) {
+void showToast(
+  ScaffoldMessengerState messenger,
+  String lang,
+  String message, {
+  VoidCallback? undo,
+  int seconds = 3,
+  String? actionLabel,
+  VoidCallback? action,
+}) {
   messenger.hideCurrentSnackBar();
   messenger.showSnackBar(SnackBar(
-    action: undo == null
-        ? null
-        : SnackBarAction(label: lang == 'tr' ? 'Geri al' : 'Undo', textColor: MC.gold, onPressed: undo),
+    action: undo != null
+        ? SnackBarAction(label: lang == 'tr' ? 'Geri al' : 'Undo', textColor: MC.gold, onPressed: undo)
+        : (action != null && actionLabel != null ? SnackBarAction(label: actionLabel, textColor: MC.gold, onPressed: action) : null),
     content: Text(message, style: sans(13.5)),
     behavior: SnackBarBehavior.floating,
     backgroundColor: const Color(0xF0171513),

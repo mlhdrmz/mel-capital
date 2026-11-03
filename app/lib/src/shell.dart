@@ -15,6 +15,7 @@ import 'sheet.dart';
 import 'state.dart';
 import 'theme.dart';
 import 'tips.dart';
+import 'ui.dart' show showToast;
 
 const Map<AppTab, String> _covers = {
   AppTab.ozet: 'lobby',
@@ -112,6 +113,23 @@ class Shell extends StatelessWidget {
       ),
     );
     if (!tabs) return scaffold;
+    // Yeni sürüm haberi: her sürüm için bir kez kısa bir not (ayrıntısı ve kurulumu Ayarlar'da).
+    if (st.updateNeedsNotice) {
+      st.markUpdateNoticed();
+      final messenger = ScaffoldMessenger.of(context);
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        showToast(
+          messenger,
+          st.lang,
+          st.lang == 'tr'
+              ? 'Mel Capital\'in yeni sürümü hazır. Ayarlar\'dan tek tıkla kurabilirsin.'
+              : 'A new version of Mel Capital is ready. Install it from Settings in one click.',
+          seconds: 8,
+          actionLabel: st.lang == 'tr' ? 'Ayarlar' : 'Settings',
+          action: () => st.setTab(AppTab.ayarlar),
+        );
+      });
+    }
     // Web önizlemesi: ?panel=harcama
     final panel = st.preview.remove('panel');
     if (panel != null) {
@@ -277,6 +295,8 @@ class TopBar extends StatelessWidget {
                           icon: _icons[tab] ?? Icons.circle_outlined,
                           label: s.t('tab.${tab.name}'),
                           selected: st.tab == tab,
+                          // Yeni sürüm varsa Ayarlar'ın yanında küçük bir nokta
+                          dot: tab == AppTab.ayarlar && st.update != null,
                           onTap: () => st.setTab(tab),
                         ),
                       ),
@@ -358,15 +378,44 @@ class _TabButton extends StatelessWidget {
     required this.label,
     required this.selected,
     required this.onTap,
+    this.dot = false,
   });
 
   final IconData icon;
   final String label;
   final bool selected;
   final VoidCallback onTap;
+  final bool dot;
 
   @override
   Widget build(BuildContext context) {
+    final button = _button();
+    if (!dot) return button;
+    return Stack(
+      clipBehavior: Clip.none,
+      children: [
+        button,
+        Positioned(
+          right: 6,
+          top: 5,
+          child: IgnorePointer(
+            child: Container(
+              key: const ValueKey<String>('update-dot'),
+              width: 9,
+              height: 9,
+              decoration: BoxDecoration(
+                color: selected ? MC.ink : MC.gold,
+                shape: BoxShape.circle,
+                border: Border.all(color: const Color(0x99000000), width: 1),
+              ),
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _button() {
     return TextButton.icon(
       onPressed: onTap,
       icon: Icon(icon, size: 17),

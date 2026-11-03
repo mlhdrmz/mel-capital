@@ -1,3 +1,6 @@
+import 'dart:async';
+import 'dart:ui' show AppExitResponse;
+
 import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
@@ -5,11 +8,13 @@ import 'package:flutter_localizations/flutter_localizations.dart';
 import 'core/model.dart';
 import 'core/normalize.dart';
 import 'core/sample.dart';
+import 'core/update.dart';
 import 'src/shell.dart';
 import 'src/state.dart';
 import 'src/theme.dart';
 import 'storage/store.dart';
 import 'storage/store_memory.dart';
+import 'storage/updater.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -17,9 +22,11 @@ Future<void> main() async {
     runApp(MelCapitalApp(state: await previewState(Uri.base.queryParameters)));
     return;
   }
-  final state = AppState(store: createStore());
+  final state = AppState(store: createStore(), updater: createUpdater());
   runApp(MelCapitalApp(state: state));
   await state.init();
+  // Açılıştan birkaç saniye sonra yeni sürüme bakılır (yalnızca sürüm bilgisi istenir).
+  unawaited(Future<void>.delayed(const Duration(seconds: 4), state.checkForUpdate));
 }
 
 /// Web önizlemesi (tasarım kontrolü): örnek verili bir profil bellekte açılır.
@@ -27,7 +34,7 @@ Future<void> main() async {
 /// `?sekme=plan` istenen sekmeyi, `?dil=en` dili, `?banka=akbank` Bankalar'da o bankanın sayfasını,
 /// `?panel=harcama` harcama panelini açar. `?ekran=tanitim&slayt=2` ilk açılış tanıtımını,
 /// `?ekran=baslangic` başlangıç ekranını, `?ekran=kurulum&adim=kartlar` kurulum sihirbazını,
-/// `?ipucu=1` sayfa ipucunu gösterir.
+/// `?ipucu=1` sayfa ipucunu, `?guncelleme=var` Ayarlar'da yeni sürüm haberini gösterir.
 Future<AppState> previewState(Map<String, String> query) async {
   final lang = query['dil'];
   final screen = query['ekran'];
@@ -59,6 +66,18 @@ Future<AppState> previewState(Map<String, String> query) async {
   if (bank != null) state.preview['banka'] = bank;
   final panel = query['panel'];
   if (panel != null) state.preview['panel'] = panel;
+  // ?guncelleme=var: Ayarlar'daki "yeni sürüm var" görünümü
+  if (query['guncelleme'] == 'var') {
+    state.update = UpdateInfo(
+      build: 999,
+      label: '05.11.2026-14.20',
+      pageUrl: kReleasesPage,
+      notes: state.lang == 'tr'
+          ? '• Kurulum ve güncelleme dosyaları\n• Pencere kapanırken son değişiklik kaydedilir'
+          : '• Setup and update files\n• The last change is saved when the window closes',
+    );
+    state.updateChecked = true;
+  }
   return state;
 }
 
@@ -82,10 +101,41 @@ Json setupPreviewData(Json sample, String step) {
   };
 }
 
-class MelCapitalApp extends StatelessWidget {
+class MelCapitalApp extends StatefulWidget {
   const MelCapitalApp({super.key, required this.state});
 
   final AppState state;
+
+  @override
+  State<MelCapitalApp> createState() => _MelCapitalAppState();
+}
+
+class _MelCapitalAppState extends State<MelCapitalApp> {
+  AppLifecycleListener? _lifecycle;
+
+  AppState get state => widget.state;
+
+  @override
+  void initState() {
+    super.initState();
+    _lifecycle = AppLifecycleListener(onExitRequested: _beforeExit);
+  }
+
+  /// Pencere kapanırken (Kapat düğmesi, Alt+F4 ya da kurulum programı) bekleyen kayıtlar bitirilir.
+  Future<AppExitResponse> _beforeExit() async {
+    try {
+      await state.flush().timeout(const Duration(seconds: 5));
+    } catch (_) {
+      // kayıt takıldıysa da pencere kapanır; dosyalar parça parça değil, bütün olarak yazılır
+    }
+    return AppExitResponse.exit;
+  }
+
+  @override
+  void dispose() {
+    _lifecycle?.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {

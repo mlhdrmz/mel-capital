@@ -6,8 +6,11 @@ import 'package:flutter/widgets.dart';
 import '../core/calc.dart';
 import '../core/model.dart';
 import '../core/normalize.dart';
+import '../core/update.dart';
 import '../core/util.dart';
+import '../core/version.dart';
 import '../storage/store.dart';
+import '../storage/updater.dart';
 
 /// Üst menüdeki sekmeler, soldan sağa.
 enum AppTab { ozet, harcamalar, borclar, bankalar, plan, alisveris, ayarlar }
@@ -20,7 +23,7 @@ const String kFirstSetupStep = 'ekstre';
 
 /// Uygulamanın durumu: profiller, açık profilin verisi, sekme, dil, ayarlar.
 class AppState extends ChangeNotifier {
-  AppState({required this.store, Locale? initialLocale})
+  AppState({required this.store, Locale? initialLocale, this.updater, this.buildNumber = kBuildNumber})
       : locale = ValueNotifier<Locale>(initialLocale ?? systemLocale());
 
   /// Windows'un dili Türkçe ise Türkçe, değilse İngilizce.
@@ -198,17 +201,26 @@ class AppState extends ChangeNotifier {
     }
   }
 
-  Future<void> _saveIndex() async {
-    try {
-      await store.saveIndex(index);
-    } catch (_) {
-      // dizin yazılamadıysa bir sonraki kayıtta yeniden denenir
-    }
-  }
+  /// Profil dizinini yazar (bütün yazmalarla aynı sırada; bkz. [_enqueue]).
+  Future<void> _saveIndex() => _enqueue(() async {
+        try {
+          await store.saveIndex(index);
+        } catch (_) {
+          // dizin yazılamadıysa bir sonraki kayıtta yeniden denenir
+        }
+      });
 
   // ---------------------------------------------------------------- Değişiklikler
 
   Future<void> _saving = Future<void>.value();
+
+  /// Dosya yazmaları sırayla yapılır; [flush] hepsinin bitmesini bekler
+  /// (ör. pencere kapanırken son değişiklik yarım kalmasın).
+  Future<void> _enqueue(Future<void> Function() job) {
+    final next = _saving.then((_) => job());
+    _saving = next.catchError((Object _) {});
+    return _saving;
+  }
 
   /// Veriyi değiştirir, hesapları yeniler ve dosyaya yazar.
   void update(void Function(Data d) change) {
@@ -223,7 +235,7 @@ class AppState extends ChangeNotifier {
     final d = _data;
     if (id == null || d == null) return;
     final snapshot = deepCopy(d.j) as Json;
-    _saving = _saving.then((_) async {
+    unawaited(_enqueue(() async {
       try {
         await store.saveData(id, snapshot);
         if (saveError != null) {
@@ -234,7 +246,7 @@ class AppState extends ChangeNotifier {
         saveError = e.toString();
         notifyListeners();
       }
-    });
+    }));
   }
 
   /// Geri alma: verinin önceki bir kopyasını geri koyar ve kaydeder.
@@ -350,10 +362,100 @@ class AppState extends ChangeNotifier {
 
   void toggleHidden() => setSetting('hidden', !hidden);
 
+  // ---------------------------------------------------------------- Güncellemeler
+
+  /// Yeni sürüm denetimi ve indirme (web önizlemesinde ve testlerde null).
+  final Updater? updater;
+
+  /// Bu derlemenin numarası (0: geliştirme derlemesi, denetim yapılmaz).
+  final int buildNumber;
+
+  /// Kullanılandan daha yeni bir sürüm varsa bilgisi.
+  UpdateInfo? update;
+
+  /// Denetim sürüyor mu.
+  bool updateChecking = false;
+
+  /// Son denetimin sonucu: null (hiç denetlenmedi), true (güncel ya da yeni sürüm bulundu), false (denetlenemedi).
+  bool? updateChecked;
+
+  /// Güncelleme indiriliyorsa ilerleme (0–1); başlatıldıysa 1.
+  double? updateProgress;
+  String? updateError;
+
+  bool get canCheckUpdates => updater != null && buildNumber > 0;
+
+  /// Son sürüme bakar. [manual] değilse yalnızca otomatik denetim açıksa çalışır.
+  Future<void> checkForUpdate({bool manual = false}) async {
+    final u = updater;
+    if (u == null || buildNumber <= 0 || updateChecking) return;
+    if (!manual && !index.autoUpdate) return;
+    updateChecking = true;
+    updateError = null;
+    notifyListeners();
+    try {
+      final raw = await u.fetchLatest();
+      update = parseRelease(raw, current: buildNumber);
+      updateChecked = true;
+    } catch (_) {
+      updateChecked = false;
+    } finally {
+      updateChecking = false;
+      notifyListeners();
+    }
+  }
+
+  void setAutoUpdate(bool value) {
+    if (index.autoUpdate == value) return;
+    index.autoUpdate = value;
+    unawaited(_saveIndex());
+    notifyListeners();
+    if (value) unawaited(checkForUpdate());
+  }
+
+  /// "Yeni sürüm var" haberi bu sürüm için verildi mi (her sürüm için bir kez gösterilir).
+  bool get updateNeedsNotice => update != null && index.updateNotified < update!.build;
+
+  void markUpdateNoticed() {
+    final u = update;
+    if (u == null || index.updateNotified >= u.build) return;
+    index.updateNotified = u.build;
+    unawaited(_saveIndex());
+  }
+
+  /// Güncelleme dosyasını indirir ve başlatır; o da bu pencereyi kapatıp yeni sürümü kurar.
+  /// Uygulama kurulum programıyla kurulmamışsa false döner (sürüm sayfası açılmalı).
+  Future<bool> installUpdate() async {
+    final u = updater;
+    final info = update;
+    if (u == null || info == null || updateProgress != null) return true;
+    if (!u.installed || info.updater == null) return false;
+    updateProgress = 0;
+    updateError = null;
+    notifyListeners();
+    try {
+      final path = await u.download(info, (p) {
+        updateProgress = p;
+        notifyListeners();
+      });
+      await flush();
+      await u.launch(path);
+      updateProgress = 1;
+    } catch (e) {
+      updateProgress = null;
+      updateError = e.toString();
+    }
+    notifyListeners();
+    return true;
+  }
+
   void setSetting(String key, Object? value) {
     settings[key] = value;
     final id = profile?.id;
-    if (id != null) unawaited(store.saveSettings(id, settings).catchError((_) {}));
+    if (id != null) {
+      final copy = deepCopy(settings) as Json;
+      unawaited(_enqueue(() => store.saveSettings(id, copy).catchError((Object _) {})));
+    }
     notifyListeners();
   }
 
