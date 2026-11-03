@@ -27,11 +27,14 @@ class AyarlarPage extends StatelessWidget {
       eyebrow: s.pick('AYARLAR', 'SETTINGS'),
       title: st.profile?.name ?? s.pick('Ayarlar', 'Settings'),
       children: [
-        const TwoColumns(
+        TwoColumns(
           leftFlex: 1,
           rightFlex: 1,
-          left: Column(children: [_ProfilesPanel(), SizedBox(height: 14), _BackupsPanel()]),
-          right: Column(children: [_ViewPanel(), SizedBox(height: 14), _DataPanel(), SizedBox(height: 14), _AboutPanel()]),
+          left: const Column(children: [_ProfilesPanel(), SizedBox(height: 14), _BackupsPanel()]),
+          // Yeni sürüm varsa "Mel Capital" bölümü en üstte durur.
+          right: st.newVersion != null
+              ? const Column(children: [_AboutPanel(), SizedBox(height: 14), _ViewPanel(), SizedBox(height: 14), _DataPanel()])
+              : const Column(children: [_ViewPanel(), SizedBox(height: 14), _DataPanel(), SizedBox(height: 14), _AboutPanel()]),
         ),
       ],
     );
