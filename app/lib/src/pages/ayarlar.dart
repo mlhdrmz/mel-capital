@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart' show defaultTargetPlatform, kIsWeb;
 import 'package:flutter/material.dart';
 import 'package:url_launcher/url_launcher.dart';
 
@@ -525,9 +526,16 @@ class _DataPanelState extends State<_DataPanel> {
 class _AboutPanel extends StatelessWidget {
   const _AboutPanel();
 
+  static bool get _android => !kIsWeb && defaultTargetPlatform == TargetPlatform.android;
+
   Future<void> _install(AppState st) async {
     final info = st.newVersion;
     if (info == null) return;
+    if (_android) {
+      // Telefon: yeni APK tarayıcıda iner; açınca Android "Güncelle" der, veriler kalır.
+      await launchUrl(Uri.parse(info.apk?.url ?? info.pageUrl), mode: LaunchMode.externalApplication);
+      return;
+    }
     final done = await st.installUpdate();
     if (!done) {
       // Kurulum programıyla kurulmamış kopya: yeni sürüm sayfası açılır.
@@ -594,7 +602,11 @@ class _AboutPanel extends StatelessWidget {
                 children: [
                   GoldButton(
                     key: const ValueKey<String>('update-install'),
-                    label: installed ? s.pick('Güncellemeyi kur', 'Install the update') : s.pick('Kurulum dosyasını indir', 'Download the installer'),
+                    label: _android
+                        ? s.pick('Yeni sürümü indir', 'Download the new version')
+                        : installed
+                            ? s.pick('Güncellemeyi kur', 'Install the update')
+                            : s.pick('Kurulum dosyasını indir', 'Download the installer'),
                     icon: installed ? Icons.system_update_alt : Icons.download_outlined,
                     onTap: () => _install(st),
                   ),
@@ -603,8 +615,11 @@ class _AboutPanel extends StatelessWidget {
             if (!installed && progress == null) ...[
               const SizedBox(height: 8),
               Text(
-                s.pick('Bu kopya kurulum programıyla kurulmamış; yeni sürümü indirdiğin kurulum dosyasıyla kurabilirsin.',
-                    'This copy was not set up with the installer; install the new version with the downloaded setup file.'),
+                _android
+                    ? s.pick('İndirilen dosyayı açıp "Güncelle"ye bas; verilerin telefonda kalır.',
+                        'Open the downloaded file and tap "Update"; your data stays on the phone.')
+                    : s.pick('Bu kopya kurulum programıyla kurulmamış; yeni sürümü indirdiğin kurulum dosyasıyla kurabilirsin.',
+                        'This copy was not set up with the installer; install the new version with the downloaded setup file.'),
                 style: sans(12, color: MC.dim, height: 1.4),
               ),
             ],

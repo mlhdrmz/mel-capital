@@ -24,6 +24,37 @@ Future<void> loadRealFonts() async {
   await family('Cormorant', ['CormorantGaramond-Medium.ttf', 'CormorantGaramond-SemiBold.ttf', 'CormorantGaramond-Bold.ttf']);
 }
 
+/// Çizim hatalarını (ör. taşmalar) bütün ayrıntısıyla toplar: hangi dosyanın hangi satırındaki
+/// widget taştı, raporda görünür.
+class ErrorLog {
+  final List<FlutterErrorDetails> errors = [];
+  FlutterExceptionHandler? _old;
+
+  void start() {
+    _old = FlutterError.onError;
+    FlutterError.onError = errors.add;
+  }
+
+  void stop() => FlutterError.onError = _old;
+
+  void check(String where) {
+    if (errors.isEmpty) return;
+    final text = errors.take(3).map((e) => e.toString()).join('\n---\n');
+    errors.clear();
+    fail('$where\n$text');
+  }
+}
+
+/// Testi hata toplayıcıyla çalıştırır (her durumda eski hata işleyicisi geri konur).
+Future<void> withErrors(Future<void> Function(ErrorLog log) body) async {
+  final log = ErrorLog()..start();
+  try {
+    await body(log);
+  } finally {
+    log.stop();
+  }
+}
+
 void main() {
   setUpAll(loadRealFonts);
 
@@ -45,24 +76,24 @@ void main() {
 
   Finder pageScroll() => find.byWidgetPredicate((w) => w is Scrollable && w.axisDirection == AxisDirection.down);
 
-  testWidgets('telefon: alt menü var, bütün sayfalar taşmadan çizilir', (tester) async {
+  testWidgets('telefon: alt menü var, bütün sayfalar taşmadan çizilir', (tester) async => withErrors((log) async {
     final state = await openSample(tester);
     expect(find.byKey(const ValueKey<String>('tab-diger')), findsOneWidget);
     expect(find.byKey(const ValueKey<String>('phone-add')), findsOneWidget);
     for (final tab in AppTab.values) {
       state.setTab(tab);
       await tester.pumpAndSettle();
-      expect(tester.takeException(), isNull, reason: tab.name);
+      log.check(tab.name);
       final scroll = pageScroll();
       if (scroll.evaluate().isNotEmpty) {
         await tester.drag(scroll.first, const Offset(0, -4000));
         await tester.pumpAndSettle();
-        expect(tester.takeException(), isNull, reason: '${tab.name}, sayfanın altı');
+        log.check('${tab.name}, sayfanın altı');
       }
     }
-  });
+  }));
 
-  testWidgets('telefon: "Diğer"den Ayarlar açılır, + düğmesi harcama paneli açar', (tester) async {
+  testWidgets('telefon: "Diğer"den Ayarlar açılır, + düğmesi harcama paneli açar', (tester) async => withErrors((log) async {
     final state = await openSample(tester);
     await tester.tap(find.byKey(const ValueKey<String>('tab-diger')));
     await tester.pumpAndSettle();
@@ -75,16 +106,16 @@ void main() {
     await tester.tap(find.byKey(const ValueKey<String>('phone-add')));
     await tester.pumpAndSettle();
     expect(find.byType(SheetFrame), findsOneWidget);
-    expect(tester.takeException(), isNull);
-  });
+    log.check('harcama paneli');
+  }));
 
-  testWidgets('telefon: düzenleme panelleri taşmadan açılır', (tester) async {
+  testWidgets('telefon: düzenleme panelleri taşmadan açılır', (tester) async => withErrors((log) async {
     final state = await openSample(tester);
     Future<void> openAndClose(String name, void Function() open) async {
       open();
       await tester.pumpAndSettle();
       expect(find.byType(SheetFrame), findsOneWidget, reason: name);
-      expect(tester.takeException(), isNull, reason: name);
+      log.check(name);
       Navigator.of(tester.element(find.byType(SheetFrame))).pop();
       await tester.pumpAndSettle();
     }
@@ -103,9 +134,9 @@ void main() {
     await openAndClose('gelir', () => openIncomeSheet(ctx, income: d.incomes.first));
     await openAndClose('hedef', () => openGoalSheet(ctx, goal: d.goals.first));
     await openAndClose('findeks', () => openFindeksSheet(ctx, entry: d.findeks.first));
-  });
+  }));
 
-  testWidgets('telefon: tanıtım, başlangıç ve kurulum adımları sığar', (tester) async {
+  testWidgets('telefon: tanıtım, başlangıç ve kurulum adımları sığar', (tester) async => withErrors((log) async {
     phone(tester);
     final state = AppState(store: MemoryStore(), initialLocale: const Locale('tr'));
     await state.init();
@@ -115,17 +146,17 @@ void main() {
     for (var i = 0; i < 3; i++) {
       state.setIntroSlide(i);
       await tester.pumpAndSettle();
-      expect(tester.takeException(), isNull, reason: 'tanıtım ${i + 1}');
+      log.check('tanıtım ${i + 1}');
     }
     state.finishIntro();
     await tester.pumpAndSettle();
-    expect(tester.takeException(), isNull, reason: 'başlangıç');
+    log.check('başlangıç');
     await state.createProfile('Deniz', data: await loadSampleJson(), setup: true);
     await tester.pumpAndSettle();
     for (final step in kSetupSteps) {
       state.setSetupStep(step);
       await tester.pumpAndSettle();
-      expect(tester.takeException(), isNull, reason: 'kurulum: $step');
+      log.check('kurulum: $step');
     }
-  });
+  }));
 }

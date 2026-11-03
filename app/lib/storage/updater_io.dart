@@ -8,8 +8,8 @@ import '../core/update.dart';
 import 'updater.dart';
 
 /// Windows: GitHub'a sorar, güncelleme dosyasını indirir ve başlatır.
-/// Telefonda (ileride) yalnızca sürüm sayfası açılır.
-Updater? createPlatformUpdater() => Platform.isWindows ? IoUpdater() : null;
+/// Telefonda yalnızca sorar; yeni APK tarayıcıda indirilir (Android kurulumu kendisi sorar).
+Updater? createPlatformUpdater() => Platform.isWindows || Platform.isAndroid ? IoUpdater() : null;
 
 class IoUpdater implements Updater {
   static const String _agent = 'MelCapital';
@@ -40,7 +40,7 @@ class IoUpdater implements Updater {
   String get _exeDir => File(Platform.resolvedExecutable).parent.path;
 
   @override
-  bool get installed => File('$_exeDir${Platform.pathSeparator}Kaldır.exe').existsSync();
+  bool get installed => Platform.isWindows && File('$_exeDir${Platform.pathSeparator}Kaldır.exe').existsSync();
 
   @override
   Future<String> download(UpdateInfo info, void Function(double progress) onProgress) async {

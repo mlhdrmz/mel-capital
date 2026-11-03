@@ -197,15 +197,25 @@ class _SetupPageState extends State<SetupPage> {
           ),
           const SizedBox(width: 6),
         ],
-        if (step != 'bitti')
-          TextButton(
-            key: const ValueKey<String>('setup-later'),
-            onPressed: () => _later(context, st),
-            style: TextButton.styleFrom(foregroundColor: MC.text),
-            child: Text(s.pick('Kurulumu sonra bitir', 'Finish setup later'),
-                style: sans(13.5, weight: FontWeight.w600, shadows: kPhotoTextShadow)),
-          ),
-        const Spacer(),
+        // Dar ekranda kısa yazılır ve gerekirse kısalır; düğmeler hiç taşmaz.
+        Expanded(
+          child: step == 'bitti'
+              ? const SizedBox.shrink()
+              : Align(
+                  alignment: Alignment.centerLeft,
+                  child: TextButton(
+                    key: const ValueKey<String>('setup-later'),
+                    onPressed: () => _later(context, st),
+                    style: TextButton.styleFrom(foregroundColor: MC.text),
+                    child: Text(
+                      isPhoneLayout(context) ? s.pick('Sonra bitir', 'Later') : s.pick('Kurulumu sonra bitir', 'Finish setup later'),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: sans(13.5, weight: FontWeight.w600, shadows: kPhotoTextShadow),
+                    ),
+                  ),
+                ),
+        ),
         if (step == 'bitti')
           GoldButton(
             key: const ValueKey<String>('setup-finish'),

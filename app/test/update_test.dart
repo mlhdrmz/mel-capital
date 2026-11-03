@@ -28,6 +28,7 @@ Map<String, dynamic> release({String tag = 's150', bool pre = false, String? dig
           'digest': digest,
         },
         {'name': 'MelCapital-Windows.zip', 'browser_download_url': 'https://example.com/z.zip', 'size': 5},
+        {'name': 'MelCapital.apk', 'browser_download_url': 'https://github.com/mlhdrmz/mel-capital/releases/download/$tag/MelCapital.apk', 'size': 7},
       ],
     };
 
@@ -80,6 +81,7 @@ void main() {
     expect(info.updater?.size, 2000);
     expect(info.updater?.sha256, sha);
     expect(info.setup?.name, 'MelCapital-Kurulum.exe');
+    expect(info.apk?.name, 'MelCapital.apk');
     expect(info.notes, contains('kurulum dosyası'));
     expect(info.notes, isNot(contains('\r')));
 

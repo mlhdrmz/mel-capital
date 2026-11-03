@@ -32,6 +32,7 @@ class UpdateInfo {
     required this.pageUrl,
     this.updater,
     this.setup,
+    this.apk,
     this.notes = '',
   });
 
@@ -49,6 +50,9 @@ class UpdateInfo {
 
   /// "Mel Capital Kurulum" dosyası.
   final ReleaseFile? setup;
+
+  /// Telefon uygulaması (APK).
+  final ReleaseFile? apk;
 
   /// Sürüm notları (kısaltılmış).
   final String notes;
@@ -79,11 +83,15 @@ UpdateInfo? parseRelease(Object? raw, {required int current}) {
   if (build == null || build <= current) return null;
   ReleaseFile? updater;
   ReleaseFile? setup;
+  ReleaseFile? apk;
   final assets = raw['assets'];
   if (assets is List) {
     for (final a in assets) {
       final f = _file(a);
-      if (f == null || !f.name.toLowerCase().endsWith('.exe')) continue;
+      if (f == null || !f.name.startsWith('MelCapital')) continue;
+      final name = f.name.toLowerCase();
+      if (name.endsWith('.apk')) apk ??= f;
+      if (!name.endsWith('.exe')) continue;
       if (f.name.startsWith('MelCapital-Guncelleme')) updater ??= f;
       if (f.name.startsWith('MelCapital-Kurulum')) setup ??= f;
     }
@@ -97,6 +105,7 @@ UpdateInfo? parseRelease(Object? raw, {required int current}) {
     pageUrl: page.startsWith('https://') ? page : kReleasesPage,
     updater: updater,
     setup: setup,
+    apk: apk,
     notes: notes,
   );
 }
