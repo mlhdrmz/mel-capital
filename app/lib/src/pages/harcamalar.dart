@@ -680,7 +680,7 @@ class _HarcamalarPageState extends State<HarcamalarPage> {
                   Wrap(spacing: 6, runSpacing: 6, children: [
                     for (final e in sugg)
                       InkWell(
-                        onTap: () => openSubSheet(context),
+                        onTap: () => openSubSheet(context, prefill: {'name': e.$1, 'group': e.$2}),
                         borderRadius: BorderRadius.circular(20),
                         child: Container(
                           padding: const EdgeInsets.fromLTRB(4, 4, 11, 4),
@@ -849,13 +849,16 @@ class SubTile extends StatelessWidget {
     Widget amount;
     if (x.isBill) {
       final v = x.monthAmounts[cm];
-      amount = Text(
+      amount = InkWell(
+        onTap: () => openBillAmountSheet(context, x, cm),
+        child: Text(
         v != null
             ? '${monthName(cm, s.lang)}: ${fmtMoney(toK(v), lang: s.lang, hidden: st.hidden)}'
             : priced
                 ? '≈ ${fmtMoney(toK(x.amount), lang: s.lang, hidden: st.hidden)}'
                 : s.pick('Bu ayın tutarı', 'This month\'s amount'),
         style: sans(13.5, weight: FontWeight.w700, color: v != null ? MC.text : MC.gold),
+        ),
       );
     } else if (priced) {
       amount = Text.rich(TextSpan(children: [
@@ -863,7 +866,7 @@ class SubTile extends StatelessWidget {
         TextSpan(text: x.period == 'yil' ? s.pick(' / yıl', ' / yr') : s.pick(' / ay', ' / mo'), style: sans(11.5, color: MC.muted)),
       ]));
     } else {
-      amount = Text(s.pick('Fiyat gir', 'Enter price'), style: sans(13.5, weight: FontWeight.w700, color: MC.gold));
+      amount = InkWell(onTap: () => openSubSheet(context, sub: x), child: Text(s.pick('Fiyat gir', 'Enter price'), style: sans(13.5, weight: FontWeight.w700, color: MC.gold)));
     }
     return Opacity(
       opacity: x.active ? 1 : 0.6,

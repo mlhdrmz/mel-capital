@@ -9,6 +9,8 @@ import '../../core/model.dart';
 import '../../core/util.dart';
 import '../glass.dart';
 import '../i18n.dart';
+import '../sheet.dart';
+import '../sheets/plans.dart';
 import '../state.dart';
 import '../theme.dart';
 import '../ui.dart';
@@ -351,10 +353,20 @@ class _PlanPageState extends State<PlanPage> {
   }
 }
 
-/// Ayı kapatma (bir sonraki güncellemede).
+/// Ayı kapatır ya da geri açar.
 void openCloseMonthSheet(BuildContext context, String month, {bool reopen = false}) {
+  final st = AppScope.of(context);
   final s = S.of(context);
-  toast(context, s.pick('Ay kapatma ekranı bir sonraki güncellemede geliyor.', 'Closing a month arrives in the next update.'));
+  if (reopen) {
+    reopenMonthDialog(context, month);
+    return;
+  }
+  final nm = addM(month, 1);
+  if (st.data.closeOf(nm) != null) {
+    toast(context, s.pick('${monthLabel(nm, s.lang)} zaten kapalı. Önce onu geri aç.', '${monthLabel(nm, s.lang)} is already closed. Reopen it first.'));
+    return;
+  }
+  showEditSheet<void>(context, builder: (_) => CloseMonthSheet(month: month), width: 640);
 }
 
 // ---------------------------------------------------------------- Parçalar
@@ -505,7 +517,15 @@ class PayRow extends StatelessWidget {
               padding: const EdgeInsets.only(left: 6),
               child: _SmallIcon(icon: Icons.receipt_long_outlined, tip: s.pick('Ekstre gir', 'Enter statement'), onTap: () {
                 final debt = ctx.data.debt(it.refId);
-                if (debt != null) openStatementSheet(context, debt);
+                if (debt != null) openStatementSheet(context, debt, month: it.fromMonth ?? m);
+              }),
+            ),
+          if (it.bill && !paid)
+            Padding(
+              padding: const EdgeInsets.only(left: 6),
+              child: _SmallIcon(icon: Icons.edit_note, tip: s.pick('Bu ayın fatura tutarını gir', 'Enter this month\'s bill'), onTap: () {
+                final sub = ctx.data.subscription(it.refId);
+                if (sub != null) openBillAmountSheet(context, sub, it.fromMonth ?? m);
               }),
             ),
           const SizedBox(width: 8),
@@ -645,7 +665,15 @@ class IncomeRow extends StatelessWidget {
         Expanded(
           child: InkWell(
             borderRadius: BorderRadius.circular(8),
-            onTap: inc == null || inc.oneOff ? null : () => openIncomeSheet(context, income: _incomeById(ctx.data, inc.id)),
+            onTap: inc == null
+                ? null
+                : inc.oneOff
+                    ? () {
+                        for (final o in ctx.data.oneOffIncomes) {
+                          if (o.id == inc.id) return openOneOffIncomeSheet(context, o);
+                        }
+                      }
+                    : () => openIncomeSheet(context, income: _incomeById(ctx.data, inc.id)),
             child: Padding(
               padding: const EdgeInsets.symmetric(vertical: 4),
               child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
@@ -658,7 +686,24 @@ class IncomeRow extends StatelessWidget {
         ),
         const SizedBox(width: 10),
         MoneyText(k, signed: true, style: sans(14.5, weight: FontWeight.w700), color: k < 0 ? MC.rose : MC.mint),
-        const SizedBox(width: 50),
+        const SizedBox(width: 8),
+        if (inc != null && !inc.oneOff && m.compareTo(addM(currentMonth(), 1)) <= 0)
+          Builder(builder: (context) {
+            final full = _incomeById(ctx.data, inc.id);
+            return SizedBox(
+              width: 104,
+              child: Align(
+                alignment: Alignment.centerRight,
+                child: SmallButton(
+                  label: inc.actual ? s.pick('Yattı', 'Received') : s.pick('Bu ay yatan', 'Received'),
+                  icon: inc.actual ? Icons.check : Icons.south_west,
+                  onTap: full == null ? null : () => openIncomeActualSheet(context, full, m),
+                ),
+              ),
+            );
+          })
+        else
+          const SizedBox(width: 104),
       ]),
     );
   }
@@ -1206,10 +1251,7 @@ class _MonthsTable extends StatelessWidget {
   }
 }
 
-void openSpendEstimateSheet(BuildContext context) {
-  final s = S.of(context);
-  toast(context, s.pick('Bu düzenleme ekranı bir sonraki güncellemede geliyor.', 'This editor arrives in the next update.'));
-}
+void openSpendEstimateSheet(BuildContext context) => showEditSheet<void>(context, builder: (_) => const SpendEstimateSheet());
 
 // ---------------------------------------------------------------- Grafikler
 
@@ -1493,6 +1535,7 @@ class _Definitions extends StatelessWidget {
                   title: o.name.isEmpty ? s.pick('Gelir', 'Income') : o.name,
                   subtitle: s.pick('Tek seferlik · ', 'One-off · ') + fmtDate(o.date, s.lang),
                   trailing: Text('+${money(toK(o.amount))}', style: sans(14, weight: FontWeight.w700, color: MC.mint)),
+                  onTap: () => openOneOffIncomeSheet(context, o),
                 ),
               if (d.incomes.isEmpty && ones.isEmpty) Text(s.pick('Gelir tanımı yok.', 'No incomes defined.'), style: sans(13, color: MC.muted)),
             ]),

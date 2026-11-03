@@ -830,7 +830,7 @@ class _CardPaySheetState extends State<CardPaySheet> {
                             Text(c.creditor, style: sans(14, weight: FontWeight.w600)),
                             Text(
                               s.pick('Borç ${money(info?.current ?? 0)}', 'Debt ${money(info?.current ?? 0)}') +
-                                  (info?.limit != null ? s.pick(' · boş ${money(info!.available ?? 0)}', ' · available ${money(info!.available ?? 0)}') : ''),
+                                  (info?.limit != null ? s.pick(' · boş ${money(info!.available ?? 0)}', ' · available ${money(info.available ?? 0)}') : ''),
                               style: sans(12, color: MC.muted),
                             ),
                           ]),
@@ -1046,7 +1046,7 @@ class _PaySheetState extends State<PaySheet> {
             padding: const EdgeInsets.only(bottom: 12),
             child: Text(
               s.pick('Kart bakiyesi ${fmtDate(info!.snap, s.lang)} tarihinde girildi; bu tarihte ya da önce yapılan ödemeler o bakiyeye dahil sayılır.',
-                  'The card balance was entered on ${fmtDate(info!.snap, s.lang)}; payments on or before that date count as included in it.'),
+                  'The card balance was entered on ${fmtDate(info.snap, s.lang)}; payments on or before that date count as included in it.'),
               style: sans(12, color: MC.dim, height: 1.4),
             ),
           ),

@@ -11,40 +11,59 @@ import '../../core/util.dart';
 import '../glass.dart';
 import '../i18n.dart';
 import '../sheet.dart';
+import '../sheets/debts.dart';
 import '../sheets/money.dart';
+import '../sheets/plans.dart';
 import '../state.dart';
 import '../theme.dart';
 import '../ui.dart';
 
-// ---------------------------------------------------------------- Düzenleme sayfaları (yer tutucu)
-
-void _soon(BuildContext context) {
-  final s = S.of(context);
-  toast(context, s.pick('Bu düzenleme ekranı bir sonraki güncellemede geliyor.', 'This editor arrives in the next update.'));
-}
+// ---------------------------------------------------------------- Düzenleme panellerini açanlar
 
 void openTransferSheet(BuildContext context, {Transfer? transfer, String? from, String? to}) =>
     showEditSheet<void>(context, builder: (_) => TransferSheet(transfer: transfer, from: from, to: to));
 void openAccountSheet(BuildContext context, {String? bank, String? type, Account? account}) =>
     showEditSheet<void>(context, builder: (_) => AccountSheet(account: account, bank: bank, type: type));
 void openCardSheet(BuildContext context, {String? bank, BankCard? card}) => showEditSheet<void>(context, builder: (_) => CardSheet(card: card, bank: bank));
-void openDebtSheet(BuildContext context, {Debt? debt, String? type}) => _soon(context);
+void openDebtSheet(BuildContext context, {Debt? debt, String? type}) => showEditSheet<void>(context, builder: (_) => DebtSheet(debt: debt, type: type));
 void openSpendSheet(BuildContext context, {Spend? spend, Json? prefill}) => showEditSheet<void>(context, builder: (_) => SpendSheet(spend: spend, prefill: prefill));
 void openQuickSpendSheet(BuildContext context, {String? source}) => showEditSheet<void>(context, builder: (_) => QuickSpendSheet(source: source));
-void openSubSheet(BuildContext context, {Subscription? sub}) => _soon(context);
-void openGoalSheet(BuildContext context, {Goal? goal, Json? prefill}) => _soon(context);
-void openGoalSaveSheet(BuildContext context, Goal goal) => _soon(context);
-void openGoalBuySheet(BuildContext context, Goal goal) => _soon(context);
+void openSubSheet(BuildContext context, {Subscription? sub, Json? prefill}) => showEditSheet<void>(context, builder: (_) => SubSheet(sub: sub, prefill: prefill));
+void openBillAmountSheet(BuildContext context, Subscription sub, String month) =>
+    showEditSheet<void>(context, builder: (_) => BillAmountSheet(sub: sub, month: month));
+void openGoalSheet(BuildContext context, {Goal? goal, Json? prefill}) => showEditSheet<void>(context, builder: (_) => GoalSheet(goal: goal, prefill: prefill));
+void openGoalSaveSheet(BuildContext context, Goal goal) => showEditSheet<void>(context, builder: (_) => ContributionSheet(goal: goal));
+void openGoalBuySheet(BuildContext context, Goal goal) => openSpendSheet(context, prefill: {
+      'goalId': goal.id,
+      'name': goal.name,
+      'amount': goal.target,
+      'category': 'alisveris',
+      'url': goal.url,
+    });
 void openPaySheet(BuildContext context, PlanItem item, String month) =>
     showEditSheet<void>(context, builder: (_) => PaySheet(kind: item.kind, refId: item.refId, month: item.fromMonth ?? month));
 void openPayRef(BuildContext context, String kind, String refId, String month) =>
     showEditSheet<void>(context, builder: (_) => PaySheet(kind: kind, refId: refId, month: month));
 void openCardPaySheet(BuildContext context, {Debt? debt}) => showEditSheet<void>(context, builder: (_) => CardPaySheet(debt: debt));
-void openStatementSheet(BuildContext context, Debt debt) => _soon(context);
-void openCardBalanceSheet(BuildContext context, Debt debt) => _soon(context);
-void openFindeksSheet(BuildContext context, {Findeks? entry}) => _soon(context);
-void openIncomeSheet(BuildContext context, {Income? income}) => _soon(context);
-void openExpenseSheet(BuildContext context, {RecurringExpense? expense}) => _soon(context);
+void openStatementSheet(BuildContext context, Debt debt, {String? month}) =>
+    showEditSheet<void>(context, builder: (_) => StatementSheet(debt: debt, month: month));
+void openCardBalanceSheet(BuildContext context, Debt debt) => showEditSheet<void>(context, builder: (_) => CardBalanceSheet(debt: debt));
+void openFindeksSheet(BuildContext context, {Findeks? entry}) {
+  int? index;
+  if (entry != null) {
+    final list = AppScope.of(context).data.findeks;
+    for (var i = 0; i < list.length; i++) {
+      if (list[i].date == entry.date) index = i;
+    }
+  }
+  showEditSheet<void>(context, builder: (_) => FindeksSheet(index: index));
+}
+
+void openIncomeSheet(BuildContext context, {Income? income}) => showEditSheet<void>(context, builder: (_) => IncomeSheet(income: income));
+void openOneOffIncomeSheet(BuildContext context, OneOffIncome income) => showEditSheet<void>(context, builder: (_) => OneOffIncomeSheet(income: income));
+void openIncomeActualSheet(BuildContext context, Income income, String month) =>
+    showEditSheet<void>(context, builder: (_) => IncomeActualSheet(income: income, month: month));
+void openExpenseSheet(BuildContext context, {RecurringExpense? expense}) => showEditSheet<void>(context, builder: (_) => ExpenseSheet(expense: expense));
 void openSpendSheetFor(BuildContext context, {String? source}) => openSpendSheet(context, prefill: {'source': source});
 
 // ---------------------------------------------------------------- Kaynak etiketi

@@ -356,3 +356,305 @@ void saveCard(Data data, Json rec, {String? id}) {
 }
 
 void deleteCard(Data data, String id) => data.cards.removeWhere((x) => x.id == id);
+
+// ---------------------------------------------------------------- Borç, ekstre, kart bakiyesi
+
+/// Plan satırlarını denetler ve sıralar: (satırlar, hata).
+(List<Json>, String?) validateSched(List<(String?, String?, int?)> rows, {required bool openEnd, required String lang}) {
+  String pick(String tr, String en) => lang == 'tr' ? tr : en;
+  final sched = <Json>[];
+  for (var i = 0; i < rows.length; i++) {
+    final (from, to, k) = rows[i];
+    final n = i + 1;
+    if (!isMonth(from)) return (const [], pick('$n. satırda başlangıç ayı seçilmeli.', 'Row $n needs a start month.'));
+    if (!openEnd && !isMonth(to)) return (const [], pick('$n. satırda bitiş ayı seçilmeli.', 'Row $n needs an end month.'));
+    if (to != null && !isMonth(to)) return (const [], pick('$n. satırda bitiş ayı için hem ay hem yıl seç.', 'Row $n: pick both month and year for the end.'));
+    if (to != null && from!.compareTo(to) > 0) return (const [], pick('$n. satırda bitiş ayı başlangıçtan önce olamaz.', 'Row $n ends before it starts.'));
+    if (k == null || k <= 0) return (const [], pick('$n. satırda aylık tutar geçerli değil.', 'Row $n has no valid monthly amount.'));
+    sched.add(<String, dynamic>{'from': from, 'to': to, 'amount': fromK(k)});
+  }
+  sched.sort((a, b) => (a['from'] as String).compareTo(b['from'] as String));
+  for (var i = 1; i < sched.length; i++) {
+    final prevTo = sched[i - 1]['to'] as String?;
+    if (prevTo == null || (sched[i]['from'] as String).compareTo(prevTo) <= 0) {
+      return (const [], pick('Plan satırlarının dönemleri çakışıyor (süresiz bir dönemden sonra yeni dönem eklenemez).', 'The plan rows overlap (no new period can follow an open-ended one).'));
+    }
+  }
+  return (sched, null);
+}
+
+/// Borç (kredi kartı, kredi, yapılandırma...) ekler ya da günceller.
+String saveDebt(Data data, Json rec, {String? id}) {
+  if (id != null) {
+    data.debt(id)?.j.addAll(rec);
+    return id;
+  }
+  final nid = uniqueId(rec['creditor'] as String, data.debts.map((x) => x.id));
+  data.debts.add(Debt(<String, dynamic>{'id': nid, 'statements': <dynamic>[], ...rec}));
+  return nid;
+}
+
+/// Borcu ve ona ait ödeme işaretlerini siler; bu kartla yapılan harcamalar kayıtta kalır
+/// ama kaynakları boşalır.
+void deleteDebt(Data data, String id) {
+  data.debts.removeWhere((x) => x.id == id);
+  for (final p in data.spends) {
+    if (srcCard(p.source) == id) p.j.addAll(<String, dynamic>{'source': null, 'installments': 1, 'firstMonth': null});
+  }
+  for (final s in data.subscriptions) {
+    if (srcCard(s.source) == id) s.j['source'] = null;
+  }
+  data.payments.removeWhere((p) => p.kind == 'debt' && p.refId == id);
+  for (final r in data.recurringExpenses) {
+    final v = r.j['linkedDebtIds'];
+    if (v is List) r.j['linkedDebtIds'] = v.where((x) => x != id).toList();
+  }
+  for (final c in data.cards) {
+    if (c.debtId == id) c.j['debtId'] = null;
+  }
+}
+
+/// Ekstre ekler ya da günceller; kesim ve son ödeme günleri, ödeme planı da yazılır.
+void saveStatement(Data data, String debtId, {required String month, required int totalK, int? minK, int? cutDay, int? dueDay, required String payPlan}) {
+  final x = data.debt(debtId);
+  if (x == null) return;
+  final list = [
+    for (final s in x.statements)
+      if (s.month != month) s.j,
+    <String, dynamic>{'month': month, 'total': fromK(totalK), 'minimum': minK == null ? null : fromK(minK)},
+  ]..sort((a, b) => (a['month'] as String).compareTo(b['month'] as String));
+  x.j['statements'] = list;
+  x.j['statementDay'] = cutDay;
+  x.j['dueDay'] = dueDay;
+  x.j['payPlan'] = payPlan;
+}
+
+void deleteStatement(Data data, String debtId, String month) {
+  final x = data.debt(debtId);
+  if (x == null) return;
+  x.j['statements'] = [for (final s in x.statements) if (s.month != month) s.j];
+}
+
+/// Kart bakiyesini bugünün tarihiyle yeniden yazar (bundan önceki ödeme ve harcamalar dahil sayılır).
+void setCardBalance(Data data, String debtId, {required int debtK, int? limitK}) {
+  data.debt(debtId)?.j.addAll(<String, dynamic>{
+    'remaining': fromK(debtK),
+    'limit': limitK == null ? null : fromK(limitK),
+    'balanceDate': todayISO(),
+    'balanceAt': nowISO(),
+  });
+}
+
+// ---------------------------------------------------------------- Abonelik ve fatura
+
+String saveSubscription(Data data, Json rec, {String? id}) {
+  if (id != null) {
+    data.subscription(id)?.j.addAll(rec);
+    return id;
+  }
+  final nid = uniqueId(rec['name'] as String, data.subscriptions.map((x) => x.id));
+  data.subscriptions.add(Subscription(<String, dynamic>{'id': nid, 'monthAmounts': <String, dynamic>{}, ...rec}));
+  return nid;
+}
+
+void deleteSubscription(Data data, String id) {
+  data.subscriptions.removeWhere((x) => x.id == id);
+  data.payments.removeWhere((p) => p.kind == 'sub' && p.refId == id);
+}
+
+/// Faturanın o ayki tutarı (null: kaldır; o ay her zamanki tutar sayılır).
+void setBillAmount(Data data, String id, String month, int? k) {
+  final x = data.subscription(id);
+  if (x == null) return;
+  final cur = x.j['monthAmounts'];
+  final map = <String, dynamic>{if (cur is Map) ...cur.cast<String, dynamic>()};
+  if (k == null) {
+    map.remove(month);
+  } else {
+    map[month] = fromK(k);
+  }
+  x.j['monthAmounts'] = map;
+}
+
+// ---------------------------------------------------------------- Sabit gider
+
+String saveExpense(Data data, Json rec, {String? id}) {
+  if (id != null) {
+    data.expense(id)?.j.addAll(rec);
+    return id;
+  }
+  final nid = uniqueId(rec['name'] as String, data.recurringExpenses.map((x) => x.id));
+  data.recurringExpenses.add(RecurringExpense(<String, dynamic>{'id': nid, ...rec}));
+  return nid;
+}
+
+void deleteExpense(Data data, String id) {
+  data.recurringExpenses.removeWhere((x) => x.id == id);
+  data.payments.removeWhere((p) => (p.kind == 'expense' && p.refId == id) || p.viaRefId == id);
+}
+
+// ---------------------------------------------------------------- Gelir
+
+String saveIncome(Data data, {String? id, required String name, int? payDay, required List<Json> schedule, String note = ''}) {
+  final rec = <String, dynamic>{'name': name, 'payDay': payDay, 'schedule': schedule, 'note': note};
+  if (id != null) {
+    for (final x in data.incomes) {
+      if (x.id == id) x.j.addAll(rec);
+    }
+    return id;
+  }
+  final nid = uniqueId(name, [...data.incomes.map((x) => x.id), ...data.oneOffIncomes.map((x) => x.id)]);
+  data.incomes.add(Income(<String, dynamic>{'id': nid, 'monthAmounts': <String, dynamic>{}, ...rec}));
+  return nid;
+}
+
+void deleteIncome(Data data, String id) => data.incomes.removeWhere((x) => x.id == id);
+
+String saveOneOffIncome(Data data, {String? id, required String name, required int k, required String date}) {
+  final rec = <String, dynamic>{'name': name, 'amount': fromK(k), 'date': date};
+  if (id != null) {
+    for (final x in data.oneOffIncomes) {
+      if (x.id == id) x.j.addAll(rec);
+    }
+    return id;
+  }
+  final nid = uniqueId(name, [...data.incomes.map((x) => x.id), ...data.oneOffIncomes.map((x) => x.id)]);
+  data.oneOffIncomes.add(OneOffIncome(<String, dynamic>{'id': nid, ...rec}));
+  return nid;
+}
+
+void deleteOneOffIncome(Data data, String id) => data.oneOffIncomes.removeWhere((x) => x.id == id);
+
+/// Bir ayda gerçekte yatan gelir (null: kaldır). Hesap seçildiyse o hesaba giriş olarak eklenir.
+void setIncomeActual(Data data, String id, String month, {int? k, String? date, String? to}) {
+  Income? inc;
+  for (final x in data.incomes) {
+    if (x.id == id) inc = x;
+  }
+  final i = inc;
+  if (i == null) return;
+  final ref = '$id|$month';
+  final cur = i.j['monthAmounts'];
+  final map = <String, dynamic>{if (cur is Map) ...cur.cast<String, dynamic>()};
+  if (k == null) {
+    map.remove(month);
+  } else {
+    map[month] = fromK(k);
+  }
+  i.j['monthAmounts'] = map;
+  for (final t in data.transfers.where((t) => t.incomeRef == ref).toList()) {
+    accAdjust(data, t.to, -toK(t.amount));
+  }
+  data.transfers.removeWhere((t) => t.incomeRef == ref);
+  if (k != null && k > 0 && to != null && date != null) {
+    data.transfers.add(Transfer(<String, dynamic>{
+      'id': rid('akt'),
+      'date': date,
+      'from': 'ext',
+      'to': to,
+      'amount': fromK(k),
+      'note': '${i.name.isEmpty ? 'Gelir' : i.name} · $month',
+      'createdAt': nowISO(),
+      'incomeRef': ref,
+    }));
+    accAdjust(data, to, k);
+  }
+}
+
+// ---------------------------------------------------------------- İstek listesi
+
+String saveGoal(Data data, Json rec, {String? id}) {
+  if (id != null) {
+    data.goal(id)?.j.addAll(rec);
+    return id;
+  }
+  final nid = uniqueId(rec['name'] as String, data.goals.map((x) => x.id));
+  data.goals.add(Goal(<String, dynamic>{
+    'id': nid,
+    'status': 'active',
+    'boughtAt': null,
+    'boughtVia': null,
+    'boughtPrice': null,
+    ...rec,
+  }));
+  return nid;
+}
+
+void deleteGoal(Data data, String id) {
+  data.goals.removeWhere((x) => x.id == id);
+  data.goalContributions.removeWhere((c) => c.goalId == id);
+  for (final p in data.spends) {
+    if (p.goalId == id) p.j['goalId'] = null;
+  }
+}
+
+/// Hedefe para ayırır (eksi tutar: geri alır).
+void addContribution(Data data, String goalId, int k, String month) {
+  data.goalContributions.add(GoalContribution(<String, dynamic>{
+    'id': rid('ayir'),
+    'goalId': goalId,
+    'amount': fromK(k),
+    'month': month,
+    'date': todayISO(),
+  }));
+}
+
+void deleteContribution(Data data, String id) => data.goalContributions.removeWhere((c) => c.id == id);
+
+/// "Alındı" işaretini kaldırır; hedef listeye geri döner.
+void reopenGoal(Data data, String id) {
+  data.goal(id)?.j.addAll(<String, dynamic>{'status': 'active', 'boughtAt': null, 'boughtVia': null, 'boughtPrice': null});
+}
+
+// ---------------------------------------------------------------- Findeks ve tahmin
+
+/// Findeks kaydı ekler ya da [index]'teki kaydı günceller. Aynı ay için ikinci kayıt eklenmez.
+String? saveFindeks(Data data, {int? index, required String date, required int score, int? lateCount, String? band}) {
+  final list = data.findeks;
+  for (var i = 0; i < list.length; i++) {
+    if (list[i].date == date && i != index) return 'dup';
+  }
+  final rec = <String, dynamic>{'date': date, 'score': score, 'lateCount': lateCount, 'band': band};
+  if (index != null && index >= 0 && index < list.length) {
+    list[index].j.addAll(rec);
+  } else {
+    list.add(Findeks(rec));
+  }
+  return null;
+}
+
+void deleteFindeks(Data data, int index) {
+  final list = data.findeks;
+  if (index >= 0 && index < list.length) list.removeAt(index);
+}
+
+/// Günlük harcama tahmini (null: otomatik).
+void setSpendEstimate(Data data, int? k) {
+  if (k == null) {
+    data.meta.remove('spendEstimate');
+  } else {
+    data.meta['spendEstimate'] = fromK(k);
+  }
+}
+
+// ---------------------------------------------------------------- Ay kapatma
+
+/// Ayı kapatır: işaretli ödenmemiş kalemler sonraki aya taşınır; istenirse serbest kalan devreder.
+void closeMonth(Data data, Model model, String month, {required List<PlanItem> carry, required bool carryCash, required bool withSnapshot}) {
+  final list = [
+    for (final c in data.monthCloses)
+      if (c.month != month) c.j,
+    <String, dynamic>{
+      'month': month,
+      'closedAt': nowISO(),
+      'carryCash': carryCash,
+      'carry': [for (final it in carry) <String, dynamic>{'kind': it.kind, 'refId': it.refId, 'from': it.fromMonth ?? month}],
+      'snapshot': withSnapshot ? <String, dynamic>{'liquid': fromK(model.liquid), 'cardDebt': fromK(model.cardDebt), 'loanDebt': fromK(model.loanDebt)} : null,
+    },
+  ]..sort((a, b) => (a['month'] as String).compareTo(b['month'] as String));
+  data.j['monthCloses'] = list;
+}
+
+void reopenMonth(Data data, String month) {
+  data.j['monthCloses'] = [for (final c in data.monthCloses) if (c.month != month) c.j];
+}
