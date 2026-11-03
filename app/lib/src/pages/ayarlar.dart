@@ -13,7 +13,7 @@ import '../state.dart';
 import '../theme.dart';
 import '../ui.dart';
 
-const String kAppVersion = '0.2';
+const String kAppVersion = '0.3';
 
 /// Ayarlar: profiller, dil ve görünüm, yedekler, veri.
 class AyarlarPage extends StatelessWidget {
@@ -239,6 +239,20 @@ class _ViewPanel extends StatelessWidget {
             help: s.t('settings.hiddenHelp'),
             trailing: GoldSwitch(value: st.hidden, onChanged: (_) => st.toggleHidden()),
           ),
+          const Hairline(),
+          SettingRow(
+            title: s.pick('Sayfa ipuçları', 'Page tips'),
+            help: s.pick('Her sayfaya ilk girişte bir kez kısa bir ipucu gösterilir.', 'A short tip is shown once, the first time you open each page.'),
+            trailing: SmallButton(
+              key: const ValueKey<String>('tips-reset'),
+              label: s.pick('Yeniden göster', 'Show again'),
+              icon: Icons.lightbulb_outline,
+              onTap: () {
+                st.resetTips();
+                toast(context, s.pick('İpuçları her sayfada bir kez yeniden gösterilecek.', 'Tips will show once more on each page.'));
+              },
+            ),
+          ),
         ],
       ),
     );
@@ -430,6 +444,18 @@ class _DataPanelState extends State<_DataPanel> {
         children: [
           PanelHead(s.pick('Veri', 'Data'), subtitle: s.pick('Veriler yalnızca bu bilgisayarda durur.', 'Your data stays on this computer.')),
           SettingRow(
+            title: s.pick('Kurulum sihirbazı', 'Setup wizard'),
+            help: s.pick('Hesaplarını, kartlarını, kredilerini, gelirini ve düzenli ödemelerini adım adım ekle.',
+                'Add your accounts, cards, loans, income and regular payments step by step.'),
+            trailing: SmallButton(
+              key: const ValueKey<String>('setup-open'),
+              label: s.pick('Aç', 'Open'),
+              icon: Icons.auto_awesome_outlined,
+              onTap: st.startSetup,
+            ),
+          ),
+          const Hairline(),
+          SettingRow(
             title: s.pick('Veri klasörü', 'Data folder'),
             help: s.pick('Belgeler › Mel Capital › Profiller', 'Documents › Mel Capital › Profiller'),
             trailing: SmallButton(
@@ -498,6 +524,7 @@ class _AboutPanel extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final st = AppScope.of(context);
     final s = S.of(context);
     return GlassPanel(
       delay: const Duration(milliseconds: 220),
@@ -507,6 +534,12 @@ class _AboutPanel extends StatelessWidget {
         title: 'Mel Capital $kAppVersion',
         help: s.pick('Önizleme sürümü. Veri biçimi eski Mel Capital ile aynıdır (sürüm 4).',
             'Preview build. The data format is the same as the old Mel Capital (version 4).'),
+        trailing: SmallButton(
+          key: const ValueKey<String>('intro-open'),
+          label: s.pick('Tanıtımı izle', 'Watch the intro'),
+          icon: Icons.slideshow_outlined,
+          onTap: st.openIntro,
+        ),
       ),
     );
   }

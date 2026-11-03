@@ -4,8 +4,11 @@ import 'package:mel_capital/core/sample.dart';
 import 'package:mel_capital/main.dart';
 import 'package:mel_capital/src/format.dart';
 import 'package:mel_capital/src/pages/common.dart';
+import 'package:mel_capital/src/pages/intro.dart';
+import 'package:mel_capital/src/pages/setup.dart';
 import 'package:mel_capital/src/sheet.dart';
 import 'package:mel_capital/src/state.dart';
+import 'package:mel_capital/src/tips.dart';
 import 'package:mel_capital/storage/store_memory.dart';
 
 void main() {
@@ -29,11 +32,27 @@ void main() {
   /// Örnek verili profille açar.
   Future<AppState> openSample(WidgetTester tester, String lang) async {
     bigWindow(tester);
-    final state = AppState(store: MemoryStore(), initialLocale: Locale(lang));
+    final state = AppState(store: MemoryStore(), initialLocale: Locale(lang))..showTips = false;
     await state.createProfile('Deniz', data: await loadSampleJson());
     await tester.pumpWidget(MelCapitalApp(state: state));
     await tester.pumpAndSettle();
     return state;
+  }
+
+  Future<void> tapKey(WidgetTester tester, String key) async {
+    final f = find.byKey(ValueKey<String>(key));
+    await tester.ensureVisible(f);
+    await tester.pumpAndSettle();
+    await tester.tap(f);
+    await tester.pumpAndSettle();
+  }
+
+  Future<void> typeKey(WidgetTester tester, String key, String text) async {
+    final f = find.byKey(ValueKey<String>(key));
+    await tester.ensureVisible(f);
+    await tester.pumpAndSettle();
+    await tester.enterText(f, text);
+    await tester.pumpAndSettle();
   }
 
   Future<void> tapTab(WidgetTester tester, AppTab tab) async {
@@ -67,21 +86,160 @@ void main() {
     expect(state.tab, AppTab.bankalar);
   });
 
-  testWidgets('ilk açılış: sıfırdan başlanır', (tester) async {
+  testWidgets('ilk açılış: tanıtım, başlangıç ve kurulum sihirbazı', (tester) async {
     bigWindow(tester);
-    final state = AppState(store: MemoryStore(), initialLocale: const Locale('tr'));
+    final store = MemoryStore();
+    final state = AppState(store: store, initialLocale: const Locale('tr'))..showTips = false;
     await state.init();
     expect(state.status, AppStatus.welcome);
+    expect(state.showIntro, isTrue);
     await tester.pumpWidget(MelCapitalApp(state: state));
     await tester.pumpAndSettle();
-    expect(find.text('Nasıl başlamak istersin?'), findsOneWidget);
-    await tester.enterText(find.byType(TextField), 'Melih');
-    await tester.tap(find.text('Sıfırdan başla'));
-    await tester.pumpAndSettle();
+
+    // Tanıtım: üç ekran
+    expect(find.byType(IntroPage), findsOneWidget);
+    expect(find.text('MEL CAPITAL NEDİR?'), findsOneWidget);
+    await tapKey(tester, 'intro-next');
+    expect(state.introSlide, 1);
+    expect(tester.takeException(), isNull);
+    await tapKey(tester, 'intro-next');
+    expect(state.introSlide, 2);
+    expect(tester.takeException(), isNull);
+    await tapKey(tester, 'intro-next');
+    expect(state.index.intro, isTrue);
+
+    // Başlangıç: yeni profil kur
+    expect(find.text('Elinde Mel Capital verisi var mı?'), findsOneWidget);
+    await typeKey(tester, 'start-name', 'Melih');
+    await tapKey(tester, 'start-new');
     expect(state.status, AppStatus.ready);
     expect(state.profile?.name, 'Melih');
-    expect(state.index.profiles.length, 1);
-    expect(state.data.accounts.length, 1);
+    expect(state.setupStep, 'ekstre');
+    expect(find.byType(SetupPage), findsOneWidget);
+
+    // Ekstreler: elle gireceğim
+    await tapKey(tester, 'setup-manual');
+    expect(state.setupStep, 'hesaplar');
+
+    // Hesaplar
+    await tapKey(tester, 'bank-akbank');
+    await typeKey(tester, 'setup-acc-balance', '12.500');
+    await tapKey(tester, 'setup-add');
+    expect(state.data.accounts.length, 2);
+    expect(state.data.accounts.any((a) => a.bank == 'akbank' && a.balance == 12500), isTrue);
+    await tapKey(tester, 'setup-next');
+    expect(state.setupStep, 'kartlar');
+
+    // Kartlar: yarım kalan form "İleri"de eklenir
+    await typeKey(tester, 'setup-card-name', 'Axess');
+    await typeKey(tester, 'setup-card-limit', '20.000');
+    await typeKey(tester, 'setup-card-debt', '3.500');
+    await typeKey(tester, 'setup-card-due', '16');
+    await tapKey(tester, 'setup-next');
+    final cards = state.data.debts.where((x) => x.isCard).toList();
+    expect(cards.length, 1);
+    expect(cards.first.bank, 'akbank');
+    expect(cards.first.remaining, 3500);
+    expect(cards.first.limit, 20000);
+    expect(state.setupStep, 'krediler');
+
+    // Krediler
+    await typeKey(tester, 'setup-loan-name', 'İhtiyaç kredisi');
+    await typeKey(tester, 'setup-loan-monthly', '2.730');
+    await typeKey(tester, 'setup-loan-count', '13');
+    await tapKey(tester, 'setup-add');
+    final loans = state.data.debts.where((x) => !x.isCard).toList();
+    expect(loans.length, 1);
+    expect(loans.first.remaining, 2730 * 13);
+    expect(loans.first.schedule.single.amount, 2730);
+    await tapKey(tester, 'setup-next');
+    expect(state.setupStep, 'gelir');
+
+    // Gelir
+    await typeKey(tester, 'setup-income-amount', '45.000');
+    await typeKey(tester, 'setup-income-day', '15');
+    await tapKey(tester, 'setup-next');
+    expect(state.data.incomes.length, 1);
+    expect(state.setupStep, 'giderler');
+
+    // Düzenli ödemeler
+    await tapKey(tester, 'cost-netflix');
+    await typeKey(tester, 'setup-cost-amount', '229,99');
+    await tapKey(tester, 'setup-add');
+    expect(state.data.subscriptions.single.name, 'Netflix');
+    await tapKey(tester, 'cost-kira');
+    await typeKey(tester, 'setup-cost-amount', '12.500');
+    await tapKey(tester, 'setup-add');
+    expect(state.data.recurringExpenses.single.name, 'Kira');
+    await tapKey(tester, 'setup-next');
+    expect(state.setupStep, 'bitti');
+    expect(tester.takeException(), isNull);
+
+    // Bitti
+    await tapKey(tester, 'setup-finish');
+    expect(state.setupStep, isNull);
+    expect(find.byKey(const ValueKey<String>('tab-ozet')), findsOneWidget);
+    expect(tester.takeException(), isNull);
+
+    // Kaydedilen veri yeniden açılınca denetimden geçer
+    await state.flush();
+    final again = AppState(store: store, initialLocale: const Locale('tr'));
+    await again.init();
+    expect(again.status, AppStatus.ready);
+    expect(again.setupStep, isNull);
+    expect(again.data.debts.length, 2);
+    expect(again.data.subscriptions.length, 1);
+  });
+
+  testWidgets('kurulum adımları örnek veriyle hatasız çizilir', (tester) async {
+    final state = await openSample(tester, 'tr');
+    state.startSetup();
+    await tester.pumpAndSettle();
+    for (final step in kSetupSteps) {
+      state.setSetupStep(step);
+      await tester.pumpAndSettle();
+      expect(find.byType(SetupPage), findsOneWidget);
+      expect(tester.takeException(), isNull);
+    }
+    await tapKey(tester, 'setup-finish');
+    expect(state.setupStep, isNull);
+  });
+
+  testWidgets('Ayarlar: kurulum ve tanıtım yeniden açılır', (tester) async {
+    final state = await openSample(tester, 'tr');
+    await tapTab(tester, AppTab.ayarlar);
+    await tapKey(tester, 'setup-open');
+    expect(state.setupStep, 'ekstre');
+    await tapKey(tester, 'setup-later');
+    expect(state.setupStep, isNull);
+    expect(state.tab, AppTab.ayarlar);
+    await tapKey(tester, 'intro-open');
+    expect(state.showIntro, isTrue);
+    expect(find.byType(IntroPage), findsOneWidget);
+    await tapKey(tester, 'intro-skip');
+    expect(state.showIntro, isFalse);
+    expect(tester.takeException(), isNull);
+  });
+
+  testWidgets('ipucu: her sayfada ilk girişte bir kez gösterilir', (tester) async {
+    bigWindow(tester);
+    final state = AppState(store: MemoryStore(), initialLocale: const Locale('tr'));
+    await state.createProfile('Deniz', data: await loadSampleJson());
+    await tester.pumpWidget(MelCapitalApp(state: state));
+    await tester.pumpAndSettle();
+    expect(find.byType(TipCard), findsOneWidget);
+    expect(state.index.tips, contains('ozet'));
+    await tester.tap(find.byKey(const ValueKey<String>('tip-ok')));
+    await tester.pumpAndSettle();
+    expect(find.byType(TipCard), findsNothing);
+    await tapTab(tester, AppTab.plan);
+    expect(find.byType(TipCard), findsOneWidget);
+    await tapTab(tester, AppTab.ozet);
+    expect(find.byType(TipCard), findsNothing);
+    expect(state.index.tips, containsAll(<String>['ozet', 'plan']));
+    state.resetTips();
+    await tester.pumpAndSettle();
+    expect(find.byType(TipCard), findsOneWidget);
     expect(tester.takeException(), isNull);
   });
 

@@ -14,6 +14,10 @@ enum AppTab { ozet, harcamalar, borclar, bankalar, plan, alisveris, ayarlar }
 
 enum AppStatus { loading, welcome, ready, corrupt }
 
+/// Kurulum sihirbazının adımları, sırayla.
+const List<String> kSetupSteps = ['ekstre', 'hesaplar', 'kartlar', 'krediler', 'gelir', 'giderler', 'bitti'];
+const String kFirstSetupStep = 'ekstre';
+
 /// Uygulamanın durumu: profiller, açık profilin verisi, sekme, dil, ayarlar.
 class AppState extends ChangeNotifier {
   AppState({required this.store, Locale? initialLocale})
@@ -114,23 +118,38 @@ class AppState extends ChangeNotifier {
     index.last = id;
     await _saveIndex();
     _tab = AppTab.ozet;
+    _tip = null;
     status = AppStatus.ready;
     notifyListeners();
   }
 
   /// Yeni profil oluşturur (veri verilmezse boş başlar) ve açar.
-  Future<void> createProfile(String name, {Json? data}) async {
+  /// [setup] verilirse profil kurulum sihirbazıyla açılır.
+  Future<void> createProfile(String name, {Json? data, bool setup = false}) async {
     final clean = name.trim().isEmpty ? (lang == 'tr' ? 'Profilim' : 'My profile') : name.trim();
     final id = newProfileId(clean, index.profiles.map((p) => p.id));
     final info = ProfileInfo(id: id, name: clean, createdAt: nowISO());
     final n = normalizeData(data ?? emptyData().j);
     final json = n.data?.j ?? emptyData().j;
     await store.saveData(id, json);
+    if (setup) {
+      try {
+        await store.saveSettings(id, <String, dynamic>{'setupStep': kFirstSetupStep});
+      } catch (_) {
+        // ayarlar yazılamazsa sihirbaz yine açılır (bellekteki ayarla)
+      }
+    }
     _adding = false;
+    _introOpen = false;
+    index.intro = true;
     index.profiles.add(info);
     index.last = id;
     await _saveIndex();
     await openProfile(id);
+    if (setup && setupStep == null) {
+      settings['setupStep'] = kFirstSetupStep;
+      notifyListeners();
+    }
   }
 
   Future<void> renameProfile(String id, String name) async {
@@ -233,11 +252,90 @@ class AppState extends ChangeNotifier {
   /// Bekleyen kayıtların bitmesini bekler.
   Future<void> flush() => _saving;
 
+  // ---------------------------------------------------------------- Tanıtım
+
+  bool _introOpen = false;
+
+  /// Tanıtımda kaçıncı ekran (0–2).
+  int introSlide = 0;
+
+  /// Tanıtım gösterilsin mi: uygulama ilk açıldığında ya da Ayarlar'dan istenince.
+  bool get showIntro => _introOpen || (status == AppStatus.welcome && !index.intro);
+
+  void openIntro() {
+    _introOpen = true;
+    introSlide = 0;
+    notifyListeners();
+  }
+
+  void setIntroSlide(int value) {
+    if (introSlide == value) return;
+    introSlide = value;
+    notifyListeners();
+  }
+
+  void finishIntro() {
+    _introOpen = false;
+    introSlide = 0;
+    if (!index.intro) {
+      index.intro = true;
+      unawaited(_saveIndex());
+    }
+    notifyListeners();
+  }
+
+  // ---------------------------------------------------------------- Kurulum sihirbazı
+
+  /// Sihirbazın açık olduğu adım (null: sihirbaz kapalı). Profilin ayarlarında saklanır;
+  /// uygulama yarıda kapanırsa kaldığı yerden açılır.
+  String? get setupStep {
+    final v = settings['setupStep'];
+    return v is String && kSetupSteps.contains(v) ? v : null;
+  }
+
+  void setSetupStep(String? step) => setSetting('setupStep', step);
+
+  /// Sihirbazı baştan açar (Ayarlar'dan).
+  void startSetup() => setSetupStep(kFirstSetupStep);
+
+  // ---------------------------------------------------------------- Sayfa ipuçları
+
+  /// İpuçları gösterilsin mi (testlerde ve web önizlemesinde kapatılabilir).
+  bool showTips = true;
+  String? _tip;
+
+  /// Bu sekmenin ipucu gösterilecekse sekmenin adı. İpucu ilk gösterildiği anda "görüldü"
+  /// sayılır; kapatılana ya da sekme değişene kadar ekranda kalır.
+  String? tipFor(AppTab tab) {
+    if (_tip == tab.name) return _tip;
+    if (!showTips || status != AppStatus.ready || !hasData || setupStep != null || _introOpen || _adding) return null;
+    if (index.tips.contains(tab.name)) return null;
+    _tip = tab.name;
+    index.tips.add(tab.name);
+    unawaited(_saveIndex());
+    return _tip;
+  }
+
+  void dismissTip() {
+    if (_tip == null) return;
+    _tip = null;
+    notifyListeners();
+  }
+
+  /// İpuçları her sayfada bir kez yeniden gösterilir.
+  void resetTips() {
+    index.tips.clear();
+    _tip = null;
+    unawaited(_saveIndex());
+    notifyListeners();
+  }
+
   // ---------------------------------------------------------------- Görünüm
 
   void setTab(AppTab value) {
     if (value == _tab) return;
     _tab = value;
+    _tip = null;
     notifyListeners();
   }
 

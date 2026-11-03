@@ -35,11 +35,19 @@ class ProfileInfo {
 }
 
 class ProfileIndex {
-  ProfileIndex({this.last, this.lang, List<ProfileInfo>? profiles}) : profiles = profiles ?? [];
+  ProfileIndex({this.last, this.lang, this.intro = false, List<String>? tips, List<ProfileInfo>? profiles})
+      : tips = tips ?? [],
+        profiles = profiles ?? [];
 
   factory ProfileIndex.fromJson(Json j) => ProfileIndex(
         last: j['last'] as String?,
         lang: j['lang'] == 'tr' || j['lang'] == 'en' ? j['lang'] as String : null,
+        // Tanıtım alanı olmayan eski dizinler: profil varsa tanıtım görülmüş sayılır.
+        intro: j['intro'] == true || (j['intro'] == null && j['profiles'] is List && (j['profiles'] as List).isNotEmpty),
+        tips: [
+          for (final t in (j['tips'] is List ? j['tips'] as List : const []))
+            if (t is String) t,
+        ],
         profiles: [
           for (final p in (j['profiles'] is List ? j['profiles'] as List : const []))
             if (p is Map) ProfileInfo.fromJson(p.cast<String, dynamic>()),
@@ -50,6 +58,12 @@ class ProfileIndex {
 
   /// Arayüz dili (bütün profiller için).
   String? lang;
+
+  /// İlk açılış tanıtımı görüldü mü.
+  bool intro;
+
+  /// İpucu gösterilmiş sayfalar (sekme adları).
+  final List<String> tips;
   final List<ProfileInfo> profiles;
 
   ProfileInfo? byId(String? id) {
@@ -59,7 +73,14 @@ class ProfileIndex {
     return null;
   }
 
-  Json toJson() => {'v': 1, 'last': last, 'lang': lang, 'profiles': [for (final p in profiles) p.toJson()]};
+  Json toJson() => {
+        'v': 1,
+        'last': last,
+        'lang': lang,
+        'intro': intro,
+        'tips': [...tips],
+        'profiles': [for (final p in profiles) p.toJson()],
+      };
 }
 
 class BackupInfo {

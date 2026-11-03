@@ -4,6 +4,7 @@
 // Hepsi bir Data üzerinde çalışır ve testlerle denetlenir.
 
 import 'calc.dart';
+import 'constants.dart';
 import 'model.dart';
 import 'util.dart';
 
@@ -657,4 +658,117 @@ void closeMonth(Data data, Model model, String month, {required List<PlanItem> c
 
 void reopenMonth(Data data, String month) {
   data.j['monthCloses'] = [for (final c in data.monthCloses) if (c.month != month) c.j];
+}
+
+// ---------------------------------------------------------------- Kurulum sihirbazı
+
+/// Kurulumda eklenen kalemin bu ayki ödeme günü geçtiyse, o ayki ödemesi kurulumdan önce yapılmış
+/// sayılır: ödendi işareti konur, hesap bakiyeleri değişmez (bakiyeler zaten ödemeden sonraki
+/// haliyle girilir). İşaret konduysa true.
+bool markPaidBeforeStart(Data data, {required String kind, required String refId, required int k, required int? day}) {
+  final m = currentMonth();
+  if (day == null || k <= 0 || day >= dayOf(todayISO())) return false;
+  if (data.payments.any((p) => p.kind == kind && p.refId == refId && p.month == m)) return false;
+  data.payments.add(Payment(<String, dynamic>{
+    'id': rid('od'),
+    'kind': kind,
+    'refId': refId,
+    'month': m,
+    'paidAmount': fromK(k),
+    'paidDate': '$m-${two(day)}',
+    'createdAt': nowISO(),
+  }));
+  return true;
+}
+
+/// Kurulumda kredi kartı ekler: bugünkü güncel borç, limit, kesim ve son ödeme günü.
+/// Bu ayın son ödeme günü geçtiyse bu ayki kart ödemesi yapılmış sayılır.
+String addSetupCard(Data data, {required String name, required String bank, required int debtK, int? limitK, int? cutDay, int? dueDay}) {
+  final id = saveDebt(data, <String, dynamic>{
+    'creditor': name,
+    'type': 'kredi_karti',
+    'bank': bank,
+    'remaining': fromK(debtK),
+    'limit': limitK == null ? null : fromK(limitK),
+    'schedule': <dynamic>[],
+    'note': '',
+    'payDay': null,
+    'statementDay': cutDay,
+    'dueDay': dueDay,
+    'balanceDate': todayISO(),
+    'balanceAt': nowISO(),
+    'payPlan': 'asgari',
+  });
+  final estK = ((debtK * kMinPayRate) / 100).round() * 100;
+  markPaidBeforeStart(data, kind: 'debt', refId: id, k: estK, day: dueDay ?? cutDay);
+  return id;
+}
+
+/// Sıradaki taksit ayı: ödeme günü bu ay geçtiyse gelecek ay, geçmediyse bu ay.
+String nextInstallmentMonth(int? payDay) {
+  final cur = currentMonth();
+  return payDay != null && payDay < dayOf(todayISO()) ? addM(cur, 1) : cur;
+}
+
+/// Kurulumda kredi ekler: aylık taksit, kalan taksit sayısı ve sıradaki taksit ayından plan kurulur.
+/// Kalan borç verilmezse taksit × taksit sayısı sayılır.
+String addSetupLoan(Data data,
+    {required String name, required String type, required String bank, required int monthlyK, required int count, required String first, int? payDay, int? restK}) {
+  return saveDebt(data, <String, dynamic>{
+    'creditor': name,
+    'type': type,
+    'bank': bank,
+    'remaining': fromK(restK ?? monthlyK * count),
+    'limit': null,
+    'schedule': [
+      <String, dynamic>{'from': first, 'to': addM(first, count - 1), 'amount': fromK(monthlyK)},
+    ],
+    'note': '',
+    'payDay': payDay,
+    'statementDay': null,
+    'dueDay': null,
+    'balanceDate': null,
+    'payPlan': 'asgari',
+  });
+}
+
+/// Kurulumda düzenli gelir ekler (bu aydan itibaren, süresiz).
+String addSetupIncome(Data data, {required String name, required int k, int? payDay}) {
+  final b = data.balancesAsOf;
+  final start = maxMonth(currentMonth(), isMonth(b) ? b : currentMonth());
+  return saveIncome(data, name: name, payDay: payDay, schedule: [
+    <String, dynamic>{'from': start, 'to': null, 'amount': fromK(k)},
+  ]);
+}
+
+/// Kurulumda düzenli ödeme ekler: kira gibi sabit gider ya da abonelik/fatura.
+/// Ödeme günü bu ay geçtiyse bu ayki ödemesi yapılmış sayılır.
+String addSetupCost(Data data, {required String name, required bool expense, required String group, required int k, int? day, String? source}) {
+  if (expense) {
+    final b = data.balancesAsOf;
+    final id = saveExpense(data, <String, dynamic>{
+      'name': name,
+      'category': group,
+      'amount': fromK(k),
+      'startMonth': maxMonth(currentMonth(), isMonth(b) ? b : currentMonth()),
+      'endMonth': null,
+      'day': day,
+      'linkedDebtIds': <String>[],
+      'note': '',
+    });
+    markPaidBeforeStart(data, kind: 'expense', refId: id, k: k, day: day);
+    return id;
+  }
+  final id = saveSubscription(data, <String, dynamic>{
+    'name': name,
+    'group': group,
+    'amount': fromK(k),
+    'period': 'ay',
+    'day': day,
+    'source': source,
+    'active': true,
+    'note': '',
+  });
+  markPaidBeforeStart(data, kind: 'sub', refId: id, k: k, day: day);
+  return id;
 }

@@ -562,3 +562,28 @@ String maskTxt(String? text, bool hidden) {
   final t = text ?? '';
   return hidden ? t.replaceAll(RegExp(r'\d[\d.,]*\s?(TL|₺)'), '••• TL') : t;
 }
+
+/// Türkçe / English seçimi (ilk açılış ekranlarında).
+class LangToggle extends StatelessWidget {
+  const LangToggle({super.key, required this.lang, required this.onChanged});
+
+  final String lang;
+  final ValueChanged<String> onChanged;
+
+  @override
+  Widget build(BuildContext context) {
+    Widget pill(String code, String label) => TextButton(
+          key: ValueKey<String>('start-lang-$code'),
+          onPressed: () => onChanged(code),
+          style: TextButton.styleFrom(
+            foregroundColor: lang == code ? MC.ink : MC.text,
+            backgroundColor: lang == code ? MC.gold : const Color(0x33000000),
+            shape: const StadiumBorder(),
+            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+            textStyle: const TextStyle(fontFamily: MC.sans, fontSize: 13, fontWeight: FontWeight.w600),
+          ),
+          child: Text(label),
+        );
+    return Row(mainAxisSize: MainAxisSize.min, children: [pill('tr', 'Türkçe'), const SizedBox(width: 6), pill('en', 'English')]);
+  }
+}

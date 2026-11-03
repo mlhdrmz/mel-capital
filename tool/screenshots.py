@@ -1,7 +1,7 @@
 """Web önizlemesinin ekran görüntülerini alır (tasarımı derleme sunucusunda kontrol etmek için).
 
 Kullanım: python screenshots.py <web klasörü> <çıktı klasörü>
-Uygulama web'de ?sekme=<ad>&dil=<tr|en>&banka=<anahtar>&ekran=hosgeldin parametreleriyle istenen ekranı açar.
+Uygulama web'de ?sekme=<ad>&dil=<tr|en>&banka=<anahtar>&ekran=<tanitim|baslangic|kurulum>&adim=<adım> parametreleriyle istenen ekranı açar.
 """
 import functools
 import http.server
@@ -20,10 +20,21 @@ TARGETS = [
     ('plan_tr', 'sekme=plan&dil=tr'),
     ('alisveris_tr', 'sekme=alisveris&dil=tr'),
     ('ayarlar_tr', 'sekme=ayarlar&dil=tr'),
-    ('hosgeldin_tr', 'ekran=hosgeldin&dil=tr'),
+    ('tanitim1_tr', 'ekran=tanitim&dil=tr'),
+    ('tanitim2_tr', 'ekran=tanitim&slayt=2&dil=tr'),
+    ('tanitim3_tr', 'ekran=tanitim&slayt=3&dil=tr'),
+    ('baslangic_tr', 'ekran=baslangic&dil=tr'),
+    ('kurulum_ekstre_tr', 'ekran=kurulum&adim=ekstre&dil=tr'),
+    ('kurulum_hesaplar_tr', 'ekran=kurulum&adim=hesaplar&dil=tr'),
+    ('kurulum_kartlar_tr', 'ekran=kurulum&adim=kartlar&dil=tr'),
+    ('kurulum_krediler_tr', 'ekran=kurulum&adim=krediler&dil=tr'),
+    ('kurulum_giderler_tr', 'ekran=kurulum&adim=giderler&dil=tr'),
+    ('kurulum_bitti_tr', 'ekran=kurulum&adim=bitti&dil=tr'),
+    ('ipucu_ozet_tr', 'sekme=ozet&ipucu=1&dil=tr'),
     ('panel_harcama_tr', 'sekme=harcamalar&dil=tr&panel=harcama'),
     ('panel_borc_tr', 'sekme=borclar&dil=tr&panel=borc'),
     ('ozet_en', 'sekme=ozet&dil=en'),
+    ('tanitim1_en', 'ekran=tanitim&dil=en'),
     ('plan_en', 'sekme=plan&dil=en'),
 ]
 

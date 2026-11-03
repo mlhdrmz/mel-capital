@@ -7,11 +7,14 @@ import 'native_window.dart';
 import 'pages.dart';
 import 'pages/common.dart';
 import 'pages/corrupt.dart';
+import 'pages/intro.dart';
 import 'pages/plan.dart' show UpcomingSheet;
+import 'pages/setup.dart';
 import 'pages/welcome.dart';
 import 'sheet.dart';
 import 'state.dart';
 import 'theme.dart';
+import 'tips.dart';
 
 const Map<AppTab, String> _covers = {
   AppTab.ozet: 'lobby',
@@ -43,19 +46,32 @@ class Shell extends StatelessWidget {
     var tabs = false;
     var cover = 'lobby';
     Widget body = const _Loading();
+    final introCover = kIntroCovers[introIndex(st.introSlide)];
     switch (st.status) {
       case AppStatus.loading:
         break;
       case AppStatus.welcome:
-        cover = 'lobby';
-        body = const WelcomePage();
+        if (st.showIntro) {
+          cover = introCover;
+          body = const IntroPage();
+        } else {
+          cover = 'lobby';
+          body = const StartPage();
+        }
       case AppStatus.corrupt:
         cover = 'lock';
         body = const CorruptPage();
       case AppStatus.ready:
-        if (st.addingProfile) {
+        final step = st.setupStep;
+        if (st.showIntro) {
+          cover = introCover;
+          body = const IntroPage();
+        } else if (st.addingProfile) {
           cover = 'lobby';
-          body = WelcomePage(addingProfile: true, onCancel: () => st.setAddingProfile(false));
+          body = StartPage(addingProfile: true, onCancel: () => st.setAddingProfile(false));
+        } else if (step != null) {
+          cover = kSetupCovers[step] ?? 'lobby';
+          body = const SetupPage();
         } else {
           tabs = true;
           cover = _covers[st.tab] ?? 'lobby';
@@ -67,6 +83,8 @@ class Shell extends StatelessWidget {
           );
         }
     }
+    // Sayfanın ipucu (ilk girişte bir kez)
+    final tip = tabs ? st.tipFor(st.tab) : null;
     final scaffold = Scaffold(
       backgroundColor: MC.bg,
       body: Stack(
@@ -82,6 +100,12 @@ class Shell extends StatelessWidget {
               ],
             ),
           ),
+          if (tip != null)
+            Positioned(
+              right: 24,
+              bottom: 24,
+              child: SafeArea(child: TipCard(key: ValueKey<String>('tip-$tip'), tab: st.tab)),
+            ),
         ],
       ),
     );
