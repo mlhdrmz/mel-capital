@@ -1,6 +1,7 @@
 // Telefon boyutunda (390 × 844) bütün ekranlar: gerçek yazı tipleriyle çizilir ki taşmalar
 // gerçekteki gibi görünsün (diğer testlerdeki Ahem yazı tipi harfleri çok geniş çizer).
 
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
