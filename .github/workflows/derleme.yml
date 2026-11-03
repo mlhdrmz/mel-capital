@@ -230,22 +230,96 @@ jobs:
           if (Test-Path $key) { throw 'Windows kaydı silinmedi' }
           if (Test-Path $docs) { throw 'Veriler silinmedi' }
           Write-Host 'Kur → aç → güncelle → kaldır denemesi tamam.'
+      - name: Yayın dosyalarını topla
+        shell: pwsh
+        run: Copy-Item ../MelCapital-Windows.zip ../dist/
       - uses: actions/upload-artifact@v5
         with:
-          name: MelCapital-Windows
-          path: |
-            MelCapital-Windows.zip
-            dist/*.exe
+          name: yayin-windows
+          path: dist
           retention-days: 30
+
+  android:
+    name: Android
+    runs-on: ubuntu-24.04
+    defaults:
+      run:
+        shell: bash
+        working-directory: app
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+      - uses: subosito/flutter-action@v2
+        with:
+          flutter-version: ${{ env.FLUTTER_VERSION }}
+          channel: stable
+          cache: true
+      - run: flutter pub get
+      - name: İmza anahtarı
+        id: imza
+        env:
+          KEYSTORE: ${{ secrets.ANDROID_KEYSTORE }}
+          KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
+        run: |
+          if [ -n "$KEYSTORE" ] && [ -n "$KEYSTORE_PASSWORD" ]; then
+            echo "$KEYSTORE" | base64 -d > android/app/melcapital.jks
+            printf 'storeFile=melcapital.jks\nstorePassword=%s\nkeyAlias=melcapital\nkeyPassword=%s\n' "$KEYSTORE_PASSWORD" "$KEYSTORE_PASSWORD" > android/key.properties
+            echo "imzali=evet" >> "$GITHUB_OUTPUT"
+          else
+            echo "::notice title=Android::İmza anahtarı yok; APK yalnızca deneme anahtarıyla imzalandı (yayına konmaz)."
+            echo "imzali=hayir" >> "$GITHUB_OUTPUT"
+          fi
+      - name: APK derlemesi
+        run: |
+          set +e
+          n='${{ github.run_number }}'
+          label=$(TZ=Europe/Istanbul date +%d.%m.%Y-%H.%M)
+          flutter build apk --release --build-name=1.0.$n --build-number=$n --dart-define=MC_SURUM=$label --dart-define=MC_DERLEME=$n 2>&1 | tee ../apk.txt
+          status=${PIPESTATUS[0]}
+          rm -f android/key.properties android/app/melcapital.jks
+          if [ $status -ne 0 ]; then
+            python3 ../tool/annotate.py error "APK derlemesi" ../apk.txt 120
+            exit $status
+          fi
+          mkdir -p ../apk
+          cp build/app/outputs/flutter-apk/app-release.apk ../apk/MelCapital.apk
+          ls -la ../apk
+      - uses: actions/upload-artifact@v5
+        with:
+          name: ${{ steps.imza.outputs.imzali == 'evet' && 'yayin-android' || 'deneme-android' }}
+          path: apk
+          retention-days: 30
+
+  yayin:
+    name: Yayın
+    needs: [windows, android]
+    if: ${{ !cancelled() && needs.windows.result == 'success' && (github.event_name == 'push' || inputs.yayinla) }}
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/download-artifact@v5
+        with:
+          pattern: yayin-*
+          merge-multiple: true
+          path: dist
+      - name: Sürüm etiketi
+        id: surum
+        run: |
+          ls -la dist
+          label=$(ls dist | sed -n 's/^MelCapital-Guncelleme-\(.*\)\.exe$/\1/p' | head -1)
+          echo "etiket=$label" >> "$GITHUB_OUTPUT"
       - name: Önizleme sürümünü yayınla
         if: github.event_name == 'push'
-        shell: bash
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           LABEL: ${{ steps.surum.outputs.etiket }}
         run: |
           gh release delete onizleme --repo "$GITHUB_REPOSITORY" --cleanup-tag --yes || true
-          gh release create onizleme ../dist/*.exe ../MelCapital-Windows.zip \
+          gh release create onizleme dist/* \
             --repo "$GITHUB_REPOSITORY" \
             --target "$GITHUB_SHA" \
             --prerelease \
@@ -253,14 +327,13 @@ jobs:
             --notes "Son derleme (${GITHUB_SHA::7}, $LABEL). İlk kez kurmak için MelCapital-Kurulum.exe; kurulu uygulamayı güncellemek için MelCapital-Guncelleme-*.exe. Veriler Belgeler\Mel Capital klasöründe durur ve kurmadan önce yedeklenir."
       - name: Resmi sürümü yayınla
         if: github.event_name == 'workflow_dispatch' && inputs.yayinla
-        shell: bash
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           LABEL: ${{ steps.surum.outputs.etiket }}
           NOTES: ${{ inputs.notlar }}
         run: |
           [ -n "$NOTES" ] || NOTES="Mel Capital $LABEL"
-          gh release create "s${{ github.run_number }}" ../dist/*.exe ../MelCapital-Windows.zip \
+          gh release create "s${{ github.run_number }}" dist/* \
             --repo "$GITHUB_REPOSITORY" \
             --target "$GITHUB_SHA" \
             --latest \

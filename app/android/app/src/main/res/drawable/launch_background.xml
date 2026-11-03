@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Açılırken kısa süre görünen koyu zemin (Flutter ilk kareyi çizene kadar). -->
+<layer-list xmlns:android="http://schemas.android.com/apk/res/android">
+    <item android:drawable="@color/mc_background" />
+</layer-list>
