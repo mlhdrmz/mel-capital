@@ -66,6 +66,9 @@ jobs:
             # Geçen testler değil, yalnızca hata ayrıntısı not edilir
             sed -n '/❌/,$p' ../test.txt | sed -e 's/^::group:://' -e '/^::/d' > ../test-fail.txt || true
             [ -s ../test-fail.txt ] || cp ../test.txt ../test-fail.txt
+            # Önce bütün hataların kısa özeti (hangi test, hangi dosyanın hangi satırı), sonra ilk hatanın ayrıntısı
+            sed -e 's/^::group:://' ../test.txt | grep -E "❌|overflowed|error-causing|/lib/src/[^ ]*\.dart:[0-9]+|Expected:|Actual:|TestFailure|Exception:" | grep -v "^::" | head -120 > ../test-ozet.txt || true
+            [ -s ../test-ozet.txt ] && python3 ../tool/annotate.py error "Testler (özet)" ../test-ozet.txt 120 bas
             python3 ../tool/annotate.py error "Testler" ../test-fail.txt 150 bas
             exit $status
           fi
@@ -258,6 +261,14 @@ jobs:
           channel: stable
           cache: true
       - run: flutter pub get
+      - name: Android NDK (indirme bazen yarıda kalıyor; birkaç kez denenir)
+        run: |
+          sdk="$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager"
+          for i in 1 2 3 4; do
+            yes | "$sdk" --install "ndk;28.2.13676358" > /dev/null 2>&1 && break
+            echo "NDK indirilemedi, yeniden deneniyor ($i)"; sleep 15
+          done
+          ls "$ANDROID_HOME/ndk"
       - name: İmza anahtarı
         id: imza
         env:

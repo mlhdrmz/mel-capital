@@ -269,7 +269,17 @@ class CardRow extends StatelessWidget {
             children: [
               Row(children: [swatch, const SizedBox(width: 14), Expanded(child: middle)]),
               const SizedBox(height: 8),
-              Row(children: [actions, const Spacer(), amounts]),
+              Row(children: [
+                actions,
+                const SizedBox(width: 8),
+                // Dar ekranda tutarlar sığmazsa küçülür
+                Expanded(
+                  child: Align(
+                    alignment: Alignment.centerRight,
+                    child: FittedBox(fit: BoxFit.scaleDown, alignment: Alignment.centerRight, child: amounts),
+                  ),
+                ),
+              ]),
             ],
           );
         }
