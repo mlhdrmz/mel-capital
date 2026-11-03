@@ -849,9 +849,9 @@ class _CalDetail extends StatelessWidget {
     return Container(
       margin: const EdgeInsets.only(top: 12),
       padding: const EdgeInsets.fromLTRB(12, 8, 8, 8),
-      decoration: ShapeDecoration(
-        color: const Color(0x2A000000),
-        shape: const SignatureBorder(cut: 14, radius: 14, side: BorderSide(color: Color(0x26FFFFFF))),
+      decoration: const ShapeDecoration(
+        color: Color(0x2A000000),
+        shape: SignatureBorder(cut: 14, radius: 14, side: BorderSide(color: Color(0x26FFFFFF))),
       ),
       child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
         Row(children: [
@@ -1281,10 +1281,11 @@ class _FlowPainter extends CustomPainter {
     final ch = size.height - top - bottom;
     final n = sums.length;
     if (n == 0) return;
-    int outOf(MonthSummary x) => x.total + math.max(0, x.savings) + x.spent + x.estSpend;
+    int pos(int v) => v > 0 ? v : 0;
+    int outOf(MonthSummary x) => x.total + pos(x.savings) + x.spent + x.estSpend;
     var max = 1;
     for (final x in sums) {
-      max = math.max(max, math.max(outOf(x), x.income + math.max(0, x.carryIn)));
+      max = math.max(max, math.max(outOf(x), x.income + pos(x.carryIn)));
     }
     final slot = size.width / n;
     final bw = math.min(26.0, slot * 0.55);
@@ -1304,7 +1305,7 @@ class _FlowPainter extends CustomPainter {
         for (final k in kGroupOrder) (k, x.groupTotal(k), false),
         ('harcama', x.spent, false),
         ('harcama', x.estSpend, true),
-        ('birikim', math.max(0, x.savings), false),
+        ('birikim', pos(x.savings), false),
       ];
       for (final (k, v, est) in parts) {
         if (v <= 0) continue;
@@ -1314,7 +1315,7 @@ class _FlowPainter extends CustomPainter {
         final r = RRect.fromRectAndRadius(Rect.fromLTWH(cx - bw / 2, y, bw, math.max(0.5, h)), const Radius.circular(2));
         canvas.drawRRect(r, Paint()..color = est ? color.withValues(alpha: 0.4) : color);
       }
-      final inc = x.income + math.max(0, x.carryIn);
+      final inc = x.income + pos(x.carryIn);
       if (inc > 0) {
         final iy = base - inc / max * ch * t;
         final p = Paint()

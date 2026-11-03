@@ -538,10 +538,12 @@ class Kpi extends StatelessWidget {
 }
 
 /// Basit bilgi mesajı (alt köşede). [undo] verilirse "Geri al" düğmesi çıkar.
-void toast(BuildContext context, String message, {VoidCallback? undo, int seconds = 3}) {
-  final messenger = ScaffoldMessenger.of(context);
+void toast(BuildContext context, String message, {VoidCallback? undo, int seconds = 3}) =>
+    showToast(ScaffoldMessenger.of(context), S.of(context).lang, message, undo: undo, seconds: seconds);
+
+/// Panel kapandıktan sonra da gösterilebilen bildirim (önceden alınmış [messenger] ile).
+void showToast(ScaffoldMessengerState messenger, String lang, String message, {VoidCallback? undo, int seconds = 3}) {
   messenger.hideCurrentSnackBar();
-  final lang = S.of(context).lang;
   messenger.showSnackBar(SnackBar(
     action: undo == null
         ? null
