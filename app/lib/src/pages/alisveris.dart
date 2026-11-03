@@ -279,23 +279,40 @@ class _AlisverisPageState extends State<AlisverisPage> {
     return SingleChildScrollView(
       padding: const EdgeInsets.fromLTRB(28, 14, 28, 56),
       child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-        Reveal(
-          child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-            Text(s.pick('HARCAMA GÜCÜN', 'YOUR SPENDING POWER'), style: sans(11.5, color: MC.eyebrow, weight: FontWeight.w700, letterSpacing: 2.6, shadows: kPhotoTextShadow)),
-            const SizedBox(height: 6),
-            Wrap(crossAxisAlignment: WrapCrossAlignment.end, spacing: 14, children: [
-              MoneyText(mm.cardAvail, count: true, style: serif(64, shadows: kBigTextShadow)),
-              Padding(
-                padding: const EdgeInsets.only(bottom: 12),
-                child: Text(s.pick('kartlarda boş limit', 'available on cards'), style: sans(15, color: MC.muted, shadows: kPhotoTextShadow)),
-              ),
-            ]),
-            Text(
-              s.pick('Hesaplarda ${money(mm.liquid)} · $nmLoc serbest kalacak ≈ ${money(sN.free)}${sN.estSpend > 0 ? ' (tahmini ${money(sN.estSpend)} günlük harcama düşüldü)' : ''}',
-                  'In accounts ${money(mm.liquid)} · $nmLoc you will have ≈ ${money(sN.free)} free${sN.estSpend > 0 ? ' (estimated ${money(sN.estSpend)} everyday spending deducted)' : ''}'),
-              style: sans(14, color: MC.muted, shadows: kPhotoTextShadow),
-            ),
-          ]),
+        // Açık renkli fotoğrafta okunması için rakamlar cam panelin içinde.
+        GlassPanel(
+          radius: 30,
+          cut: 30,
+          darkness: 0.46,
+          padding: const EdgeInsets.fromLTRB(26, 20, 26, 20),
+          child: Wrap(
+            alignment: WrapAlignment.spaceBetween,
+            crossAxisAlignment: WrapCrossAlignment.end,
+            spacing: 24,
+            runSpacing: 12,
+            children: [
+              Column(crossAxisAlignment: CrossAxisAlignment.start, mainAxisSize: MainAxisSize.min, children: [
+                Text(s.pick('HARCAMA GÜCÜN', 'YOUR SPENDING POWER'), style: sans(11.5, color: MC.eyebrow, weight: FontWeight.w700, letterSpacing: 2.6)),
+                const SizedBox(height: 6),
+                Row(mainAxisSize: MainAxisSize.min, crossAxisAlignment: CrossAxisAlignment.end, children: [
+                  MoneyText(mm.cardAvail, count: true, style: serif(60)),
+                  const SizedBox(width: 12),
+                  Padding(padding: const EdgeInsets.only(bottom: 12), child: Text(s.pick('kartlarda boş limit', 'available on cards'), style: sans(15, color: MC.muted))),
+                ]),
+              ]),
+              Column(crossAxisAlignment: CrossAxisAlignment.end, mainAxisSize: MainAxisSize.min, children: [
+                Text(s.pick('Hesaplarda', 'In accounts'), style: sans(12, color: MC.muted)),
+                MoneyText(mm.liquid, style: serif(30)),
+                const SizedBox(height: 4),
+                Text(
+                  s.pick('$nmLoc serbest kalacak ≈ ${money(sN.free)}', '$nmLoc you will have ≈ ${money(sN.free)} free'),
+                  style: sans(13.5, weight: FontWeight.w600, color: sN.free < 0 ? MC.rose : MC.gold),
+                ),
+                if (sN.estSpend > 0)
+                  Text(s.pick('tahmini ${money(sN.estSpend)} günlük harcama düşüldü', 'estimated ${money(sN.estSpend)} everyday spending deducted'), style: sans(11.5, color: MC.dim)),
+              ]),
+            ],
+          ),
         ),
         const SizedBox(height: 22),
         _Section(
@@ -428,9 +445,9 @@ class _Section extends StatelessWidget {
         Row(crossAxisAlignment: CrossAxisAlignment.end, children: [
           Expanded(
             child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-              Text(title, style: serif(32, shadows: kPhotoTextShadow)),
+              Text(title, style: serif(32, shadows: kBigTextShadow)),
               const SizedBox(height: 3),
-              Text(sub, style: sans(13, color: MC.muted, shadows: kPhotoTextShadow)),
+              Text(sub, style: sans(13.5, color: MC.text, weight: FontWeight.w500, shadows: kBigTextShadow)),
             ]),
           ),
           if (trailing != null) trailing!,

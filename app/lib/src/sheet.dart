@@ -9,6 +9,7 @@ import '../core/calc.dart';
 import '../core/constants.dart';
 import '../core/model.dart';
 import '../core/util.dart';
+import 'celebrate.dart';
 import 'dialogs.dart';
 import 'glass.dart';
 import 'i18n.dart';
@@ -66,12 +67,14 @@ class Outcome {
 }
 
 /// Değişikliği uygular, paneli kapatır ve geri alınabilir bildirim gösterir.
-void commitOutcome(BuildContext context, Outcome o, String message, {bool close = true}) {
+/// Bir borç kapanırsa (ya da [party] verilirse) konfeti yağar.
+void commitOutcome(BuildContext context, Outcome o, String message, {bool close = true, bool party = false}) {
   final st = AppScope.of(context);
   final s = S.of(context);
   final apply = o.apply;
   if (apply == null) return;
   final messenger = ScaffoldMessenger.of(context);
+  final overlay = Overlay.of(context, rootOverlay: true);
   final snap = st.snapshot();
   final before = st.ctx.model;
   st.update(apply);
@@ -79,6 +82,7 @@ void commitOutcome(BuildContext context, Outcome o, String message, {bool close 
   if (close) Navigator.of(context).pop();
   final extra = closed.isEmpty ? '' : s.pick(' ${closed.map((x) => x.creditor).join(', ')} borcu kapandı! 🎉', ' ${closed.map((x) => x.creditor).join(', ')} is paid off! 🎉');
   showToast(messenger, s.lang, message + extra, undo: () => st.restore(snap));
+  if (party || closed.isNotEmpty) celebrateOn(overlay);
 }
 
 /// Panelin iskeleti: başlık, kaydırılabilir alanlar, hata, önizleme ve düğmeler.

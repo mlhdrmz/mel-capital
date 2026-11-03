@@ -1,11 +1,15 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 
 import 'glass.dart';
 import 'i18n.dart';
 import 'native_window.dart';
 import 'pages.dart';
+import 'pages/common.dart';
 import 'pages/corrupt.dart';
+import 'pages/plan.dart' show UpcomingSheet;
 import 'pages/welcome.dart';
+import 'sheet.dart';
 import 'state.dart';
 import 'theme.dart';
 
@@ -63,7 +67,7 @@ class Shell extends StatelessWidget {
           );
         }
     }
-    return Scaffold(
+    final scaffold = Scaffold(
       backgroundColor: MC.bg,
       body: Stack(
         fit: StackFit.expand,
@@ -81,6 +85,49 @@ class Shell extends StatelessWidget {
         ],
       ),
     );
+    if (!tabs) return scaffold;
+    return Focus(autofocus: true, onKeyEvent: (node, event) => _shortcut(context, st, event), child: scaffold);
+  }
+
+  /// Klavye kısayolları: 1–7 sekmeler, N harcama, H hızlı giriş, T para aktar.
+  /// Bir metin kutusuna yazılırken devreye girmez.
+  KeyEventResult _shortcut(BuildContext context, AppState st, KeyEvent event) {
+    if (event is! KeyDownEvent) return KeyEventResult.ignored;
+    final kb = HardwareKeyboard.instance;
+    if (kb.isControlPressed || kb.isAltPressed || kb.isMetaPressed) return KeyEventResult.ignored;
+    final focus = FocusManager.instance.primaryFocus?.context;
+    if (focus != null && (focus.widget is EditableText || focus.findAncestorWidgetOfExactType<EditableText>() != null)) {
+      return KeyEventResult.ignored;
+    }
+    if (ModalRoute.of(context)?.isCurrent == false) return KeyEventResult.ignored;
+    const digits = [
+      LogicalKeyboardKey.digit1,
+      LogicalKeyboardKey.digit2,
+      LogicalKeyboardKey.digit3,
+      LogicalKeyboardKey.digit4,
+      LogicalKeyboardKey.digit5,
+      LogicalKeyboardKey.digit6,
+      LogicalKeyboardKey.digit7,
+    ];
+    final key = event.logicalKey;
+    final i = digits.indexOf(key);
+    if (i >= 0 && i < AppTab.values.length) {
+      st.setTab(AppTab.values[i]);
+      return KeyEventResult.handled;
+    }
+    if (key == LogicalKeyboardKey.keyN) {
+      openSpendSheet(context);
+      return KeyEventResult.handled;
+    }
+    if (key == LogicalKeyboardKey.keyH) {
+      openQuickSpendSheet(context);
+      return KeyEventResult.handled;
+    }
+    if (key == LogicalKeyboardKey.keyT) {
+      openTransferSheet(context);
+      return KeyEventResult.handled;
+    }
+    return KeyEventResult.ignored;
   }
 }
 
@@ -205,6 +252,8 @@ class TopBar extends StatelessWidget {
           ),
           if (tabs) ...[
             const SizedBox(width: 12),
+            _Bell(count: st.hasData ? st.ctx.upcoming(7).length : 0),
+            const SizedBox(width: 8),
             _SquareButton(
               icon: st.hidden ? Icons.visibility_off_outlined : Icons.visibility_outlined,
               tooltip: s.t(st.hidden ? 'top.show' : 'top.hide'),
@@ -331,5 +380,37 @@ class _SquareButton extends StatelessWidget {
         fixedSize: const Size(40, 40),
       ),
     );
+  }
+}
+
+/// Zil: 7 gün içindeki ödenmemiş ödemelerin sayısı (uyarı değil, yalnızca liste).
+class _Bell extends StatelessWidget {
+  const _Bell({required this.count});
+
+  final int count;
+
+  @override
+  Widget build(BuildContext context) {
+    final s = S.of(context);
+    return Stack(clipBehavior: Clip.none, children: [
+      _SquareButton(
+        icon: count > 0 ? Icons.notifications_outlined : Icons.notifications_none,
+        tooltip: s.pick('7 gün içindeki ödemeler', 'Payments in the next 7 days'),
+        onTap: () => showEditSheet<void>(context, builder: (_) => const UpcomingSheet()),
+      ),
+      if (count > 0)
+        Positioned(
+          right: -3,
+          top: -3,
+          child: IgnorePointer(
+            child: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 1),
+              constraints: const BoxConstraints(minWidth: 18),
+              decoration: BoxDecoration(color: MC.gold, borderRadius: BorderRadius.circular(9)),
+              child: Text('$count', textAlign: TextAlign.center, style: sans(11, weight: FontWeight.w700, color: MC.ink)),
+            ),
+          ),
+        ),
+    ]);
   }
 }

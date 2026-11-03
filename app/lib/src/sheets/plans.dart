@@ -1041,6 +1041,7 @@ class _ContributionSheetState extends State<ContributionSheet> {
             commitOutcome(
               context,
               o,
+              party: !reached0 && reached1,
               !reached0 && reached1
                   ? s.pick('"${g.name}" için hedefe ulaştın! 🎉', 'You reached the goal for "${g.name}"! 🎉')
                   : (_take ? s.pick('Para geri alındı; serbest paraya döndü.', 'Money taken back; it is free again.') : s.pick('Para ayrıldı.', 'Money set aside.')),

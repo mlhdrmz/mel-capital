@@ -3,6 +3,8 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:mel_capital/core/sample.dart';
 import 'package:mel_capital/main.dart';
 import 'package:mel_capital/src/format.dart';
+import 'package:mel_capital/src/pages/common.dart';
+import 'package:mel_capital/src/sheet.dart';
 import 'package:mel_capital/src/state.dart';
 import 'package:mel_capital/storage/store_memory.dart';
 
@@ -126,5 +128,72 @@ void main() {
     expect(again.status, AppStatus.ready);
     expect(again.profile?.name, 'Deniz');
     expect(again.data.accounts.first.balance, 1234.5);
+  });
+
+  testWidgets('harcama paneli: eklenir, geri alınır', (tester) async {
+    final state = await openSample(tester, 'tr');
+    await tapTab(tester, AppTab.harcamalar);
+    final n0 = state.data.spends.length;
+    await tester.tap(find.text('Harcama').first);
+    await tester.pumpAndSettle();
+    expect(find.text('Harcama ekle'), findsOneWidget);
+    final fields = find.descendant(of: find.byType(SheetFrame), matching: find.byType(TextField));
+    await tester.enterText(fields.at(0), 'Kahve');
+    await tester.enterText(fields.at(1), '85');
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Kaydet'));
+    await tester.pumpAndSettle();
+    expect(state.data.spends.length, n0 + 1);
+    expect(state.data.spends.last.name, 'Kahve');
+    expect(find.byType(SheetFrame), findsNothing);
+    await tester.tap(find.text('Geri al'));
+    await tester.pumpAndSettle();
+    expect(state.data.spends.length, n0);
+    expect(tester.takeException(), isNull);
+  });
+
+  testWidgets('plan: ödendi işareti konur', (tester) async {
+    final state = await openSample(tester, 'tr');
+    await tapTab(tester, AppTab.plan);
+    final p0 = state.data.payments.length;
+    final tick = find.byTooltip('Ödendi olarak işaretle');
+    expect(tick, findsWidgets);
+    await tester.ensureVisible(tick.first);
+    await tester.tap(tick.first);
+    await tester.pumpAndSettle();
+    expect(state.data.payments.length, greaterThan(p0));
+    expect(tester.takeException(), isNull);
+  });
+
+  testWidgets('bütün düzenleme panelleri açılır', (tester) async {
+    final state = await openSample(tester, 'tr');
+    Future<void> openAndClose(Future<void> Function() open) async {
+      await open();
+      await tester.pumpAndSettle();
+      expect(find.byType(SheetFrame), findsOneWidget);
+      expect(tester.takeException(), isNull);
+      Navigator.of(tester.element(find.byType(SheetFrame))).pop();
+      await tester.pumpAndSettle();
+    }
+
+    final ctx = tester.element(find.byType(Scaffold).first);
+    final d = state.data;
+    await openAndClose(() async => openSpendSheet(ctx, spend: d.spends.first));
+    await openAndClose(() async => openQuickSpendSheet(ctx));
+    await openAndClose(() async => openTransferSheet(ctx));
+    await openAndClose(() async => openCardPaySheet(ctx));
+    await openAndClose(() async => openAccountSheet(ctx, account: d.accounts.first));
+    await openAndClose(() async => openCardSheet(ctx, card: d.cards.first));
+    await openAndClose(() async => openDebtSheet(ctx, debt: d.debts.first));
+    await openAndClose(() async => openDebtSheet(ctx, debt: d.debts.last));
+    await openAndClose(() async => openStatementSheet(ctx, d.debts.first));
+    await openAndClose(() async => openCardBalanceSheet(ctx, d.debts.first));
+    await openAndClose(() async => openSubSheet(ctx, sub: d.subscriptions.first));
+    await openAndClose(() async => openExpenseSheet(ctx, expense: d.recurringExpenses.first));
+    await openAndClose(() async => openIncomeSheet(ctx, income: d.incomes.first));
+    await openAndClose(() async => openIncomeSheet(ctx));
+    await openAndClose(() async => openGoalSheet(ctx, goal: d.goals.first));
+    await openAndClose(() async => openGoalSaveSheet(ctx, d.goals.first));
+    await openAndClose(() async => openFindeksSheet(ctx, entry: d.findeks.first));
   });
 }

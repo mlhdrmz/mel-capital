@@ -189,6 +189,7 @@ class _SpendSheetState extends State<SpendSheet> {
     commitOutcome(
       context,
       o,
+      party: _goalId != null,
       _goalId != null ? s.pick('Alındı olarak işaretlendi. 🎉', 'Marked as bought. 🎉') : (edit ? s.pick('Harcama güncellendi.', 'Spend updated.') : s.pick('Harcama eklendi.', 'Spend added.')),
     );
   }

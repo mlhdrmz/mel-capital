@@ -132,4 +132,4 @@ jobs:
             --target "$GITHUB_SHA" \
             --prerelease \
             --title "Mel Capital — önizleme" \
-            --notes "Son derleme (${GITHUB_SHA::7}). Zip'i bir klasöre açıp MelCapital.exe'yi çalıştırın. Henüz örnek verilerle çalışan bir önizlemedir."
+            --notes "Son derleme (${GITHUB_SHA::7}). Zip'i bir klasöre açıp MelCapital.exe'yi çalıştırın. Veriler Belgeler\Mel Capital\Profiller klasöründe durur; eski Mel Capital verisi ilk açılışta kopyalanarak getirilebilir (eski dosyaya dokunulmaz)."

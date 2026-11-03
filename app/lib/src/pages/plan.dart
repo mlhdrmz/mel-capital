@@ -7,6 +7,7 @@ import '../../core/calc.dart';
 import '../../core/constants.dart';
 import '../../core/model.dart';
 import '../../core/util.dart';
+import '../celebrate.dart';
 import '../glass.dart';
 import '../i18n.dart';
 import '../sheet.dart';
@@ -132,6 +133,7 @@ void togglePay(BuildContext context, PlanItem it, String m) {
       ? ''
       : s.pick(' ${closed.map((x) => x.creditor).join(', ')} borcu kapandı!', ' ${closed.map((x) => x.creditor).join(', ')} is paid off!');
   toast(context, s.pick('Ödendi.', 'Paid.') + fromTxt + closedTxt, undo: () => st.restore(snap), seconds: 6);
+  if (closed.isNotEmpty) celebrate(context);
 }
 
 // ---------------------------------------------------------------- Sayfa
@@ -1559,6 +1561,42 @@ class _Definitions extends StatelessWidget {
           ),
         ],
       ]),
+    );
+  }
+}
+
+// ---------------------------------------------------------------- Yaklaşan ödemeler
+
+/// Önümüzdeki 7 günün ödenmemiş kalemleri (üst menüdeki zil).
+class UpcomingSheet extends StatelessWidget {
+  const UpcomingSheet({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    final st = AppScope.of(context);
+    final s = S.of(context);
+    final ctx = st.ctx;
+    final list = ctx.upcoming(7);
+    final tot = sumK(list, (Upcoming u) => u.item.planned);
+    return SheetFrame(
+      title: s.pick('Yaklaşan ödemeler', 'Coming payments'),
+      subtitle: list.isEmpty
+          ? s.pick('Önümüzdeki 7 günde ödenecek kalem yok.', 'Nothing to pay in the next 7 days.')
+          : s.pick('7 gün içinde ${list.length} ödeme · toplam ${fmtMoney(tot, lang: s.lang, hidden: st.hidden)}', '${list.length} payments in 7 days · total ${fmtMoney(tot, lang: s.lang, hidden: st.hidden)}'),
+      leftActions: [
+        GlassButton(
+          label: s.pick('Plan', 'Plan'),
+          icon: Icons.calendar_month_outlined,
+          onTap: () {
+            Navigator.of(context).pop();
+            st.setTab(AppTab.plan);
+          },
+        ),
+      ],
+      actions: [GoldButton(label: s.pick('Kapat', 'Close'), onTap: () => Navigator.of(context).pop())],
+      children: [
+        for (final u in list) PayRow(ctx: ctx, item: u.item, month: u.month),
+      ],
     );
   }
 }

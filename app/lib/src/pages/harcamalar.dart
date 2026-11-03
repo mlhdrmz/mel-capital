@@ -1116,8 +1116,8 @@ class _Bars extends StatelessWidget {
             decoration: BoxDecoration(color: r.on ? const Color(0x1FFFFFFF) : Colors.transparent, borderRadius: BorderRadius.circular(8)),
             child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
               Row(children: [
-                Flexible(child: r.label),
-                const Spacer(),
+                Expanded(child: Align(alignment: Alignment.centerLeft, child: r.label)),
+                const SizedBox(width: 10),
                 Text(money(r.k), style: sans(13, weight: FontWeight.w700)),
               ]),
               const SizedBox(height: 6),
