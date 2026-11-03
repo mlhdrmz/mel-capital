@@ -21,7 +21,7 @@ import 'common.dart';
 
 /// Sihirbaz adımlarının arka plan fotoğrafları (eklenenlerin sonra görüneceği sayfanınki).
 const Map<String, String> kSetupCovers = {
-  'ekstre': 'santorini',
+  'ekstre': 'lobby',
   'hesaplar': 'villa',
   'kartlar': 'mountain',
   'krediler': 'mountain',
@@ -246,43 +246,56 @@ class _SetupPageState extends State<SetupPage> {
         ),
         const SizedBox(height: 20),
         KeyedSubtree(key: ValueKey<String>('step-$step'), child: content),
-        const SizedBox(height: 18),
-        nav,
+        const SizedBox(height: 12),
+      ],
+    );
+    Widget limit(Widget child) => Align(
+          alignment: Alignment.topLeft,
+          child: ConstrainedBox(constraints: const BoxConstraints(maxWidth: 920), child: child),
+        );
+    // İçerik kayar; alttaki düğmeler hep görünür kalır.
+    final column = Column(
+      children: [
+        Expanded(
+          child: SingleChildScrollView(
+            padding: const EdgeInsets.only(top: 10, bottom: 8),
+            child: limit(body),
+          ),
+        ),
+        Padding(padding: const EdgeInsets.fromLTRB(0, 10, 0, 20), child: limit(nav)),
       ],
     );
     return LayoutBuilder(
       builder: (context, c) {
-        final wide = c.maxWidth >= 1100;
-        return SingleChildScrollView(
-          padding: const EdgeInsets.fromLTRB(28, 10, 28, 40),
-          child: wide
-              ? Row(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    SizedBox(
-                      width: 250,
-                      child: Padding(
-                        padding: const EdgeInsets.only(top: 6),
-                        child: _StepRail(current: step, counts: counts, onTap: (x) => _go(st, x)),
-                      ),
-                    ),
-                    const SizedBox(width: 40),
-                    Expanded(
-                      child: Align(
-                        alignment: Alignment.topLeft,
-                        child: ConstrainedBox(constraints: const BoxConstraints(maxWidth: 920), child: body),
-                      ),
-                    ),
-                  ],
-                )
-              : Column(
-                  crossAxisAlignment: CrossAxisAlignment.stretch,
-                  children: [
-                    _StepStrip(current: step, onTap: (x) => _go(st, x)),
-                    const SizedBox(height: 18),
-                    body,
-                  ],
+        if (c.maxWidth < 1100) {
+          return Padding(
+            padding: const EdgeInsets.fromLTRB(20, 6, 20, 0),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                _StepStrip(current: step, onTap: (x) => _go(st, x)),
+                const SizedBox(height: 8),
+                Expanded(child: column),
+              ],
+            ),
+          );
+        }
+        return Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 28),
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              SizedBox(
+                width: 250,
+                child: SingleChildScrollView(
+                  padding: const EdgeInsets.only(top: 16, bottom: 16),
+                  child: _StepRail(current: step, counts: counts, onTap: (x) => _go(st, x)),
                 ),
+              ),
+              const SizedBox(width: 40),
+              Expanded(child: column),
+            ],
+          ),
         );
       },
     );
@@ -548,7 +561,8 @@ void _remove(BuildContext context, String message, void Function(Data d) change)
 class _BankChips extends StatelessWidget {
   const _BankChips({required this.value, required this.onChanged, this.wallets = false, this.kyk = false, this.other = false});
 
-  final String value;
+  /// Seçili banka ('' = Diğer, null = seçilmedi).
+  final String? value;
   final ValueChanged<String> onChanged;
   final bool wallets;
   final bool kyk;
@@ -924,7 +938,7 @@ class _CardsStepState extends State<_CardsStep> with _Flushable<_CardsStep> {
         FieldBox(
           label: s.pick('Banka', 'Bank'),
           child: _BankChips(
-            value: _bank,
+            value: _bankTouched || _bank.isNotEmpty ? _bank : null,
             other: true,
             onChanged: (v) => setState(() {
               _bank = v;
@@ -1100,7 +1114,7 @@ class _LoansStepState extends State<_LoansStep> with _Flushable<_LoansStep> {
         FieldBox(
           label: s.pick('Banka (isteğe bağlı)', 'Bank (optional)'),
           child: _BankChips(
-            value: _bank,
+            value: _bankTouched || _bank.isNotEmpty ? _bank : null,
             kyk: true,
             other: true,
             onChanged: (v) => setState(() {
@@ -1608,8 +1622,8 @@ class _DoneStep extends StatelessWidget {
             line(
               Icons.balance_outlined,
               m.debtFree != null
-                  ? s.pick('Toplam borcun ${money(m.totalRemaining)}. Bu gidişle kredilerin ${monthLabel(m.debtFree, 'tr')} ayında biter.',
-                      'Your total debt is ${money(m.totalRemaining)}. At this pace your loans end in ${monthLabel(m.debtFree, 'en')}.')
+                  ? s.pick('Toplam borcun ${money(m.totalRemaining)}. Bu gidişle son kredi taksitin: ${monthLabel(m.debtFree, 'tr')}.',
+                      'Your total debt is ${money(m.totalRemaining)}. At this pace your last loan instalment is in ${monthLabel(m.debtFree, 'en')}.')
                   : s.pick('Toplam borcun ${money(m.totalRemaining)}.', 'Your total debt is ${money(m.totalRemaining)}.'),
             ),
           if (st.settings['statementsLater'] == true)

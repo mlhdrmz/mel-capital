@@ -11,7 +11,7 @@ import '../theme.dart';
 import '../ui.dart';
 
 /// Tanıtım ekranlarının arka plan fotoğrafları.
-const List<String> kIntroCovers = ['lobby', 'highrise', 'santorini'];
+const List<String> kIntroCovers = ['lobby', 'highrise', 'villa'];
 
 /// Geçerli tanıtım ekranı sırası (0–2).
 int introIndex(int i) => i < 0 ? 0 : (i >= kIntroCovers.length ? kIntroCovers.length - 1 : i);
@@ -57,29 +57,32 @@ class IntroPage extends StatelessWidget {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    Row(
-                      children: [
-                        Expanded(
-                          child: Text(
-                            s.pick('TANITIM · ${i + 1} / $count', 'INTRODUCTION · ${i + 1} / $count'),
-                            style: sans(11.5, color: MC.eyebrow, weight: FontWeight.w700, letterSpacing: 2.6, shadows: kPhotoTextShadow),
-                          ),
-                        ),
-                        if (i == 0 && st.status != AppStatus.ready) ...[
-                          LangToggle(lang: s.lang, onChanged: st.setLanguage),
-                          const SizedBox(width: 12),
-                        ],
-                        if (!last)
-                          TextButton(
-                            key: const ValueKey<String>('intro-skip'),
-                            onPressed: st.finishIntro,
-                            style: TextButton.styleFrom(
-                              foregroundColor: MC.text,
-                              textStyle: const TextStyle(fontFamily: MC.sans, fontSize: 14, fontWeight: FontWeight.w600),
+                    SizedBox(
+                      height: 44,
+                      child: Row(
+                        children: [
+                          Expanded(
+                            child: Text(
+                              s.pick('TANITIM · ${i + 1} / $count', 'INTRODUCTION · ${i + 1} / $count'),
+                              style: sans(11.5, color: MC.eyebrow, weight: FontWeight.w700, letterSpacing: 2.6, shadows: kPhotoTextShadow),
                             ),
-                            child: Text(s.pick('Geç', 'Skip'), style: const TextStyle(shadows: kPhotoTextShadow)),
                           ),
-                      ],
+                          if (i == 0 && st.status != AppStatus.ready) ...[
+                            LangToggle(lang: s.lang, onChanged: st.setLanguage),
+                            const SizedBox(width: 12),
+                          ],
+                          if (!last)
+                            TextButton(
+                              key: const ValueKey<String>('intro-skip'),
+                              onPressed: st.finishIntro,
+                              style: TextButton.styleFrom(
+                                foregroundColor: MC.text,
+                                textStyle: const TextStyle(fontFamily: MC.sans, fontSize: 14, fontWeight: FontWeight.w600),
+                              ),
+                              child: Text(s.pick('Geç', 'Skip'), style: const TextStyle(shadows: kPhotoTextShadow)),
+                            ),
+                        ],
+                      ),
                     ),
                     SizedBox(height: narrow ? 28 : 48),
                     KeyedSubtree(key: ValueKey<int>(i), child: slide),

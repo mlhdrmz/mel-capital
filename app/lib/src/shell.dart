@@ -100,10 +100,12 @@ class Shell extends StatelessWidget {
               ],
             ),
           ),
+          // Özet'te büyük rakam sağ altta olduğu için ipucu sağ üstte durur.
           if (tip != null)
             Positioned(
               right: 24,
-              bottom: 24,
+              top: st.tab == AppTab.ozet ? 84 : null,
+              bottom: st.tab == AppTab.ozet ? null : 24,
               child: SafeArea(child: TipCard(key: ValueKey<String>('tip-$tip'), tab: st.tab)),
             ),
         ],
