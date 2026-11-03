@@ -262,7 +262,16 @@ class _SetupPageState extends State<SetupPage> {
             child: limit(body),
           ),
         ),
-        Padding(padding: const EdgeInsets.fromLTRB(0, 10, 0, 20), child: limit(nav)),
+        // Düğmeler açık renkli fotoğraflarda da okunsun diye ince bir cam şerit üstünde durur
+        // (ekstre adımında yalnızca "sonra bitir" olduğu için şeritsiz).
+        Padding(
+          padding: const EdgeInsets.fromLTRB(0, 10, 0, 20),
+          child: limit(
+            step == 'ekstre'
+                ? nav
+                : GlassPanel(radius: 18, cut: 18, animate: false, padding: const EdgeInsets.fromLTRB(10, 8, 10, 8), child: nav),
+          ),
+        ),
       ],
     );
     return LayoutBuilder(
