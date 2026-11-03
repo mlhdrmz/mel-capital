@@ -327,23 +327,32 @@ class _RowItemState extends State<RowItem> {
       ),
       child: Opacity(
         opacity: widget.dim ? 0.55 : 1,
-        child: Row(
-          children: [
-            if (widget.leading != null) ...[widget.leading!, const SizedBox(width: 13)],
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(widget.title, maxLines: 1, overflow: TextOverflow.ellipsis, style: sans(14.5, weight: FontWeight.w600)),
-                  if (widget.subtitle != null && widget.subtitle!.isNotEmpty) ...[
-                    const SizedBox(height: 2),
-                    Text(widget.subtitle!, maxLines: 2, overflow: TextOverflow.ellipsis, style: sans(12, color: MC.muted)),
+        // Sağdaki parça satırın en çok %60'ını alır; dar ekranda sığmazsa küçülür, taşmaz.
+        child: LayoutBuilder(
+          builder: (context, c) => Row(
+            children: [
+              if (widget.leading != null) ...[widget.leading!, const SizedBox(width: 13)],
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(widget.title, maxLines: 1, overflow: TextOverflow.ellipsis, style: sans(14.5, weight: FontWeight.w600)),
+                    if (widget.subtitle != null && widget.subtitle!.isNotEmpty) ...[
+                      const SizedBox(height: 2),
+                      Text(widget.subtitle!, maxLines: 2, overflow: TextOverflow.ellipsis, style: sans(12, color: MC.muted)),
+                    ],
                   ],
-                ],
+                ),
               ),
-            ),
-            if (widget.trailing != null) ...[const SizedBox(width: 12), widget.trailing!],
-          ],
+              if (widget.trailing != null) ...[
+                const SizedBox(width: 12),
+                ConstrainedBox(
+                  constraints: BoxConstraints(maxWidth: c.maxWidth.isFinite ? c.maxWidth * 0.6 : double.infinity),
+                  child: FittedBox(fit: BoxFit.scaleDown, alignment: Alignment.centerRight, child: widget.trailing),
+                ),
+              ],
+            ],
+          ),
         ),
       ),
     );

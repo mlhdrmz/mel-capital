@@ -551,11 +551,13 @@ class _ItemRow extends StatelessWidget {
         mainAxisSize: MainAxisSize.min,
         children: [
           if (k != null) MoneyText(k!, style: sans(14.5, weight: FontWeight.w700)),
-          IconButton(
-            tooltip: s.pick('Düzenle', 'Edit'),
-            onPressed: onEdit,
-            icon: const Icon(Icons.edit_outlined, size: 18, color: MC.muted),
-          ),
+          // Telefonda satıra dokunmak düzenler; ayrı düğmeye yer yok.
+          if (!isPhoneLayout(context))
+            IconButton(
+              tooltip: s.pick('Düzenle', 'Edit'),
+              onPressed: onEdit,
+              icon: const Icon(Icons.edit_outlined, size: 18, color: MC.muted),
+            ),
           if (onDelete != null)
             IconButton(
               tooltip: s.pick('Sil', 'Delete'),
