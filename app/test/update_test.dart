@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mel_capital/core/sample.dart';
@@ -145,6 +146,18 @@ void main() {
   });
 
   testWidgets('Ayarlar: yeni sürüm haberi ve kurulum düğmesi', (tester) async {
+    // Testler varsayılan olarak Android sayılır; burada Windows'taki tek tıkla kurulum denenir.
+    debugDefaultTargetPlatformOverride = TargetPlatform.windows;
+    try {
+      await _settingsUpdateFlow(tester);
+    } finally {
+      debugDefaultTargetPlatformOverride = null;
+    }
+  });
+}
+
+Future<void> _settingsUpdateFlow(WidgetTester tester) async {
+  {
     tester.view.physicalSize = const Size(2400, 1300);
     tester.view.devicePixelRatio = 1.0;
     addTearDown(tester.view.reset);
@@ -173,5 +186,5 @@ void main() {
     expect(fake.launched, hasLength(1));
     expect(find.textContaining('Güncelleme başladı'), findsOneWidget);
     expect(tester.takeException(), isNull);
-  });
+  }
 }

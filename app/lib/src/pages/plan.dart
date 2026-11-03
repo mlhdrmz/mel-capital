@@ -503,8 +503,17 @@ class PayRow extends StatelessWidget {
                     Flexible(
                       child: Text(it.name, maxLines: 1, overflow: TextOverflow.ellipsis, style: sans(14.5, weight: FontWeight.w600, color: paid ? MC.muted : MC.text)),
                     ),
-                    if (late) _Tag(text: s.pick('gecikti', 'late'), color: MC.rose),
-                    if (it.carry) _Tag(text: s.pick('taşındı', 'moved'), color: MC.gold),
+                    if (late || it.carry)
+                      Flexible(
+                        child: FittedBox(
+                          fit: BoxFit.scaleDown,
+                          alignment: Alignment.centerLeft,
+                          child: Row(mainAxisSize: MainAxisSize.min, children: [
+                            if (late) _Tag(text: s.pick('gecikti', 'late'), color: MC.rose),
+                            if (it.carry) _Tag(text: s.pick('taşındı', 'moved'), color: MC.gold),
+                          ]),
+                        ),
+                      ),
                   ]),
                   const SizedBox(height: 2),
                   Text(sub, maxLines: 2, overflow: TextOverflow.ellipsis, style: sans(12, color: MC.muted)),
@@ -692,6 +701,15 @@ class IncomeRow extends StatelessWidget {
         if (inc != null && !inc.oneOff && m.compareTo(addM(currentMonth(), 1)) <= 0)
           Builder(builder: (context) {
             final full = _incomeById(ctx.data, inc.id);
+            if (isPhoneLayout(context)) {
+              return _SmallIcon(
+                icon: inc.actual ? Icons.task_alt : Icons.download_done,
+                tip: inc.actual ? s.pick('Yattı', 'Received') : s.pick('Bu ay yatan', 'Received'),
+                onTap: () {
+                  if (full != null) openIncomeActualSheet(context, full, m);
+                },
+              );
+            }
             return SizedBox(
               width: 104,
               child: Align(
@@ -705,7 +723,7 @@ class IncomeRow extends StatelessWidget {
             );
           })
         else
-          const SizedBox(width: 104),
+          SizedBox(width: isPhoneLayout(context) ? 34 : 104),
       ]),
     );
   }
@@ -855,7 +873,7 @@ class _Calendar extends StatelessWidget {
       borderRadius: BorderRadius.circular(10),
       child: AnimatedContainer(
         duration: const Duration(milliseconds: 160),
-        padding: const EdgeInsets.fromLTRB(7, 5, 7, 5),
+        padding: isPhoneLayout(context) ? const EdgeInsets.fromLTRB(4, 4, 4, 4) : const EdgeInsets.fromLTRB(7, 5, 7, 5),
         decoration: ShapeDecoration(
           color: on
               ? MC.gold.withValues(alpha: 0.22)
@@ -867,13 +885,17 @@ class _Calendar extends StatelessWidget {
           shape: SignatureBorder(cut: 8, radius: 10, side: BorderSide(color: border, width: on || isToday ? 1.4 : 1)),
         ),
         child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-          Row(children: [
-            Text('$dd', style: sans(12.5, weight: FontWeight.w700, color: weekend ? MC.dim : MC.text)),
-            const Spacer(),
-            if (c != null)
-              for (final g in c.groups.take(4))
+          // Günün noktaları: hücre darsa sığdığı kadar
+          LayoutBuilder(builder: (context, box) {
+            final room = box.maxWidth.isFinite ? ((box.maxWidth - 17) / 8).floor() : 4;
+            final groups = c == null ? const <String>[] : c.groups.take(room < 0 ? 0 : (room > 4 ? 4 : room)).toList();
+            return Row(children: [
+              Text('$dd', style: sans(12.5, weight: FontWeight.w700, color: weekend ? MC.dim : MC.text)),
+              const Spacer(),
+              for (final g in groups)
                 Container(margin: const EdgeInsets.only(left: 2), width: 6, height: 6, decoration: BoxDecoration(color: dot(g), shape: BoxShape.circle)),
-          ]),
+            ]);
+          }),
           const Spacer(),
           if (c != null && c.out > 0)
             Text(shortMoney(c.out, s.lang, st.hidden), maxLines: 1, style: sans(11, weight: FontWeight.w600, color: late ? MC.rose : (done ? MC.mint : MC.text))),
