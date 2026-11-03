@@ -537,15 +537,21 @@ class Kpi extends StatelessWidget {
   }
 }
 
-/// Basit bilgi mesajı (alt köşede).
-void toast(BuildContext context, String message) {
-  ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+/// Basit bilgi mesajı (alt köşede). [undo] verilirse "Geri al" düğmesi çıkar.
+void toast(BuildContext context, String message, {VoidCallback? undo, int seconds = 3}) {
+  final messenger = ScaffoldMessenger.of(context);
+  messenger.hideCurrentSnackBar();
+  final lang = S.of(context).lang;
+  messenger.showSnackBar(SnackBar(
+    action: undo == null
+        ? null
+        : SnackBarAction(label: lang == 'tr' ? 'Geri al' : 'Undo', textColor: MC.gold, onPressed: undo),
     content: Text(message, style: sans(13.5)),
     behavior: SnackBarBehavior.floating,
     backgroundColor: const Color(0xF0171513),
     shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
     width: 460,
-    duration: const Duration(seconds: 3),
+    duration: Duration(seconds: undo == null ? seconds : (seconds < 6 ? 6 : seconds)),
   ));
 }
 

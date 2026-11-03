@@ -25,10 +25,12 @@ void openTransferSheet(BuildContext context) => _soon(context);
 void openAccountSheet(BuildContext context, {String? bank, String? type, Account? account}) => _soon(context);
 void openCardSheet(BuildContext context, {String? bank, BankCard? card}) => _soon(context);
 void openDebtSheet(BuildContext context, {Debt? debt, String? type}) => _soon(context);
-void openSpendSheet(BuildContext context, {Spend? spend}) => _soon(context);
+void openSpendSheet(BuildContext context, {Spend? spend, Json? prefill}) => _soon(context);
 void openQuickSpendSheet(BuildContext context) => _soon(context);
 void openSubSheet(BuildContext context, {Subscription? sub}) => _soon(context);
-void openGoalSheet(BuildContext context, {Goal? goal}) => _soon(context);
+void openGoalSheet(BuildContext context, {Goal? goal, Json? prefill}) => _soon(context);
+void openGoalSaveSheet(BuildContext context, Goal goal) => _soon(context);
+void openGoalBuySheet(BuildContext context, Goal goal) => _soon(context);
 void openPaySheet(BuildContext context, PlanItem item, String month) => _soon(context);
 void openCardPaySheet(BuildContext context, {Debt? debt}) => _soon(context);
 void openStatementSheet(BuildContext context, Debt debt) => _soon(context);
@@ -37,6 +39,45 @@ void openFindeksSheet(BuildContext context, {Findeks? entry}) => _soon(context);
 void openIncomeSheet(BuildContext context, {Income? income}) => _soon(context);
 void openExpenseSheet(BuildContext context, {RecurringExpense? expense}) => _soon(context);
 void openSpendSheetFor(BuildContext context, {String? source}) => _soon(context);
+
+// ---------------------------------------------------------------- Kaynak etiketi
+
+/// Ödeme kaynağı etiketi: banka plakası ve hesap/kart adı.
+class SourceChip extends StatelessWidget {
+  const SourceChip({super.key, required this.source, this.compact = false});
+
+  final String? source;
+  final bool compact;
+
+  @override
+  Widget build(BuildContext context) {
+    final st = AppScope.of(context);
+    final s = S.of(context);
+    final d = st.data;
+    final sb = sourceBank(d, source);
+    final name = source == null || source!.isEmpty ? s.pick('kaynak yok', 'no source') : sourceName(d, source, s.lang);
+    return Container(
+      constraints: BoxConstraints(maxWidth: compact ? 150 : 210),
+      padding: const EdgeInsets.fromLTRB(4, 3, 9, 3),
+      decoration: BoxDecoration(
+        color: const Color(0x2E000000),
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: const Color(0x2EFFFFFF)),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          if (sb != null && !sb.cash)
+            BankPlate(bankKey: sb.key, name: sb.name, size: 16)
+          else
+            Icon(source == null ? Icons.help_outline : Icons.payments_outlined, size: 15, color: MC.muted),
+          const SizedBox(width: 6),
+          Flexible(child: Text(name, maxLines: 1, overflow: TextOverflow.ellipsis, style: sans(11.5, color: MC.muted))),
+        ],
+      ),
+    );
+  }
+}
 
 // ---------------------------------------------------------------- Hareketler
 

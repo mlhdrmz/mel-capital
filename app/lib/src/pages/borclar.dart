@@ -461,11 +461,11 @@ Future<void> showFindeksReport(BuildContext context, Json r) {
         ]),
       );
   String moneyOf(Object? v) => v is num ? fmtMoney(toK(v), lang: s.lang, hidden: hide) : '—';
-  final comps = r['components'] is List ? (r['components'] as List).whereType<Map>().toList() : const <Map>[];
+  final comps = r['components'] is List ? (r['components'] as List).whereType<Map<dynamic, dynamic>>().toList() : const <Map<dynamic, dynamic>>[];
   final worst = r['worst'] is Map ? r['worst'] as Map : null;
   final months = r['historyMonths'] is List ? (r['historyMonths'] as List).map((e) => e.toString()).toList() : const <String>[];
-  final history = r['history'] is List ? (r['history'] as List).whereType<Map>().toList() : const <Map>[];
-  final closed = r['closed'] is List ? (r['closed'] as List).whereType<Map>().toList() : const <Map>[];
+  final history = r['history'] is List ? (r['history'] as List).whereType<Map<dynamic, dynamic>>().toList() : const <Map<dynamic, dynamic>>[];
+  final closed = r['closed'] is List ? (r['closed'] as List).whereType<Map<dynamic, dynamic>>().toList() : const <Map<dynamic, dynamic>>[];
   const cellColors = {'ok': Color(0xFF9FD7A5), '1': Color(0xFFE8C06A), '2': Color(0xFFEFA06F), '3': Color(0xFFEF8F7F)};
   const cellText = {'ok': '✓', '1': '1', '2': '2', '3': '3', '-': '–'};
   return showGlassDialog<void>(

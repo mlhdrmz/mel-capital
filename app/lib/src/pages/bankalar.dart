@@ -384,7 +384,9 @@ class _AccountsPanel extends StatelessWidget {
           for (var i = 0; i < accounts.length; i++) ...[
             if (i > 0) const Hairline(),
             RowItem(
-              leading: CategoryMark(accounts[i].isCash ? 'nakit' : 'banka', size: 38),
+              leading: accounts[i].bank.isNotEmpty && !accounts[i].isCash
+                  ? BankPlate(bankKey: accounts[i].bank, name: accounts[i].name, size: 30)
+                  : CategoryMark(accounts[i].isCash ? 'nakit' : 'banka', size: 38),
               title: accounts[i].name.isEmpty ? s.pick('Hesap', 'Account') : accounts[i].name,
               subtitle: (kAccountTypes[accounts[i].type] ?? const Lbl('Diğer', 'Other')).of(s.lang) +
                   (accounts[i].asOf != null ? ' · ${fmtDayShort(accounts[i].asOf, s.lang)}' : ''),

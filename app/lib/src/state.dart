@@ -218,6 +218,18 @@ class AppState extends ChangeNotifier {
     });
   }
 
+  /// Geri alma: verinin önceki bir kopyasını geri koyar ve kaydeder.
+  void restore(Json snapshot) {
+    if (_data == null) return;
+    _data = Data(snapshot);
+    _ctx = null;
+    _queueSave();
+    notifyListeners();
+  }
+
+  /// Değişiklikten önceki verinin kopyası (geri almak için).
+  Json snapshot() => deepCopy(data.j) as Json;
+
   /// Bekleyen kayıtların bitmesini bekler.
   Future<void> flush() => _saving;
 
