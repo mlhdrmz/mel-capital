@@ -20,6 +20,7 @@ TARGETS = [
     ('plan_tr', 'sekme=plan&dil=tr'),
     ('alisveris_tr', 'sekme=alisveris&dil=tr'),
     ('ayarlar_tr', 'sekme=ayarlar&dil=tr'),
+    ('ayarlar_guncelleme_tr', 'sekme=ayarlar&dil=tr&guncelleme=var'),
     ('tanitim1_tr', 'ekran=tanitim&dil=tr'),
     ('tanitim2_tr', 'ekran=tanitim&slayt=2&dil=tr'),
     ('tanitim3_tr', 'ekran=tanitim&slayt=3&dil=tr'),

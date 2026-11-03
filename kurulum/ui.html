@@ -1,0 +1,171 @@
+<!doctype html>
+<html lang="{{LANG}}"><head><meta charset="utf-8"><title>{{TITLE}}</title>
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<style>
+@font-face{font-family:"Inter";src:url(assets/Inter-Regular.ttf) format("truetype");font-weight:400}
+@font-face{font-family:"Inter";src:url(assets/Inter-SemiBold.ttf) format("truetype");font-weight:600 700}
+@font-face{font-family:"Cormorant Garamond";src:url(assets/CormorantGaramond-SemiBold.ttf) format("truetype");font-weight:600}
+*{box-sizing:border-box;margin:0}
+html,body{height:100%;overflow:hidden;background:#0d0c0b;color:#f3ece0;font-family:Inter,"Segoe UI",sans-serif;-webkit-user-select:none;user-select:none}
+.bg{position:fixed;inset:0;background:url(assets/bg.webp) center 42%/cover;transform:scale(1.03)}
+.bg::after{content:"";position:absolute;inset:0;background:linear-gradient(90deg,rgba(9,8,7,.94) 0%,rgba(9,8,7,.84) 55%,rgba(9,8,7,.55) 100%)}
+.wrap{position:relative;height:100%;display:flex;flex-direction:column;padding:34px 44px 30px}
+.brand{display:flex;align-items:center;gap:12px}
+.brand img{width:38px;height:38px;border-radius:10px;box-shadow:0 6px 18px rgba(0,0,0,.4)}
+.brand b{font-family:"Cormorant Garamond",serif;font-size:24px;font-weight:600}
+.main{flex:1;display:flex;flex-direction:column;justify-content:center;max-width:620px}
+.eyebrow{font-size:11.5px;letter-spacing:.24em;text-transform:uppercase;color:#e9c98f;font-weight:600}
+h1{font-family:"Cormorant Garamond",serif;font-weight:600;font-size:50px;line-height:1.02;margin:10px 0 10px}
+.lead{font-size:14.5px;color:#d8cfc2;line-height:1.55}
+.facts{margin-top:22px;display:flex;flex-direction:column;gap:10px;font-size:13.5px;color:#e8e0d3}
+.facts div{display:flex;gap:10px;align-items:flex-start;line-height:1.45}
+.facts i{width:7px;height:7px;border-radius:50%;background:#e9c98f;margin-top:6px;flex:none}
+.facts code{font-family:Consolas,ui-monospace,monospace;font-size:12.5px;color:#f6e3bb}
+.bar{margin:26px 0 20px;height:4px;border-radius:4px;background:rgba(255,255,255,.14);overflow:hidden}
+.bar i{display:block;height:100%;width:0;border-radius:4px;background:linear-gradient(90deg,#c99a52,#f0d39a);transition:width .8s cubic-bezier(.2,.7,.2,1)}
+ol{list-style:none;padding:0;display:flex;flex-direction:column;gap:12px}
+li{display:flex;align-items:center;gap:12px;font-size:14.5px;color:rgba(243,236,224,.42);transition:color .3s}
+li .m{width:22px;height:22px;border-radius:50%;border:1.5px solid rgba(255,255,255,.25);display:grid;place-items:center;flex:none}
+li.on{color:#fff}
+li.on .m{border-color:#e9c98f;border-top-color:transparent;animation:spin .8s linear infinite}
+li.ok{color:#d8cfc2}
+li.ok .m{background:#e9c98f;border-color:#e9c98f}
+li.ok .m::after{content:"";width:8px;height:4px;border:2px solid #1b1306;border-top:0;border-right:0;transform:translateY(-1px) rotate(-45deg)}
+li small{color:#e9c98f;font-size:12.5px;margin-left:4px}
+@keyframes spin{to{transform:rotate(360deg)}}
+.err{margin-top:18px;padding:12px 14px;border-radius:12px;background:rgba(239,150,140,.12);border:1px solid rgba(239,150,140,.4);color:#f6c2b9;font-size:13.5px;line-height:1.5}
+.actions{display:flex;gap:10px;justify-content:flex-end;align-items:center}
+.actions .note{margin-right:auto;font-size:12.5px;color:#bdb3a5}
+button{font:inherit;font-weight:600;font-size:14px;min-height:42px;padding:0 22px;border-radius:11px;border:1px solid rgba(255,255,255,.22);background:rgba(255,255,255,.06);color:#f3ece0;cursor:pointer}
+button:hover{background:rgba(255,255,255,.12)}
+button.primary{background:linear-gradient(135deg,#ecc987,#c99a52);border-color:transparent;color:#1b1306}
+button.primary:hover{filter:brightness(1.06)}
+[hidden]{display:none!important}
+</style></head>
+<body>
+<div class="bg"></div>
+<div class="wrap">
+  <div class="brand"><img src="assets/icon.png" alt=""><b>Mel Capital</b></div>
+  <div class="main">
+    <div class="eyebrow" id="eb"></div>
+    <h1 id="h"></h1>
+    <p class="lead" id="lead"></p>
+    <div class="facts" id="facts"></div>
+    <div id="prog" hidden><div class="bar"><i id="bar"></i></div><ol id="steps"></ol></div>
+    <div class="err" id="err" hidden></div>
+  </div>
+  <div class="actions">
+    <span class="note" id="note"></span>
+    <button id="b2" hidden></button>
+    <button class="primary" id="b1" hidden></button>
+  </div>
+</div>
+<script>
+(function () {
+  var $ = function (id) { return document.getElementById(id); };
+  var S = null, built = false, busy = false;
+  var TXT = {
+    tr: {
+      ebUpd: 'Güncelleme · sürüm ', ebSet: 'Kurulum · sürüm ',
+      hUpdRun: 'Güncelleniyor…', hSetRun: 'Kuruluyor…',
+      leadRun: 'Verilerin olduğu gibi korunuyor. Bu birkaç saniye sürer.',
+      perm: '· Windows izin isterse "Evet"e bas',
+      hUpdDone: 'Güncelleme tamamlandı', hSetDone: 'Kurulum tamamlandı',
+      leadUpdDone: 'Mel Capital açılıyor…',
+      leadSetDone: 'Mel Capital Başlat menüsünde ve masaüstünde. Windows "Uygulamalar" listesinden kaldırabilirsin.',
+      open: "Mel Capital'i aç", opening: 'Açılıyor…', close: 'Kapat',
+      hUpdFail: 'Güncelleme tamamlanamadı', hSetFail: 'Kurulum tamamlanamadı',
+      leadFail: 'Verilerine dokunulmadı.', retry: 'Tekrar dene',
+      hAgain: 'Mel Capital zaten kurulu', hNew: "Mel Capital'i kur", hReplace: "Mel Capital'in yeni sürümünü kur",
+      leadAgain: function (v, cur) { return 'Kurulu sürüm ' + (v || 'bilinmiyor') + '. İstersen bu dosyadaki sürümle (' + cur + ') yeniden kurabilirsin.'; },
+      leadNew: 'Hesapların, kartların, borçların ve harcamaların tek yerde; bilgisayarına kurulu bir uygulama olarak.',
+      leadReplace: "Bilgisayarındaki eski Mel Capital'in yerine yeni sürüm kurulur.",
+      fWhere: 'Kurulacağı yer: ', fData: 'Verilerin <code>Belgeler\\Mel Capital</code> klasöründe kalır; kurulumdan önce yedeklenir.',
+      fOld: 'Eski Mel Capital kaldırılır. Verilerine dokunulmaz; yeni sürüm ilk açılışta onları kopyalayarak getirir.',
+      fShort: 'Başlat menüsüne ve masaüstüne Mel Capital simgesi eklenir.',
+      fLegacy: 'Eski düzende kurulmuş kopya ve eski simgeleri temizlenir.',
+      noteAsk: 'Windows bir kez izin isteyecek.', install: 'Kur', reinstall: 'Yeniden kur', cancel: 'Vazgeç',
+      notInstalled: /kurulu değil|not installed/
+    },
+    en: {
+      ebUpd: 'Update · version ', ebSet: 'Setup · version ',
+      hUpdRun: 'Updating…', hSetRun: 'Installing…',
+      leadRun: 'Your data is kept exactly as it is. This takes a few seconds.',
+      perm: '· if Windows asks for permission, click "Yes"',
+      hUpdDone: 'Update complete', hSetDone: 'Setup complete',
+      leadUpdDone: 'Opening Mel Capital…',
+      leadSetDone: 'Mel Capital is in the Start menu and on the desktop. You can remove it from the Windows "Apps" list.',
+      open: 'Open Mel Capital', opening: 'Opening…', close: 'Close',
+      hUpdFail: 'The update did not finish', hSetFail: 'Setup did not finish',
+      leadFail: 'Your data was not touched.', retry: 'Try again',
+      hAgain: 'Mel Capital is already installed', hNew: 'Install Mel Capital', hReplace: 'Install the new Mel Capital',
+      leadAgain: function (v, cur) { return 'Installed version ' + (v || 'unknown') + '. You can reinstall with the version in this file (' + cur + ').'; },
+      leadNew: 'Your accounts, cards, debts and spending in one place, as an app installed on your computer.',
+      leadReplace: 'The new version replaces the old Mel Capital on your computer.',
+      fWhere: 'Install location: ', fData: 'Your data stays in <code>Documents\\Mel Capital</code> and is backed up before installing.',
+      fOld: 'The old Mel Capital is removed. Your data is not touched; the new version copies it in on first launch.',
+      fShort: 'A Mel Capital icon is added to the Start menu and the desktop.',
+      fLegacy: 'An older per-user copy and its icons are cleaned up.',
+      noteAsk: 'Windows will ask for permission once.', install: 'Install', reinstall: 'Reinstall', cancel: 'Cancel',
+      notInstalled: /kurulu değil|not installed/
+    }
+  };
+  function post(p) { return fetch(p, { method: 'POST' }).catch(function () {}); }
+  function btn(el, text, fn) { el.hidden = !text; el.textContent = text || ''; el.onclick = fn || null; }
+  function fact(t) { return '<div><i></i><span>' + t + '</span></div>'; }
+  function esc(t) { return String(t).replace(/[&<>"]/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]; }); }
+  function render() {
+    var s = S, t = TXT[s.lang] || TXT.en, upd = s.mode === 'guncelleme';
+    document.documentElement.lang = s.lang;
+    $('err').hidden = !s.error; $('err').textContent = s.error || '';
+    var running = s.state === 'calisiyor', done = s.state === 'bitti', fail = s.state === 'hata';
+    $('prog').hidden = !(running || done || (fail && s.step > 0));
+    $('facts').hidden = running || done || fail;
+    if (!built) {
+      s.steps.forEach(function (x) { var li = document.createElement('li'); li.innerHTML = '<span class="m"></span><span></span>'; li.lastChild.textContent = x; $('steps').appendChild(li); });
+      built = true;
+    }
+    var lis = $('steps').children;
+    for (var i = 0; i < lis.length; i++) {
+      lis[i].className = (i < s.step || done) ? 'ok' : (i === s.step && running ? 'on' : '');
+      var hint = lis[i].querySelector('small'); if (hint) hint.remove();
+      if (i === 2 && running && s.step === 2) { var h = document.createElement('small'); h.textContent = t.perm; lis[i].appendChild(h); }
+    }
+    $('bar').style.width = Math.round(((done ? s.steps.length : s.step + (running ? 0.5 : 0)) / s.steps.length) * 100) + '%';
+    $('eb').textContent = (upd ? t.ebUpd : t.ebSet) + s.version;
+    if (running) {
+      $('h').textContent = upd ? t.hUpdRun : t.hSetRun;
+      $('lead').textContent = t.leadRun;
+      btn($('b1')); btn($('b2')); $('note').textContent = '';
+    } else if (done) {
+      $('h').textContent = upd ? t.hUpdDone : t.hSetDone;
+      $('lead').textContent = upd ? t.leadUpdDone : t.leadSetDone;
+      if (upd) { btn($('b1')); btn($('b2')); } else {
+        btn($('b1'), t.open, function () { if (busy) return; busy = true; post('ac'); $('note').textContent = t.opening; });
+        btn($('b2'), t.close, function () { post('kapat'); });
+      }
+    } else if (fail) {
+      $('h').textContent = upd ? t.hUpdFail : t.hSetFail;
+      $('lead').textContent = t.leadFail;
+      var notInstalled = t.notInstalled.test(s.error || '');
+      btn($('b1'), notInstalled ? '' : t.retry, function () { post('basla'); });
+      btn($('b2'), t.close, function () { post('kapat'); });
+    } else { // hazır (yalnızca kurulum)
+      var again = s.installed && !s.oldApp;
+      $('h').textContent = again ? t.hAgain : (s.oldApp ? t.hReplace : t.hNew);
+      $('lead').textContent = again ? t.leadAgain(s.installedVersion, s.version) : (s.oldApp ? t.leadReplace : t.leadNew);
+      $('facts').innerHTML = fact(t.fWhere + '<code>' + esc(s.installDir) + '</code>') + fact(t.fData) +
+        (s.oldApp ? fact(t.fOld) : '') + fact(t.fShort) + (s.legacy ? fact(t.fLegacy) : '');
+      $('note').textContent = t.noteAsk;
+      btn($('b1'), again ? t.reinstall : t.install, function () { post('basla'); });
+      btn($('b2'), t.cancel, function () { post('kapat'); });
+    }
+  }
+  function tick() {
+    fetch('durum', { cache: 'no-store' }).then(function (r) { return r.json(); }).then(function (s) { S = s; render(); setTimeout(tick, 300); })
+      .catch(function () { setTimeout(tick, 600); });
+  }
+  tick();
+})();
+</script>
+</body></html>

@@ -4,6 +4,15 @@ on:
   push:
     branches: [main]
   workflow_dispatch:
+    inputs:
+      yayinla:
+        description: 'Resmi sürüm olarak yayınla (kurulu uygulamalar "yeni sürüm var" der)'
+        type: boolean
+        default: false
+      notlar:
+        description: 'Sürüm notları (uygulamadaki güncelleme kartında görünür)'
+        type: string
+        default: ''
 
 permissions:
   contents: read
@@ -60,6 +69,25 @@ jobs:
             python3 ../tool/annotate.py error "Testler" ../test-fail.txt 150 bas
             exit $status
           fi
+      - uses: actions/setup-go@v5
+        with:
+          go-version: '1.24.x'
+          cache: false
+      - name: Kurulum programı denemesi
+        working-directory: kurulum
+        run: |
+          set +e
+          {
+            unformatted=$(gofmt -l .)
+            if [ -n "$unformatted" ]; then echo "gofmt gerekli: $unformatted"; exit 1; fi
+            go vet ./... && go test ./... && GOOS=windows GOARCH=amd64 go vet ./... && ./dene.sh
+          } > ../kurulum.txt 2>&1
+          status=$?
+          cat ../kurulum.txt
+          if [ $status -ne 0 ]; then
+            python3 ../tool/annotate.py error "Kurulum programı" ../kurulum.txt 80
+            exit $status
+          fi
       - name: Web önizlemesi
         run: |
           set +e
@@ -106,33 +134,135 @@ jobs:
           flutter-version: ${{ env.FLUTTER_VERSION }}
           channel: stable
           cache: true
+      - uses: actions/setup-go@v5
+        with:
+          go-version: '1.24.x'
+          cache: false
       - run: flutter pub get
+      - name: Sürüm
+        id: surum
+        shell: pwsh
+        run: |
+          $tz = [System.TimeZoneInfo]::FindSystemTimeZoneById('Turkey Standard Time')
+          $label = [System.TimeZoneInfo]::ConvertTimeFromUtc([DateTime]::UtcNow, $tz).ToString('dd.MM.yyyy-HH.mm')
+          "etiket=$label" >> $env:GITHUB_OUTPUT
+          Write-Host "Sürüm $label, derleme ${{ github.run_number }}"
       - name: Windows derlemesi
         shell: pwsh
         run: |
-          flutter build windows --release 2>&1 | Tee-Object -FilePath ../build.txt
+          $n = '${{ github.run_number }}'
+          flutter build windows --release --build-name=1.0.$n --build-number=$n --dart-define=MC_SURUM=${{ steps.surum.outputs.etiket }} --dart-define=MC_DERLEME=$n 2>&1 | Tee-Object -FilePath ../build.txt
           if ($LASTEXITCODE -ne 0) {
             python ../tool/annotate.py error "Windows derlemesi" ../build.txt 120
             exit 1
           }
-      - name: Paketle
+      - name: Kurulum, güncelleme ve kaldırma dosyaları
         shell: pwsh
-        run: Compress-Archive -Path build/windows/x64/runner/Release/* -DestinationPath ../MelCapital-Windows.zip
+        working-directory: kurulum
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $label = '${{ steps.surum.outputs.etiket }}'
+          $n = '${{ github.run_number }}'
+          $ico = '../app/windows/runner/resources/app_icon.ico'
+          python ../tool/zip_dir.py ../app/build/windows/x64/runner/Release payload/uygulama.zip
+          Copy-Item payload/uygulama.zip ../MelCapital-Windows.zip
+          New-Item -ItemType Directory -Force ../dist | Out-Null
+          $env:CGO_ENABLED = '0'; $env:GOOS = 'windows'; $env:GOARCH = 'amd64'
+          $ld = "-H windowsgui -s -w -X main.version=$label -X main.build=$n"
+          function Build($desc, $file, $out, $tags, $mode) {
+            python gen_syso.py rsrc_windows_amd64.syso $ico $desc $file $n $label
+            if ($LASTEXITCODE -ne 0) { throw "kaynak dosyası: $desc" }
+            go build -trimpath -tags "$tags" -ldflags "$ld -X main.mode=$mode" -o $out .
+            if ($LASTEXITCODE -ne 0) { throw "go build: $desc" }
+          }
+          Build 'Mel Capital Kaldır' 'Kaldır.exe' 'payload/kaldir.exe' '' 'kaldir'
+          Build 'Mel Capital Kurulum' 'MelCapital-Kurulum.exe' '../dist/MelCapital-Kurulum.exe' 'payload' 'kurulum'
+          Build 'Mel Capital Güncelleme' "MelCapital-Guncelleme-$label.exe" "../dist/MelCapital-Guncelleme-$label.exe" 'payload' 'guncelleme'
+          Remove-Item rsrc_windows_amd64.syso
+          Get-ChildItem ../dist | Format-Table Name, Length
+      - name: Deneme kurulumu (kur, aç, güncelle, kaldır)
+        shell: pwsh
+        working-directory: dist
+        timeout-minutes: 10
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $label = '${{ steps.surum.outputs.etiket }}'
+          $pf = Join-Path $env:ProgramFiles 'Mel Capital'
+          $docs = Join-Path ([Environment]::GetFolderPath('MyDocuments')) 'Mel Capital'
+          $key = 'HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\MelCapital'
+          function Result($name) {
+            $f = Join-Path $env:RUNNER_TEMP $name
+            for ($i = 0; $i -lt 60 -and -not (Test-Path $f); $i++) { Start-Sleep -Milliseconds 500 }
+            if (-not (Test-Path $f)) { return '(sonuç yok)' }
+            return (Get-Content $f -Raw).Trim()
+          }
+          # 1) Kur
+          Start-Process -FilePath (Resolve-Path 'MelCapital-Kurulum.exe') -ArgumentList '--sessiz', '--sonuc', (Join-Path $env:RUNNER_TEMP 'kurulum.txt'), '--dil', 'tr' -Wait
+          $r = Result 'kurulum.txt'; if ($r -ne 'ok') { throw "Kurulum: $r" }
+          foreach ($f in 'Mel Capital.exe', 'Kaldır.exe', 'flutter_windows.dll', 'data\flutter_assets', 'surum.txt') {
+            if (-not (Test-Path (Join-Path $pf $f))) { throw "Kurulumdan sonra $f yok" }
+          }
+          if ((Get-ItemProperty $key).DisplayVersion -ne $label) { throw 'Windows "Uygulamalar" kaydı yazılmadı' }
+          Write-Host "Kuruldu: $pf"
+          # 2) Aç: uygulama gerçek Windows'ta açılıyor mu?
+          New-Item -ItemType Directory -Force (Join-Path $docs 'Profiller\deneme') | Out-Null
+          Set-Content (Join-Path $docs 'Profiller\deneme\veri.json') '{"v":4}'
+          $app = Start-Process -FilePath (Join-Path $pf 'Mel Capital.exe') -PassThru
+          $null = $app.Handle
+          Start-Sleep -Seconds 12
+          $running = -not $app.HasExited
+          if ($running) { Write-Host 'Uygulama açıldı ve çalışıyor.' } else { Write-Host "::warning::Uygulama deneme makinesinde açık kalmadı (çıkış kodu $($app.ExitCode)); kapanma denemesi atlandı." }
+          # 3) Güncelle: açık uygulama kapanır, veriler yedeklenir
+          Start-Process -FilePath (Resolve-Path "MelCapital-Guncelleme-$label.exe") -ArgumentList '--sessiz', '--sonuc', (Join-Path $env:RUNNER_TEMP 'guncelleme.txt'), '--dil', 'tr' -Wait
+          $r = Result 'guncelleme.txt'; if ($r -ne 'ok') { throw "Güncelleme: $r" }
+          if ($running) {
+            $null = $app.WaitForExit(5000)
+            if (-not $app.HasExited) { throw 'Güncelleme açık uygulamayı kapatmadı' }
+            if ($app.ExitCode -eq 0) { Write-Host 'Uygulama "kapan" deyince kendisi düzgünce kapandı.' }
+            else { Write-Host "::warning::Uygulama kendisi kapanmadı, sonlandırıldı (çıkış kodu $($app.ExitCode))." }
+          }
+          if (-not (Get-ChildItem (Join-Path $docs 'Profiller\deneme\Yedekler') -Filter 'guncelleme-oncesi_*.json')) { throw 'Güncellemeden önce profil yedeklenmedi' }
+          # 4) Kaldır (verilerle birlikte)
+          Start-Process -FilePath (Join-Path $pf 'Kaldır.exe') -ArgumentList '--sessiz', '--veriyi-sil', '--sonuc', (Join-Path $env:RUNNER_TEMP 'kaldir.txt') -Wait
+          for ($i = 0; $i -lt 60 -and (Test-Path $pf); $i++) { Start-Sleep -Milliseconds 500 }
+          if (Test-Path $pf) { throw 'Program klasörü silinmedi' }
+          $r = Result 'kaldir.txt'; if ($r -ne 'ok') { throw "Kaldırma: $r" }
+          if (Test-Path $key) { throw 'Windows kaydı silinmedi' }
+          if (Test-Path $docs) { throw 'Veriler silinmedi' }
+          Write-Host 'Kur → aç → güncelle → kaldır denemesi tamam.'
       - uses: actions/upload-artifact@v5
         with:
           name: MelCapital-Windows
-          path: MelCapital-Windows.zip
+          path: |
+            MelCapital-Windows.zip
+            dist/*.exe
           retention-days: 30
       - name: Önizleme sürümünü yayınla
         if: github.event_name == 'push'
         shell: bash
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          LABEL: ${{ steps.surum.outputs.etiket }}
         run: |
           gh release delete onizleme --repo "$GITHUB_REPOSITORY" --cleanup-tag --yes || true
-          gh release create onizleme ../MelCapital-Windows.zip \
+          gh release create onizleme ../dist/*.exe ../MelCapital-Windows.zip \
             --repo "$GITHUB_REPOSITORY" \
             --target "$GITHUB_SHA" \
             --prerelease \
-            --title "Mel Capital — önizleme" \
-            --notes "Son derleme (${GITHUB_SHA::7}). Zip'i bir klasöre açıp MelCapital.exe'yi çalıştırın. Veriler Belgeler\Mel Capital\Profiller klasöründe durur; eski Mel Capital verisi ilk açılışta kopyalanarak getirilebilir (eski dosyaya dokunulmaz)."
+            --title "Mel Capital — önizleme ($LABEL)" \
+            --notes "Son derleme (${GITHUB_SHA::7}, $LABEL). İlk kez kurmak için MelCapital-Kurulum.exe; kurulu uygulamayı güncellemek için MelCapital-Guncelleme-*.exe. Veriler Belgeler\Mel Capital klasöründe durur ve kurmadan önce yedeklenir."
+      - name: Resmi sürümü yayınla
+        if: github.event_name == 'workflow_dispatch' && inputs.yayinla
+        shell: bash
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          LABEL: ${{ steps.surum.outputs.etiket }}
+          NOTES: ${{ inputs.notlar }}
+        run: |
+          [ -n "$NOTES" ] || NOTES="Mel Capital $LABEL"
+          gh release create "s${{ github.run_number }}" ../dist/*.exe ../MelCapital-Windows.zip \
+            --repo "$GITHUB_REPOSITORY" \
+            --target "$GITHUB_SHA" \
+            --latest \
+            --title "Mel Capital $LABEL" \
+            --notes "$NOTES"
