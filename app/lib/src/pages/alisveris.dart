@@ -491,8 +491,11 @@ class _ShopTileState extends State<_ShopTile> {
           child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
             Expanded(child: Align(alignment: Alignment.centerLeft, child: Text(sh.name, style: serif(25, color: const Color(0xFF1B1712), weight: FontWeight.w700)))),
             Row(children: [
-              Text(Uri.parse(sh.url).host.replaceFirst('www.', ''), style: sans(11, color: const Color(0xFF5A534A))),
-              const Spacer(),
+              Expanded(
+                child: Text(Uri.parse(sh.url).host.replaceFirst('www.', ''),
+                    maxLines: 1, overflow: TextOverflow.ellipsis, style: sans(11, color: const Color(0xFF5A534A))),
+              ),
+              const SizedBox(width: 4),
               const Icon(Icons.open_in_new, size: 14, color: Color(0xFF5A534A)),
             ]),
           ]),
@@ -750,10 +753,12 @@ class GoalCard extends StatelessWidget {
           if (g.note.isNotEmpty) Padding(padding: const EdgeInsets.only(top: 8), child: Text(maskTxt(g.note, st.hidden), style: sans(12.5, color: MC.muted))),
           const SizedBox(height: 14),
           Row(children: [
-            GoldButton(label: s.pick('Para ayır', 'Set aside'), onTap: () => openGoalSaveSheet(context, g)),
-            const SizedBox(width: 8),
-            GlassButton(label: s.pick('Aldım', 'Bought it'), onTap: () => openGoalBuySheet(context, g)),
-            const Spacer(),
+            Expanded(
+              child: Wrap(spacing: 8, runSpacing: 8, children: [
+                GoldButton(label: s.pick('Para ayır', 'Set aside'), onTap: () => openGoalSaveSheet(context, g)),
+                GlassButton(label: s.pick('Aldım', 'Bought it'), onTap: () => openGoalBuySheet(context, g)),
+              ]),
+            ),
             if (link.isNotEmpty) IconButton(tooltip: s.pick('Ürüne git', 'Open product'), onPressed: () => openLink(context, link), icon: const Icon(Icons.open_in_new, size: 18, color: MC.muted)),
             IconButton(tooltip: s.pick('Düzenle', 'Edit'), onPressed: () => openGoalSheet(context, goal: g), icon: const Icon(Icons.edit_outlined, size: 18, color: MC.muted)),
           ]),

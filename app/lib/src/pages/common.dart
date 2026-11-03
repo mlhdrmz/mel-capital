@@ -10,6 +10,8 @@ import '../../core/model.dart';
 import '../../core/util.dart';
 import '../glass.dart';
 import '../i18n.dart';
+import '../sheet.dart';
+import '../sheets/money.dart';
 import '../state.dart';
 import '../theme.dart';
 import '../ui.dart';
@@ -21,24 +23,29 @@ void _soon(BuildContext context) {
   toast(context, s.pick('Bu düzenleme ekranı bir sonraki güncellemede geliyor.', 'This editor arrives in the next update.'));
 }
 
-void openTransferSheet(BuildContext context) => _soon(context);
-void openAccountSheet(BuildContext context, {String? bank, String? type, Account? account}) => _soon(context);
-void openCardSheet(BuildContext context, {String? bank, BankCard? card}) => _soon(context);
+void openTransferSheet(BuildContext context, {Transfer? transfer, String? from, String? to}) =>
+    showEditSheet<void>(context, builder: (_) => TransferSheet(transfer: transfer, from: from, to: to));
+void openAccountSheet(BuildContext context, {String? bank, String? type, Account? account}) =>
+    showEditSheet<void>(context, builder: (_) => AccountSheet(account: account, bank: bank, type: type));
+void openCardSheet(BuildContext context, {String? bank, BankCard? card}) => showEditSheet<void>(context, builder: (_) => CardSheet(card: card, bank: bank));
 void openDebtSheet(BuildContext context, {Debt? debt, String? type}) => _soon(context);
-void openSpendSheet(BuildContext context, {Spend? spend, Json? prefill}) => _soon(context);
-void openQuickSpendSheet(BuildContext context) => _soon(context);
+void openSpendSheet(BuildContext context, {Spend? spend, Json? prefill}) => showEditSheet<void>(context, builder: (_) => SpendSheet(spend: spend, prefill: prefill));
+void openQuickSpendSheet(BuildContext context, {String? source}) => showEditSheet<void>(context, builder: (_) => QuickSpendSheet(source: source));
 void openSubSheet(BuildContext context, {Subscription? sub}) => _soon(context);
 void openGoalSheet(BuildContext context, {Goal? goal, Json? prefill}) => _soon(context);
 void openGoalSaveSheet(BuildContext context, Goal goal) => _soon(context);
 void openGoalBuySheet(BuildContext context, Goal goal) => _soon(context);
-void openPaySheet(BuildContext context, PlanItem item, String month) => _soon(context);
-void openCardPaySheet(BuildContext context, {Debt? debt}) => _soon(context);
+void openPaySheet(BuildContext context, PlanItem item, String month) =>
+    showEditSheet<void>(context, builder: (_) => PaySheet(kind: item.kind, refId: item.refId, month: item.fromMonth ?? month));
+void openPayRef(BuildContext context, String kind, String refId, String month) =>
+    showEditSheet<void>(context, builder: (_) => PaySheet(kind: kind, refId: refId, month: month));
+void openCardPaySheet(BuildContext context, {Debt? debt}) => showEditSheet<void>(context, builder: (_) => CardPaySheet(debt: debt));
 void openStatementSheet(BuildContext context, Debt debt) => _soon(context);
 void openCardBalanceSheet(BuildContext context, Debt debt) => _soon(context);
 void openFindeksSheet(BuildContext context, {Findeks? entry}) => _soon(context);
 void openIncomeSheet(BuildContext context, {Income? income}) => _soon(context);
 void openExpenseSheet(BuildContext context, {RecurringExpense? expense}) => _soon(context);
-void openSpendSheetFor(BuildContext context, {String? source}) => _soon(context);
+void openSpendSheetFor(BuildContext context, {String? source}) => openSpendSheet(context, prefill: {'source': source});
 
 // ---------------------------------------------------------------- Kaynak etiketi
 
@@ -127,12 +134,21 @@ class MovementRow extends StatelessWidget {
         style: sans(14.5, weight: FontWeight.w700),
         color: moneyIn ? MC.mint : (neutral ? MC.muted : null),
       ),
-      onTap: mv.t == 'spend'
-          ? () {
-              final sp = d.spends.where((x) => x.id == mv.id);
-              if (sp.isNotEmpty) openSpendSheet(context, spend: sp.first);
+      onTap: () {
+        switch (mv.t) {
+          case 'spend':
+            for (final x in d.spends) {
+              if (x.id == mv.id) return openSpendSheet(context, spend: x);
             }
-          : null,
+          case 'transfer':
+            for (final x in d.transfers) {
+              if (x.id == mv.id) return openTransferSheet(context, transfer: x);
+            }
+          default:
+            final kind = mv.kind, ref = mv.ref, month = mv.month;
+            if (kind != null && ref != null && month != null) openPayRef(context, kind, ref, month);
+        }
+      },
     );
   }
 }

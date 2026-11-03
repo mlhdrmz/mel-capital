@@ -108,9 +108,10 @@ void togglePay(BuildContext context, PlanItem it, String m) {
   final st = AppScope.of(context);
   final s = S.of(context);
   if (it.carriedOut) return;
+  final pm = it.fromMonth ?? m; // taşınan kalemin ödemesi asıl ayına yazılır
   final snap = st.snapshot();
   if (it.pay != null) {
-    st.update((d) => removePaymentFor(d, it.kind, it.refId, m));
+    st.update((d) => removePaymentFor(d, it.kind, it.refId, pm));
     toast(context, s.pick('"Ödendi" işareti kaldırıldı.', '"Paid" mark removed.'), undo: () => st.restore(snap));
     return;
   }
@@ -120,7 +121,7 @@ void togglePay(BuildContext context, PlanItem it, String m) {
   }
   final before = st.ctx.model;
   String? from;
-  st.update((d) => from = markPaid(d, before, it, m));
+  st.update((d) => from = markPaid(d, before, it, pm));
   final closed = closedDebts(st.data, before, st.ctx.model);
   final fromTxt = from != null
       ? s.pick(' ${sourceName(st.data, from, s.lang)} hesabından düşüldü.', ' Taken from ${sourceName(st.data, from, s.lang)}.')
