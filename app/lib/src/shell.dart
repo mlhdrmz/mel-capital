@@ -1,3 +1,5 @@
+import 'dart:ui' show ImageFilter;
+
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
@@ -15,7 +17,7 @@ import 'sheet.dart';
 import 'state.dart';
 import 'theme.dart';
 import 'tips.dart';
-import 'ui.dart' show showToast;
+import 'ui.dart' show isPhoneLayout, showToast;
 
 const Map<AppTab, String> _covers = {
   AppTab.ozet: 'lobby',
@@ -86,8 +88,24 @@ class Shell extends StatelessWidget {
     }
     // Sayfanın ipucu (ilk girişte bir kez)
     final tip = tabs ? st.tipFor(st.tab) : null;
+    // Telefonda sekmeler alttaki menüde; "+" düğmesi harcama ekler.
+    final phone = isPhoneLayout(context);
+    final s = S.of(context);
     final scaffold = Scaffold(
       backgroundColor: MC.bg,
+      extendBody: true,
+      bottomNavigationBar: phone && tabs ? const _PhoneNav() : null,
+      floatingActionButton: phone && tabs && st.tab != AppTab.ayarlar
+          ? FloatingActionButton(
+              key: const ValueKey<String>('phone-add'),
+              tooltip: s.pick('Harcama ekle', 'Add spending'),
+              backgroundColor: MC.gold,
+              foregroundColor: MC.ink,
+              shape: const SignatureBorder(cut: 14, radius: 18),
+              onPressed: () => openSpendSheet(context),
+              child: const Icon(Icons.add, size: 28),
+            )
+          : null,
       body: Stack(
         fit: StackFit.expand,
         children: [
@@ -101,14 +119,21 @@ class Shell extends StatelessWidget {
               ],
             ),
           ),
-          // Özet'te büyük rakam sağ altta olduğu için ipucu sağ üstte durur.
+          // Özet'te büyük rakam sağ altta olduğu için ipucu sağ üstte durur; telefonda alt menünün üstünde.
           if (tip != null)
-            Positioned(
-              right: 24,
-              top: st.tab == AppTab.ozet ? 84 : null,
-              bottom: st.tab == AppTab.ozet ? null : 24,
-              child: SafeArea(child: TipCard(key: ValueKey<String>('tip-$tip'), tab: st.tab)),
-            ),
+            phone
+                ? Positioned(
+                    left: 12,
+                    right: 12,
+                    bottom: 96,
+                    child: SafeArea(top: false, child: TipCard(key: ValueKey<String>('tip-$tip'), tab: st.tab)),
+                  )
+                : Positioned(
+                    right: 24,
+                    top: st.tab == AppTab.ozet ? 84 : null,
+                    bottom: st.tab == AppTab.ozet ? null : 24,
+                    child: SafeArea(child: TipCard(key: ValueKey<String>('tip-$tip'), tab: st.tab)),
+                  ),
         ],
       ),
     );
@@ -273,14 +298,15 @@ class TopBar extends StatelessWidget {
   Widget build(BuildContext context) {
     final st = AppScope.of(context);
     final s = S.of(context);
+    final phone = isPhoneLayout(context);
     return Padding(
-      padding: const EdgeInsets.fromLTRB(24, 14, 18, 6),
+      padding: phone ? const EdgeInsets.fromLTRB(16, 10, 12, 2) : const EdgeInsets.fromLTRB(24, 14, 18, 6),
       child: Row(
         children: [
           const _Brand(),
           const SizedBox(width: 18),
-          if (!tabs) const Spacer(),
-          if (tabs) Expanded(
+          if (!tabs || phone) const Spacer(),
+          if (tabs && !phone) Expanded(
             child: Center(
               child: SingleChildScrollView(
                 scrollDirection: Axis.horizontal,
@@ -496,5 +522,121 @@ class _Bell extends StatelessWidget {
           ),
         ),
     ]);
+  }
+}
+
+// ---------------------------------------------------------------- Telefon: alt menü
+
+/// Telefonda alttaki menü: dört ana sayfa ve "Diğer" (Bankalar, Alışveriş, Ayarlar).
+class _PhoneNav extends StatelessWidget {
+  const _PhoneNav();
+
+  static const List<AppTab> main = [AppTab.ozet, AppTab.harcamalar, AppTab.plan, AppTab.borclar];
+  static const List<AppTab> more = [AppTab.bankalar, AppTab.alisveris, AppTab.ayarlar];
+
+  void _openMore(BuildContext context, AppState st) {
+    final s = S.of(context);
+    showModalBottomSheet<void>(
+      context: context,
+      backgroundColor: const Color(0xF2171513),
+      shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(24))),
+      builder: (sheet) => SafeArea(
+        top: false,
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(12, 10, 12, 10),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Container(
+                width: 40,
+                height: 4,
+                margin: const EdgeInsets.only(bottom: 8),
+                decoration: BoxDecoration(color: const Color(0x40FFFFFF), borderRadius: BorderRadius.circular(2)),
+              ),
+              for (final t in more)
+                ListTile(
+                  key: ValueKey<String>('tab-${t.name}'),
+                  leading: Icon(_icons[t], color: st.tab == t ? MC.gold : MC.text),
+                  title: Text(s.t('tab.${t.name}'), style: sans(15.5, weight: FontWeight.w600, color: st.tab == t ? MC.gold : MC.text)),
+                  trailing: t == AppTab.ayarlar && st.newVersion != null
+                      ? Text(s.pick('Yeni sürüm', 'New version'), style: sans(12.5, color: MC.gold, weight: FontWeight.w600))
+                      : null,
+                  onTap: () {
+                    Navigator.of(sheet).pop();
+                    st.setTab(t);
+                  },
+                ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final st = AppScope.of(context);
+    final s = S.of(context);
+    Widget item({required String key, required IconData icon, required String label, required bool selected, required VoidCallback onTap, bool dot = false}) {
+      final color = selected ? MC.gold : MC.text;
+      return Expanded(
+        child: InkResponse(
+          key: ValueKey<String>(key),
+          onTap: onTap,
+          radius: 34,
+          child: Padding(
+            padding: const EdgeInsets.fromLTRB(2, 9, 2, 8),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Stack(
+                  clipBehavior: Clip.none,
+                  children: [
+                    Icon(icon, size: 23, color: color),
+                    if (dot)
+                      Positioned(
+                        right: -4,
+                        top: -2,
+                        child: Container(width: 8, height: 8, decoration: const BoxDecoration(color: MC.gold, shape: BoxShape.circle)),
+                      ),
+                  ],
+                ),
+                const SizedBox(height: 4),
+                Text(label, maxLines: 1, overflow: TextOverflow.ellipsis, style: sans(11, weight: FontWeight.w600, color: color)),
+              ],
+            ),
+          ),
+        ),
+      );
+    }
+
+    return ClipRect(
+      child: BackdropFilter(
+        filter: ImageFilter.blur(sigmaX: 18, sigmaY: 18),
+        child: DecoratedBox(
+          decoration: const BoxDecoration(
+            color: Color(0xB8100D0B),
+            border: Border(top: BorderSide(color: Color(0x26FFFFFF))),
+          ),
+          child: SafeArea(
+            top: false,
+            child: Row(
+              children: [
+                for (final t in main)
+                  item(key: 'tab-${t.name}', icon: _icons[t] ?? Icons.circle_outlined, label: s.t('tab.${t.name}'), selected: st.tab == t, onTap: () => st.setTab(t)),
+                item(
+                  key: 'tab-diger',
+                  icon: Icons.more_horiz,
+                  label: s.pick('Diğer', 'More'),
+                  selected: more.contains(st.tab),
+                  dot: st.newVersion != null,
+                  onTap: () => _openMore(context, st),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
   }
 }

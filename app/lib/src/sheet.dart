@@ -25,18 +25,23 @@ Future<T?> showEditSheet<T>(BuildContext context, {required WidgetBuilder builde
     barrierLabel: MaterialLocalizations.of(context).modalBarrierDismissLabel,
     barrierColor: const Color(0x73000000),
     transitionDuration: const Duration(milliseconds: 280),
-    pageBuilder: (context, _, __) => Align(
-      alignment: Alignment.centerRight,
-      child: SafeArea(
-        child: Padding(
-          padding: const EdgeInsets.fromLTRB(16, 12, 14, 12),
-          child: SizedBox(
-            width: math.min(width, MediaQuery.sizeOf(context).width - 32),
-            child: Material(type: MaterialType.transparency, child: builder(context)),
+    pageBuilder: (context, _, __) {
+      // Telefonda panel ekranı neredeyse tamamen kaplar.
+      final phone = isPhoneLayout(context);
+      final screen = MediaQuery.sizeOf(context).width;
+      return Align(
+        alignment: Alignment.centerRight,
+        child: SafeArea(
+          child: Padding(
+            padding: phone ? const EdgeInsets.fromLTRB(6, 6, 6, 6) : const EdgeInsets.fromLTRB(16, 12, 14, 12),
+            child: SizedBox(
+              width: phone ? screen - 12 : math.min(width, screen - 32),
+              child: Material(type: MaterialType.transparency, child: builder(context)),
+            ),
           ),
         ),
-      ),
-    ),
+      );
+    },
     transitionBuilder: (context, anim, _, child) {
       final curve = CurvedAnimation(parent: anim, curve: Curves.easeOutCubic, reverseCurve: Curves.easeInCubic);
       return SlideTransition(

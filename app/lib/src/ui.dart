@@ -1,5 +1,7 @@
 // Ortak arayüz parçaları: tutar yazısı, düğmeler, satırlar, banka plakası, boş durum.
 
+import 'dart:math' as math;
+
 import 'package:flutter/material.dart';
 
 import '../core/constants.dart';
@@ -71,6 +73,11 @@ class MoneyText extends StatelessWidget {
 }
 
 /// Sayfa iskeleti: kaydırılabilir içerik, başlık ve sağda düğmeler.
+/// Telefon düzeni: dar ekranlarda alt menü, daha küçük kenar boşlukları ve başlıklar.
+const double kPhoneWidth = 700;
+
+bool isPhoneLayout(BuildContext context) => MediaQuery.sizeOf(context).width < kPhoneWidth;
+
 class PageFrame extends StatelessWidget {
   const PageFrame({super.key, required this.eyebrow, required this.title, this.actions = const [], required this.children, this.leading});
 
@@ -82,8 +89,9 @@ class PageFrame extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final phone = isPhoneLayout(context);
     return SingleChildScrollView(
-      padding: const EdgeInsets.fromLTRB(28, 14, 28, 56),
+      padding: phone ? const EdgeInsets.fromLTRB(16, 6, 16, 96) : const EdgeInsets.fromLTRB(28, 14, 28, 56),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -104,7 +112,7 @@ class PageFrame extends StatelessWidget {
                       children: [
                         Text(eyebrow, style: sans(11.5, color: MC.eyebrow, weight: FontWeight.w700, letterSpacing: 2.6, shadows: kPhotoTextShadow)),
                         const SizedBox(height: 6),
-                        Text(title, style: serif(44, shadows: kPhotoTextShadow)),
+                        Text(title, style: serif(phone ? 34 : 44, shadows: kPhotoTextShadow)),
                       ],
                     ),
                   ],
@@ -113,7 +121,7 @@ class PageFrame extends StatelessWidget {
               ],
             ),
           ),
-          const SizedBox(height: 20),
+          SizedBox(height: phone ? 14 : 20),
           ...children,
         ],
       ),
@@ -523,9 +531,13 @@ class Kpi extends StatelessWidget {
         children: [
           Text(label, maxLines: 1, overflow: TextOverflow.ellipsis, style: sans(12.5, color: MC.label, weight: FontWeight.w600)),
           const SizedBox(height: 5),
-          text != null
-              ? Text(text!, style: serif(31, color: valueColor ?? MC.text))
-              : MoneyText(k, count: true, style: serif(31, color: valueColor ?? (k < 0 ? MC.rose : MC.text))),
+          FittedBox(
+            fit: BoxFit.scaleDown,
+            alignment: Alignment.centerLeft,
+            child: text != null
+                ? Text(text!, style: serif(31, color: valueColor ?? MC.text))
+                : MoneyText(k, count: true, style: serif(31, color: valueColor ?? (k < 0 ? MC.rose : MC.text))),
+          ),
           const SizedBox(height: 5),
           Text(sub, maxLines: 1, overflow: TextOverflow.ellipsis, style: sans(11.5, color: MC.muted)),
           if (footer != null) ...[const SizedBox(height: 8), footer!],
@@ -560,7 +572,7 @@ void showToast(
     behavior: SnackBarBehavior.floating,
     backgroundColor: const Color(0xF0171513),
     shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-    width: 460,
+    width: math.min(460, MediaQuery.sizeOf(messenger.context).width - 24),
     duration: Duration(seconds: undo == null ? seconds : (seconds < 6 ? 6 : seconds)),
   ));
 }

@@ -39,6 +39,22 @@ TARGETS = [
     ('plan_en', 'sekme=plan&dil=en'),
 ]
 
+# Telefon boyutunda (390 × 844) bakılan ekranlar
+PHONE = (390, 844)
+TARGETS += [
+    ('telefon_ozet_tr', 'sekme=ozet&dil=tr', PHONE),
+    ('telefon_harcamalar_tr', 'sekme=harcamalar&dil=tr', PHONE),
+    ('telefon_plan_tr', 'sekme=plan&dil=tr', PHONE),
+    ('telefon_borclar_tr', 'sekme=borclar&dil=tr', PHONE),
+    ('telefon_bankalar_tr', 'sekme=bankalar&dil=tr', PHONE),
+    ('telefon_alisveris_tr', 'sekme=alisveris&dil=tr', PHONE),
+    ('telefon_ayarlar_tr', 'sekme=ayarlar&dil=tr', PHONE),
+    ('telefon_panel_harcama_tr', 'sekme=harcamalar&dil=tr&panel=harcama', PHONE),
+    ('telefon_tanitim1_tr', 'ekran=tanitim&dil=tr', PHONE),
+    ('telefon_baslangic_tr', 'ekran=baslangic&dil=tr', PHONE),
+    ('telefon_kurulum_hesaplar_tr', 'ekran=kurulum&adim=hesaplar&dil=tr', PHONE),
+]
+
 
 def main() -> None:
     web, out = sys.argv[1], sys.argv[2]
@@ -50,8 +66,10 @@ def main() -> None:
     report = []
     with sync_playwright() as pw:
         browser = pw.chromium.launch(args=['--use-angle=swiftshader', '--enable-unsafe-swiftshader'])
-        for name, query in TARGETS:
-            page = browser.new_page(viewport={'width': 1600, 'height': 900})
+        for target in TARGETS:
+            name, query = target[0], target[1]
+            width, height = target[2] if len(target) > 2 else (1600, 900)
+            page = browser.new_page(viewport={'width': width, 'height': height})
             logs = []
             page.on('console', lambda m, logs=logs: logs.append(f'{m.type}: {m.text}'))
             page.on('pageerror', lambda e, logs=logs: logs.append(f'pageerror: {e}'))
