@@ -257,7 +257,7 @@ class _BankDetail extends StatelessWidget {
             Kpi(label: s.pick('Tüm hesaplar', 'All accounts'), k: ctx.model.liquid, sub: s.pick('Bankalar dahil', 'Banks included'), color: MC.sky, delay: const Duration(milliseconds: 60)),
           ]),
           const SizedBox(height: 14),
-          Split(
+          TwoColumns(
             left: _AccountsPanel(accounts: loose),
             right: Column(children: [
               MonthMovesPanel(accIds: ids),
@@ -312,7 +312,7 @@ class _BankDetail extends StatelessWidget {
           ),
         ]),
         const SizedBox(height: 14),
-        Split(
+        TwoColumns(
           left: Column(children: [
             GlassPanel(
               delay: const Duration(milliseconds: 220),

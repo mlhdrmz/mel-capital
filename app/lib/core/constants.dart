@@ -320,3 +320,10 @@ String dayOfMonthText(int day, String lang) {
       : const {1: 'st', 2: 'nd', 3: 'rd'}[day % 10] ?? 'th';
   return 'on the $day$suffix';
 }
+
+/// "5 Kasım" / "November 5" (gün ve ay; ay yoksa "belirtilmemiş").
+String dayMonth(int? day, String? m, String lang) {
+  if (day == null || !isMonth(m)) return lang == 'tr' ? 'belirtilmemiş' : 'not set';
+  final name = monthName(m, lang);
+  return lang == 'tr' ? '$day $name' : '$name $day';
+}

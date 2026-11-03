@@ -30,6 +30,13 @@ void openQuickSpendSheet(BuildContext context) => _soon(context);
 void openSubSheet(BuildContext context, {Subscription? sub}) => _soon(context);
 void openGoalSheet(BuildContext context, {Goal? goal}) => _soon(context);
 void openPaySheet(BuildContext context, PlanItem item, String month) => _soon(context);
+void openCardPaySheet(BuildContext context, {Debt? debt}) => _soon(context);
+void openStatementSheet(BuildContext context, Debt debt) => _soon(context);
+void openCardBalanceSheet(BuildContext context, Debt debt) => _soon(context);
+void openFindeksSheet(BuildContext context, {Findeks? entry}) => _soon(context);
+void openIncomeSheet(BuildContext context, {Income? income}) => _soon(context);
+void openExpenseSheet(BuildContext context, {RecurringExpense? expense}) => _soon(context);
+void openSpendSheetFor(BuildContext context, {String? source}) => _soon(context);
 
 // ---------------------------------------------------------------- Hareketler
 

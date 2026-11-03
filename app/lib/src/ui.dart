@@ -437,8 +437,8 @@ class EmptyCard extends StatelessWidget {
 }
 
 /// Yan yana sütunlar; dar ekranda alt alta.
-class Split extends StatelessWidget {
-  const Split({super.key, required this.left, required this.right, this.leftFlex = 17, this.rightFlex = 10, this.breakpoint = 900});
+class TwoColumns extends StatelessWidget {
+  const TwoColumns({super.key, required this.left, required this.right, this.leftFlex = 17, this.rightFlex = 10, this.breakpoint = 900});
 
   final Widget left;
   final Widget right;
@@ -547,4 +547,10 @@ void toast(BuildContext context, String message) {
     width: 460,
     duration: const Duration(seconds: 3),
   ));
+}
+
+/// Gizli modda metindeki tutarları (ör. "1.250 TL") gizler.
+String maskTxt(String? text, bool hidden) {
+  final t = text ?? '';
+  return hidden ? t.replaceAll(RegExp(r'\d[\d.,]*\s?(TL|₺)'), '••• TL') : t;
 }

@@ -155,3 +155,41 @@ InputDecoration fieldDecoration({String? hint, String? suffix, String? label}) {
     focusedBorder: edge.copyWith(borderSide: const BorderSide(color: MC.gold, width: 1.4)),
   );
 }
+
+/// Açılır seçim kutusu (cam üstünde koyu alan).
+class GlassSelect<T> extends StatelessWidget {
+  const GlassSelect({super.key, required this.value, required this.items, required this.onChanged, this.width});
+
+  final T? value;
+  final List<(T, String)> items;
+  final ValueChanged<T?> onChanged;
+  final double? width;
+
+  @override
+  Widget build(BuildContext context) {
+    final field = Container(
+      padding: const EdgeInsets.symmetric(horizontal: 12),
+      decoration: BoxDecoration(
+        color: const Color(0x38000000),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: const Color(0x33FFFFFF)),
+      ),
+      child: DropdownButtonHideUnderline(
+        child: DropdownButton<T>(
+          value: items.any((e) => e.$1 == value) ? value : null,
+          isExpanded: true,
+          dropdownColor: const Color(0xF2201C18),
+          borderRadius: BorderRadius.circular(12),
+          iconEnabledColor: MC.muted,
+          style: sans(14.5),
+          items: [
+            for (final e in items)
+              DropdownMenuItem<T>(value: e.$1, child: Text(e.$2, maxLines: 1, overflow: TextOverflow.ellipsis)),
+          ],
+          onChanged: onChanged,
+        ),
+      ),
+    );
+    return width == null ? field : SizedBox(width: width, child: field);
+  }
+}

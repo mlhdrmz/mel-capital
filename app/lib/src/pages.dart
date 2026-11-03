@@ -4,6 +4,7 @@ import '../core/util.dart';
 import 'i18n.dart';
 import 'pages/ayarlar.dart';
 import 'pages/bankalar.dart';
+import 'pages/borclar.dart';
 import 'pages/ozet.dart';
 import 'state.dart';
 import 'ui.dart';
@@ -11,6 +12,7 @@ import 'ui.dart';
 /// Sekmeye göre sayfa.
 Widget pageFor(AppTab tab) => switch (tab) {
       AppTab.ozet => const OzetPage(),
+      AppTab.borclar => const BorclarPage(),
       AppTab.bankalar => const BankalarPage(),
       AppTab.ayarlar => const AyarlarPage(),
       _ => _SoonPage(tab: tab),

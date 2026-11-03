@@ -27,7 +27,7 @@ class AyarlarPage extends StatelessWidget {
       eyebrow: s.pick('AYARLAR', 'SETTINGS'),
       title: st.profile?.name ?? s.pick('Ayarlar', 'Settings'),
       children: [
-        Split(
+        TwoColumns(
           leftFlex: 1,
           rightFlex: 1,
           left: const Column(children: [_ProfilesPanel(), SizedBox(height: 14), _BackupsPanel()]),
