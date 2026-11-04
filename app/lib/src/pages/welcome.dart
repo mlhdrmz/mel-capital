@@ -11,6 +11,7 @@ import '../../storage/pick_file.dart';
 import '../glass.dart';
 import '../i18n.dart';
 import '../state.dart';
+import '../sync_ui.dart';
 import '../theme.dart';
 import '../ui.dart';
 
@@ -60,12 +61,18 @@ class _StartPageState extends State<StartPage> {
     super.dispose();
   }
 
-  Future<void> _start(Future<Json?> Function() data, {bool setup = false}) async {
+  Future<void> _start(Future<Json?> Function() data, {bool setup = false, bool legacy = false}) async {
     if (_busy) return;
     setState(() => _busy = true);
     final st = AppScope.of(context);
     try {
-      await st.createProfile(_name.text, data: await data(), setup: setup);
+      final json = await data();
+      if (legacy && json != null) {
+        // Eski uygulamanın verisi: o bilgisayarda telefon eşleştirmesi varsa o da bu profille sürer.
+        await st.createLegacyProfile(_name.text, json);
+      } else {
+        await st.createProfile(_name.text, data: json, setup: setup);
+      }
       if (widget.addingProfile) widget.onCancel?.call();
     } finally {
       if (mounted) setState(() => _busy = false);
@@ -97,14 +104,18 @@ class _StartPageState extends State<StartPage> {
     final st = AppScope.of(context);
     final s = S.of(context);
     final legacy = _legacy == null ? null : Data(_legacy!);
+    final phone = isPhoneLayout(context);
     return SingleChildScrollView(
-      padding: const EdgeInsets.fromLTRB(28, 28, 28, 56),
+      padding: phone ? const EdgeInsets.fromLTRB(16, 12, 16, 40) : const EdgeInsets.fromLTRB(28, 28, 28, 56),
       child: Center(
         child: ConstrainedBox(
           constraints: const BoxConstraints(maxWidth: 820),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
+              // Telefonda dil seçimi başlığın üstünde durur; başlık tam genişlikte kalır.
+              if (phone && !widget.addingProfile)
+                Align(alignment: Alignment.centerRight, child: LangToggle(lang: s.lang, onChanged: st.setLanguage)),
               Reveal(
                 child: Row(
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -120,7 +131,7 @@ class _StartPageState extends State<StartPage> {
                           const SizedBox(height: 6),
                           Text(
                             widget.addingProfile ? s.pick('Yeni bir profil aç', 'Open a new profile') : s.pick('Nasıl başlayalım?', 'How shall we start?'),
-                            style: serif(52, shadows: kPhotoTextShadow),
+                            style: serif(phone ? 40 : 52, shadows: kPhotoTextShadow),
                           ),
                           const SizedBox(height: 8),
                           Text(
@@ -131,7 +142,7 @@ class _StartPageState extends State<StartPage> {
                         ],
                       ),
                     ),
-                    if (!widget.addingProfile) ...[
+                    if (!widget.addingProfile && !phone) ...[
                       const SizedBox(width: 16),
                       LangToggle(lang: s.lang, onChanged: st.setLanguage),
                     ],
@@ -173,6 +184,21 @@ class _StartPageState extends State<StartPage> {
               const SizedBox(height: 22),
               Text(s.pick('Elinde Mel Capital verisi var mı?', 'Do you already have Mel Capital data?'), style: serif(30, shadows: kPhotoTextShadow)),
               const SizedBox(height: 12),
+              // Telefonda: bilgisayardaki Mel Capital'e bağlanıp verileri oradan almak
+              if (st.phone && st.syncApi != null) ...[
+                _Choice(
+                  key: const ValueKey<String>('start-pair'),
+                  icon: Icons.qr_code_scanner,
+                  title: s.pick('Evet, bilgisayarımdaki Mel Capital\'e bağlan', 'Yes, connect to Mel Capital on my computer'),
+                  text: s.pick(
+                    'Bilgisayarda Ayarlar → Telefon → "Kodu göster"deki kodu okut. Verilerin şifreli olarak bu telefona gelir; bundan sonra iki taraf birbiriyle eşitlenir.',
+                    'Scan the code from Settings → Phone → "Show code" on your computer. Your data arrives encrypted on this phone; from then on both sides stay in sync.',
+                  ),
+                  highlight: true,
+                  onTap: _busy ? null : () => openPhonePairing(context, name: _name.text),
+                ),
+                const SizedBox(height: 10),
+              ],
               if (legacy != null) ...[
                 _Choice(
                   key: const ValueKey<String>('start-legacy'),
@@ -183,7 +209,7 @@ class _StartPageState extends State<StartPage> {
                     'Your old Mel Capital data was found: ${legacy.accounts.length} accounts, ${legacy.debts.length} debts, ${legacy.spends.length} spends. A copy is taken; the old file is left untouched.',
                   ),
                   highlight: true,
-                  onTap: _busy ? null : () => _start(() async => _legacy),
+                  onTap: _busy ? null : () => _start(() async => _legacy, legacy: true),
                 ),
                 const SizedBox(height: 10),
               ],
@@ -217,7 +243,7 @@ class _StartPageState extends State<StartPage> {
                   'Ekstrelerin, hesapların, kartların, kredilerin, gelirin ve düzenli ödemelerin için adım adım ilerleriz. Her adım atlanabilir.',
                   'We go step by step through your statements, accounts, cards, loans, income and regular payments. Every step can be skipped.',
                 ),
-                highlight: legacy == null,
+                highlight: legacy == null && !(st.phone && st.syncApi != null),
                 onTap: _busy ? null : () => _start(() async => null, setup: true),
               ),
               const SizedBox(height: 10),

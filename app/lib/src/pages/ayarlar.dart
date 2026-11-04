@@ -13,6 +13,7 @@ import '../dialogs.dart';
 import '../glass.dart';
 import '../i18n.dart';
 import '../state.dart';
+import '../sync_ui.dart';
 import '../theme.dart';
 import '../ui.dart';
 
@@ -31,7 +32,13 @@ class AyarlarPage extends StatelessWidget {
         TwoColumns(
           leftFlex: 1,
           rightFlex: 1,
-          left: const Column(children: [_ProfilesPanel(), SizedBox(height: 14), _BackupsPanel()]),
+          left: Column(children: [
+            const _ProfilesPanel(),
+            const SizedBox(height: 14),
+            // Telefon eşitlemesi (web önizlemesinde yok)
+            if (st.sync != null) ...[const SyncPanel(), const SizedBox(height: 14)],
+            const _BackupsPanel(),
+          ]),
           // Yeni sürüm varsa "Mel Capital" bölümü en üstte durur.
           right: st.newVersion != null
               ? const Column(children: [_AboutPanel(), SizedBox(height: 14), _ViewPanel(), SizedBox(height: 14), _DataPanel()])
@@ -482,7 +489,7 @@ class _DataPanelState extends State<_DataPanel> {
               trailing: SmallButton(
                 label: s.pick('Getir', 'Bring'),
                 icon: Icons.drive_file_move_outline,
-                onTap: _busy ? null : () => _run(() => st.createProfile(s.pick('Eski verilerim', 'My old data'), data: _legacy)),
+                onTap: _busy ? null : () => _run(() => st.createLegacyProfile(s.pick('Eski verilerim', 'My old data'), _legacy!)),
               ),
             ),
           ],

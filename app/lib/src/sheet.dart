@@ -19,6 +19,9 @@ import 'ui.dart';
 
 /// Sağdan kayarak açılan düzenleme paneli.
 Future<T?> showEditSheet<T>(BuildContext context, {required WidgetBuilder builder, double width = 580}) {
+  // Panel açıkken telefondan gelen değişiklikler bekletilir (panel eski veriyle kalmasın).
+  final st = context.getInheritedWidgetOfExactType<AppScope>()?.notifier;
+  st?.sheetOpened();
   return showGeneralDialog<T>(
     context: context,
     barrierDismissible: true,
@@ -49,7 +52,7 @@ Future<T?> showEditSheet<T>(BuildContext context, {required WidgetBuilder builde
         child: FadeTransition(opacity: curve, child: child),
       );
     },
-  );
+  ).whenComplete(() => st?.sheetClosed());
 }
 
 /// Form çıktısı: hata ya da veriye uygulanacak değişiklik.

@@ -186,4 +186,43 @@ class FileStore implements Store {
       return null;
     }
   }
+
+  @override
+  Future<Object?> loadSyncState(String profileId) async {
+    try {
+      return await _readJson(_join([await _profileDir(profileId), 'senkron.json']));
+    } catch (_) {
+      return null;
+    }
+  }
+
+  @override
+  Future<void> saveSyncState(String profileId, Json? state) async {
+    final path = _join([await _profileDir(profileId), 'senkron.json']);
+    if (state == null) {
+      final f = File(path);
+      if (await f.exists()) await f.delete();
+      return;
+    }
+    await _writeAtomic(path, jsonEncode(state));
+  }
+
+  /// Testlerde eski uygulamanın durum klasörü.
+  String? legacyStateDirOverride;
+
+  @override
+  Future<Object?> readLegacySync() async {
+    String? dir = legacyStateDirOverride;
+    if (dir == null) {
+      if (!Platform.isWindows) return null;
+      final local = Platform.environment['LOCALAPPDATA'];
+      if (local == null || local.isEmpty) return null;
+      dir = _join([local, 'Mel Capital']);
+    }
+    try {
+      return await _readJson(_join([dir, 'senkron.json']));
+    } catch (_) {
+      return null;
+    }
+  }
 }

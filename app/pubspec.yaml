@@ -13,7 +13,11 @@ dependencies:
     sdk: flutter
   crypto: ^3.0.6
   file_selector: ^1.0.3
+  # Telefon eşitlemesi: QR kodu okuma (yalnızca telefonda), QR çizimi ve AES-GCM şifreleme
+  mobile_scanner: ^7.0.0
   path_provider: ^2.1.5
+  pointycastle: ^3.9.1
+  qr: ^3.0.2
   url_launcher: ^6.3.1
 
 dev_dependencies:

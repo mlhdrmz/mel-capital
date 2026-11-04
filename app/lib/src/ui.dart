@@ -573,6 +573,9 @@ void showToast(
   VoidCallback? action,
 }) {
   messenger.hideCurrentSnackBar();
+  final duration = Duration(seconds: undo == null ? seconds : (seconds < 6 ? 6 : seconds));
+  // "Geri al" süresince telefondan gelen değişiklikler bekletilir (geri alma onları silmesin).
+  if (undo != null) messenger.context.getInheritedWidgetOfExactType<AppScope>()?.notifier?.noteUndo(duration);
   messenger.showSnackBar(SnackBar(
     action: undo != null
         ? SnackBarAction(label: lang == 'tr' ? 'Geri al' : 'Undo', textColor: MC.gold, onPressed: undo)
@@ -582,7 +585,7 @@ void showToast(
     backgroundColor: const Color(0xF0171513),
     shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
     width: math.min(460, MediaQuery.sizeOf(messenger.context).width - 24),
-    duration: Duration(seconds: undo == null ? seconds : (seconds < 6 ? 6 : seconds)),
+    duration: duration,
   ));
 }
 

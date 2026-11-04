@@ -14,7 +14,9 @@ class MemoryStore implements Store {
   final Map<String, String> _data;
   final Map<String, Json> _settings = {};
   final Map<String, Map<String, String>> _backups = {};
+  final Map<String, String> _sync = {};
   Object? legacy;
+  Object? legacySync;
 
   @override
   Future<String?> folder() async => null;
@@ -72,10 +74,29 @@ class MemoryStore implements Store {
     _data.remove(profileId);
     _settings.remove(profileId);
     _backups.remove(profileId);
+    _sync.remove(profileId);
   }
 
   @override
   Future<Object?> readLegacyData() async => legacy;
+
+  @override
+  Future<Object?> loadSyncState(String profileId) async {
+    final s = _sync[profileId];
+    return s == null ? null : jsonDecode(s);
+  }
+
+  @override
+  Future<void> saveSyncState(String profileId, Json? state) async {
+    if (state == null) {
+      _sync.remove(profileId);
+    } else {
+      _sync[profileId] = jsonEncode(state);
+    }
+  }
+
+  @override
+  Future<Object?> readLegacySync() async => legacySync;
 
   @override
   Future<bool> openFolder(String? profileId, {bool backups = false}) async => false;

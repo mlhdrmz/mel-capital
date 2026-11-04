@@ -41,6 +41,7 @@ class ProfileIndex {
     this.intro = false,
     this.autoUpdate = true,
     this.updateNotified = 0,
+    this.legacySyncUsed = false,
     List<String>? tips,
     List<ProfileInfo>? profiles,
   })  : tips = tips ?? [],
@@ -53,6 +54,7 @@ class ProfileIndex {
         intro: j['intro'] == true || (j['intro'] == null && j['profiles'] is List && (j['profiles'] as List).isNotEmpty),
         autoUpdate: j['autoUpdate'] != false,
         updateNotified: j['updateNotified'] is int ? j['updateNotified'] as int : 0,
+        legacySyncUsed: j['legacySyncUsed'] == true,
         tips: [
           for (final t in (j['tips'] is List ? j['tips'] as List : const []))
             if (t is String) t,
@@ -77,6 +79,9 @@ class ProfileIndex {
   /// "Yeni sürüm var" haberi verilmiş en son sürümün derleme numarası.
   int updateNotified;
 
+  /// Eski Mel Capital'in telefon eşleştirmesi bir profile aktarıldı mı (bir kez aktarılır).
+  bool legacySyncUsed;
+
   /// İpucu gösterilmiş sayfalar (sekme adları).
   final List<String> tips;
   final List<ProfileInfo> profiles;
@@ -95,6 +100,7 @@ class ProfileIndex {
         'intro': intro,
         'autoUpdate': autoUpdate,
         'updateNotified': updateNotified,
+        'legacySyncUsed': legacySyncUsed,
         'tips': [...tips],
         'profiles': [for (final p in profiles) p.toJson()],
       };
@@ -134,6 +140,16 @@ abstract class Store {
 
   /// Eski Mel Capital'in veri dosyası (yalnızca okunur, hiç değiştirilmez).
   Future<Object?> readLegacyData();
+
+  /// Profilin telefon eşitlemesi durumu (eşleştirme anahtarı, son ortak hâl). Yoksa null.
+  Future<Object?> loadSyncState(String profileId);
+
+  /// Eşitleme durumunu yazar; null ise siler (eşleştirme kaldırıldı).
+  Future<void> saveSyncState(String profileId, Json? state);
+
+  /// Eski Mel Capital'in telefon eşleştirmesi (%LOCALAPPDATA%\Mel Capital\senkron.json; yalnızca
+  /// okunur). Yoksa null.
+  Future<Object?> readLegacySync();
 
   /// Profilin klasörünü dosya gezgininde açar (web'de açılamaz: false).
   Future<bool> openFolder(String? profileId, {bool backups = false});

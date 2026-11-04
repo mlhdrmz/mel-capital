@@ -15,6 +15,7 @@ import 'pages/setup.dart';
 import 'pages/welcome.dart';
 import 'sheet.dart';
 import 'state.dart';
+import 'sync_ui.dart';
 import 'theme.dart';
 import 'tips.dart';
 import 'ui.dart' show isPhoneLayout, showToast;
@@ -137,7 +138,7 @@ class Shell extends StatelessWidget {
         ],
       ),
     );
-    if (!tabs) return scaffold;
+    if (!tabs) return SyncToasts(child: scaffold);
     // Yeni sürüm haberi: her sürüm için bir kez kısa bir not (ayrıntısı ve kurulumu Ayarlar'da).
     if (st.updateNeedsNotice) {
       st.markUpdateNoticed();
@@ -164,7 +165,7 @@ class Shell extends StatelessWidget {
         if (panel == 'borc') openDebtSheet(context, debt: st.data.debts.isEmpty ? null : st.data.debts.last);
       });
     }
-    return Focus(autofocus: true, onKeyEvent: (node, event) => _shortcut(context, st, event), child: scaffold);
+    return Focus(autofocus: true, onKeyEvent: (node, event) => _shortcut(context, st, event), child: SyncToasts(child: scaffold));
   }
 
   /// Klavye kısayolları: 1–7 sekmeler, N harcama, H hızlı giriş, T para aktar.
@@ -333,6 +334,8 @@ class TopBar extends StatelessWidget {
           ),
           if (tabs) ...[
             const SizedBox(width: 12),
+            // Telefon eşitlemesi varsa durumu (dokununca hemen eşitler)
+            if (st.sync?.paired == true) ...[const SyncButton(), const SizedBox(width: 8)],
             _Bell(count: st.hasData ? st.ctx.upcoming(7).length : 0),
             const SizedBox(width: 8),
             _SquareButton(

@@ -14,6 +14,7 @@ import 'src/state.dart';
 import 'src/theme.dart';
 import 'storage/store.dart';
 import 'storage/store_memory.dart';
+import 'storage/sync_factory.dart';
 import 'storage/updater.dart';
 
 Future<void> main() async {
@@ -22,7 +23,7 @@ Future<void> main() async {
     runApp(MelCapitalApp(state: await previewState(Uri.base.queryParameters)));
     return;
   }
-  final state = AppState(store: createStore(), updater: createUpdater());
+  final state = AppState(store: createStore(), updater: createUpdater(), syncApi: createSyncApi());
   runApp(MelCapitalApp(state: state));
   await state.init();
   // Açılıştan birkaç saniye sonra yeni sürüme bakılır (yalnızca sürüm bilgisi istenir).
@@ -118,11 +119,17 @@ class _MelCapitalAppState extends State<MelCapitalApp> {
   @override
   void initState() {
     super.initState();
-    _lifecycle = AppLifecycleListener(onExitRequested: _beforeExit);
+    _lifecycle = AppLifecycleListener(
+      onExitRequested: _beforeExit,
+      onHide: () => state.setVisible(false),
+      onShow: () => state.setVisible(true),
+    );
   }
 
-  /// Pencere kapanırken (Kapat düğmesi, Alt+F4 ya da kurulum programı) bekleyen kayıtlar bitirilir.
+  /// Pencere kapanırken (Kapat düğmesi, Alt+F4 ya da kurulum programı) bekleyen kayıtlar bitirilir;
+  /// telefona gitmemiş değişiklik varsa son bir kez eşitlenir.
   Future<AppExitResponse> _beforeExit() async {
+    await state.syncBeforeExit();
     try {
       await state.flush().timeout(const Duration(seconds: 5));
     } catch (_) {
@@ -151,6 +158,12 @@ class _MelCapitalAppState extends State<MelCapitalApp> {
           locale: locale,
           supportedLocales: const [Locale('tr'), Locale('en')],
           localizationsDelegates: GlobalMaterialLocalizations.delegates,
+          // Dokunuşlar eşitlemenin yoklama sıklığını belirler (uzun süre dokunulmazsa seyrekleşir).
+          builder: (context, child) => Listener(
+            behavior: HitTestBehavior.translucent,
+            onPointerDown: (_) => state.touch(),
+            child: child,
+          ),
           home: const Shell(),
         ),
       ),
