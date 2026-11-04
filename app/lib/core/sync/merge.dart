@@ -13,6 +13,9 @@ import '../model.dart';
 import '../normalize.dart';
 import '../util.dart';
 
+/// Anahtar türü belirsiz JSON nesnesi.
+typedef AnyMap = Map<dynamic, dynamic>;
+
 /// Eşitlenen listeler ve kayıtlarının anahtarı.
 const Map<String, String> kSyncColls = {
   'debts': 'id',
@@ -150,8 +153,8 @@ Object? _mergeObj(Object? b, Object? l, Object? r, String prefer) {
   return out;
 }
 
-Map<String, Map> _keyedMap(Object? a, String key) {
-  final m = <String, Map>{};
+Map<String, AnyMap> _keyedMap(Object? a, String key) {
+  final m = <String, AnyMap>{};
   if (a is List) {
     for (final x in a) {
       if (x is Map) m[_keyStr(x[key])] = x;
@@ -167,7 +170,7 @@ String _keyStr(Object? v) {
   return '$v';
 }
 
-List<String> _keysOfMaps(List<Map<String, Map>> maps) {
+List<String> _keysOfMaps(List<Map<String, AnyMap>> maps) {
   final out = <String>[];
   final seen = <String>{};
   for (final m in maps) {
@@ -201,7 +204,7 @@ List<Object?> _mergeKeyed(Object? b, Object? l, Object? r, String key, String pr
 String _s(Object? v) => v is String ? v : '';
 
 /// Hesap bakiyesi: iki taraftaki değişim toplanır; bir tarafta elle girildiyse (setAt) o geçerli.
-Object? _mergeBalance(Map? b, Map l, Map r, String prefer) {
+Object? _mergeBalance(AnyMap? b, AnyMap l, AnyMap r, String prefer) {
   if (b == null) return prefer == 'r' ? r['balance'] : l['balance'];
   final sb = _s(b['setAt']), sl = _s(l['setAt']), sr = _s(r['setAt']);
   final lSet = sl != sb, rSet = sr != sb;
@@ -211,7 +214,7 @@ Object? _mergeBalance(Map? b, Map l, Map r, String prefer) {
   return fromK(toK(l['balance']) + toK(r['balance']) - toK(b['balance']));
 }
 
-Map _mergeRec(String coll, Map? b, Map l, Map r) {
+AnyMap _mergeRec(String coll, AnyMap? b, AnyMap l, AnyMap r) {
   final sl = rsig(l), sr = rsig(r);
   // Hesaplarda bakiye her zaman toplanarak birleşir: iki cihazda aynı tutarda iki ayrı harcama, iki
   // kayıt aynı görünse de iki kez düşülmelidir.
@@ -248,7 +251,7 @@ List<Object?> _mergeColl(String coll, Object? ba, Object? la, Object? ra) {
   final out = <Object?>[];
   for (final k in _keysOfMaps([rm, lm])) {
     final b = bm[k], l = lm[k], r = rm[k];
-    Map? v;
+    AnyMap? v;
     if (b == null) {
       v = l != null && r != null ? _mergeRec(coll, null, l, r) : (l ?? r); // yeni kayıt
     } else if (l == null || r == null) {
@@ -262,7 +265,7 @@ List<Object?> _mergeColl(String coll, Object? ba, Object? la, Object? ra) {
 }
 
 /// Üç yönlü birleştirme (doğrulama yapılmaz; bkz. [syncMerge]).
-Map<String, dynamic> merge3(Object? base, Map l, Map r) {
+Map<String, dynamic> merge3(Object? base, AnyMap l, AnyMap r) {
   final b = base is Map ? base : const <String, dynamic>{};
   final out = <String, dynamic>{};
   for (final k in _keysOf([r, l])) {
@@ -290,8 +293,8 @@ Set<String> _ids(Object? d, String coll) {
 
 /// İki cihazda birbirinden habersiz girilmiş aynı işlem (aynı ay için aynı ödeme, aynı maaş girişi)
 /// bir kez sayılır: karşı taraftaki kopya çıkarılır ve hesap bakiyesine etkisi geri alınır.
-Map<String, dynamic> dedupeConcurrent(Object? b, Map l, Map r, Map<String, dynamic> m) {
-  bool Function(Map) isNew(String coll, {required bool local}) {
+Map<String, dynamic> dedupeConcurrent(Object? b, AnyMap l, AnyMap r, Map<String, dynamic> m) {
+  bool Function(AnyMap) isNew(String coll, {required bool local}) {
     final bi = _ids(b, coll), li = _ids(l, coll), ri = _ids(r, coll);
     return (x) {
       final id = _keyStr(x['id']);
@@ -302,7 +305,7 @@ Map<String, dynamic> dedupeConcurrent(Object? b, Map l, Map r, Map<String, dynam
   final data = Data(m);
   if (m['payments'] is List) {
     final lNew = isNew('payments', local: true), rNew = isNew('payments', local: false);
-    String sig(Map p) => [p['kind'], p['refId'], p['month'], _truthy(p['viaRefId']) ? p['viaRefId'] : ''].map((x) => '${x ?? ''}').join('|');
+    String sig(AnyMap p) => [p['kind'], p['refId'], p['month'], _truthy(p['viaRefId']) ? p['viaRefId'] : ''].map((x) => '${x ?? ''}').join('|');
     // JavaScript'teki gibi: listede nesne olmayan öğeler de olduğu gibi kalır.
     final list = m['payments'] as List;
     final mine = {
@@ -359,8 +362,8 @@ Map<String, dynamic> repairRefs(Map<String, dynamic> d) {
 }
 
 /// Tam birleştirme: sonuç doğrulanmış veri; birleştirilemezse [MergeError].
-Data syncMerge(Object? base, Map l, Map r) {
-  final m = repairRefs(dedupeConcurrent(base, l, r, merge3(base, deepCopy(l) as Map, deepCopy(r) as Map)));
+Data syncMerge(Object? base, AnyMap l, AnyMap r) {
+  final m = repairRefs(dedupeConcurrent(base, l, r, merge3(base, deepCopy(l) as AnyMap, deepCopy(r) as AnyMap)));
   final n = normalizeData(m);
   if (!n.ok) throw MergeError(n.errors);
   return n.data!;

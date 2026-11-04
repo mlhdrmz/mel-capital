@@ -34,6 +34,9 @@ TARGETS = [
     ('ipucu_ozet_tr', 'sekme=ozet&ipucu=1&dil=tr'),
     ('panel_harcama_tr', 'sekme=harcamalar&dil=tr&panel=harcama'),
     ('panel_borc_tr', 'sekme=borclar&dil=tr&panel=borc'),
+    ('ayarlar_telefon_eski_tr', 'sekme=ayarlar&dil=tr&telefon=eski'),
+    ('ayarlar_telefon_bagli_tr', 'sekme=ayarlar&dil=tr&telefon=bagli'),
+    ('telefon_kodu_tr', 'sekme=ayarlar&dil=tr&telefon=bagli&panel=kod'),
     ('ozet_en', 'sekme=ozet&dil=en'),
     ('tanitim1_en', 'ekran=tanitim&dil=en'),
     ('plan_en', 'sekme=plan&dil=en'),
@@ -53,6 +56,9 @@ TARGETS += [
     ('telefon_tanitim1_tr', 'ekran=tanitim&dil=tr', PHONE),
     ('telefon_baslangic_tr', 'ekran=baslangic&dil=tr', PHONE),
     ('telefon_kurulum_hesaplar_tr', 'ekran=kurulum&adim=hesaplar&dil=tr', PHONE),
+    ('telefon_baslangic_esle_tr', 'ekran=baslangic&dil=tr&cihaz=telefon', PHONE),
+    ('telefon_esle_panel_tr', 'sekme=ayarlar&dil=tr&cihaz=telefon&panel=esle', PHONE),
+    ('telefon_ayarlar_bagli_tr', 'sekme=ayarlar&dil=tr&cihaz=telefon&telefon=bagli', PHONE),
 ]
 
 

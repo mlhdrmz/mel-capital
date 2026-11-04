@@ -11,7 +11,7 @@ String _key(Object? v) {
   return '${v ?? 'null'}';
 }
 
-SyncIndex indexData(Map d) {
+SyncIndex indexData(AnyMap d) {
   final idx = <String, Map<String, String>>{};
   kSyncColls.forEach((coll, key) {
     final m = <String, String>{};
@@ -28,7 +28,7 @@ SyncIndex indexData(Map d) {
 
 /// [prev]'e göre yeni ya da değişmiş kayıtlara [now] zamanını yazar; yeni özeti döner.
 /// [prev] yoksa (ilk kayıt) yalnızca özet çıkarılır.
-SyncIndex stampChanges(Map d, SyncIndex? prev, String now) {
+SyncIndex stampChanges(AnyMap d, SyncIndex? prev, String now) {
   if (prev == null) return indexData(d);
   kSyncColls.forEach((coll, key) {
     final before = prev[coll] ?? const <String, String>{};

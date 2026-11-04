@@ -163,6 +163,8 @@ class Shell extends StatelessWidget {
         if (!context.mounted) return;
         if (panel == 'harcama') openSpendSheet(context, prefill: {'name': 'Kahve', 'amount': 85, 'category': 'kafe'});
         if (panel == 'borc') openDebtSheet(context, debt: st.data.debts.isEmpty ? null : st.data.debts.last);
+        if (panel == 'kod') showPairCodeSheet(context);
+        if (panel == 'esle') openPhonePairing(context);
       });
     }
     return Focus(autofocus: true, onKeyEvent: (node, event) => _shortcut(context, st, event), child: SyncToasts(child: scaffold));

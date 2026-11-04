@@ -50,7 +50,7 @@ void main() {
 
   group('normalize eski uygulamayla aynı', () {
     final cases = (fixture('normalize.json') as Map)['cases'] as List;
-    for (final c in cases.cast<Map>()) {
+    for (final c in cases.cast<Map<dynamic, dynamic>>()) {
       test('${c['name']}', () {
         final n = normalizeData(deepCopy(c['input']));
         expect(n.ok, isTrue, reason: n.errors.join('\n'));
@@ -67,7 +67,7 @@ void main() {
 
   group('birleştirme eski uygulamayla aynı', () {
     final f = fixture('birlestirme.json.gz') as Map;
-    for (final c in (f['cases'] as List).cast<Map>()) {
+    for (final c in (f['cases'] as List).cast<Map<dynamic, dynamic>>()) {
       test('${c['name']}', () {
         final base = c['base'] == 'N' ? deepCopy(f['base']) : deepCopy(c['base']);
         final l = deepCopy(c['local']) as Map;

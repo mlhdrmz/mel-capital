@@ -99,7 +99,7 @@ Json newSyncDevice({required bool phone}) {
 /// Eski eşleştirmenin son ortak hâli ile bu profilin verisi aynı kaynaktan mı geliyor: ortak
 /// hâldeki kayıtların en az %80'i bu profilde de varsa evet. Değilse eşleştirme sürdürülürken
 /// son ortak hâl kullanılmaz (yoksa profilde olmayan kayıtlar "silinmiş" sayılırdı).
-bool syncSameOrigin(Object? base, Map local) {
+bool syncSameOrigin(Object? base, AnyMap local) {
   if (base is! Map) return false;
   var total = 0;
   var found = 0;

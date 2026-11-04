@@ -9,12 +9,14 @@ import 'core/model.dart';
 import 'core/normalize.dart';
 import 'core/sample.dart';
 import 'core/update.dart';
+import 'core/util.dart';
 import 'src/shell.dart';
 import 'src/state.dart';
 import 'src/theme.dart';
 import 'storage/store.dart';
 import 'storage/store_memory.dart';
 import 'storage/sync_factory.dart';
+import 'storage/sync_memory.dart';
 import 'storage/updater.dart';
 
 Future<void> main() async {
@@ -36,12 +38,21 @@ Future<void> main() async {
 /// `?panel=harcama` harcama panelini açar. `?ekran=tanitim&slayt=2` ilk açılış tanıtımını,
 /// `?ekran=baslangic` başlangıç ekranını, `?ekran=kurulum&adim=kartlar` kurulum sihirbazını,
 /// `?ipucu=1` sayfa ipucunu, `?guncelleme=var` Ayarlar'da yeni sürüm haberini gösterir.
+/// Telefon eşitlemesi (bellekteki sunucuyla): `?cihaz=telefon` uygulamayı telefon gibi açar;
+/// `?telefon=eski` eski uygulamanın eşleştirmesini bulmuş, `?telefon=bagli` eşleşmiş hâli,
+/// `?panel=kod` eşleştirme kodunu gösterir.
 Future<AppState> previewState(Map<String, String> query) async {
   final lang = query['dil'];
   final screen = query['ekran'];
+  final device = query['cihaz'] == 'telefon';
+  final link = query['telefon'];
+  final syncApi = device || link != null ? MemorySyncApi(MemorySyncServer()) : null;
+  final store = MemoryStore(index: ProfileIndex(intro: screen != 'tanitim'));
   final state = AppState(
-    store: MemoryStore(index: ProfileIndex(intro: screen != 'tanitim')),
+    store: store,
     initialLocale: lang == null ? null : Locale(lang == 'en' ? 'en' : 'tr'),
+    syncApi: syncApi,
+    phone: device,
   );
   state.showTips = query['ipucu'] != null;
   if (screen == 'tanitim' || screen == 'baslangic' || screen == 'hosgeldin') {
@@ -59,7 +70,22 @@ Future<AppState> previewState(Map<String, String> query) async {
     state.setSetupStep(step);
     return state;
   }
-  await state.createProfile(name, data: sample);
+  if (syncApi != null && link != null) {
+    // Önizleme için uydurma anahtar: bellekteki sunucuya bilgisayarın ilk kopyası yazılır.
+    final legacy = await previewSeedSync(syncApi, sample);
+    if (device && link == 'bagli') {
+      await state.pairFromLink(legacy['key'] as String, legacy['bilet'] as String, name: name);
+    } else {
+      store.legacySync = legacy;
+      if (link == 'bagli') {
+        await state.createLegacyProfile(name, sample);
+      } else {
+        await state.createProfile(name, data: sample);
+      }
+    }
+  } else {
+    await state.createProfile(name, data: sample);
+  }
   for (final tab in AppTab.values) {
     if (tab.name == query['sekme']) state.setTab(tab);
   }
@@ -80,6 +106,35 @@ Future<AppState> previewState(Map<String, String> query) async {
     state.updateChecked = true;
   }
   return state;
+}
+
+/// Önizleme: eski bilgisayar uygulamasının yaptığı gibi bellekteki sunucuya ilk kopyayı yazar ve o
+/// bilgisayarın eşitleme durumunu döner (anahtar uydurmadır).
+Future<Json> previewSeedSync(MemorySyncApi api, Json data) async {
+  final key = 'onizleme${'K' * 35}';
+  final bilet = 'onizleme${'B' * 78}';
+  final keys = await api.derive(key);
+  final dev = {'id': 'pc-onizleme', 'ad': 'Bilgisayar'};
+  final hist = [
+    {'s': 1, 'd': 'pc-onizleme'},
+  ];
+  final at = nowISO();
+  final put = await api.request('PUT', keys, bilet,
+      create: true, body: await api.seal(keys, {'v': 1, 'seq': 1, 'at': at, 'by': dev, 'hist': hist, 'data': data}));
+  final etag = put.json is Map ? (put.json as Map)['etag'] : null;
+  return {
+    'v': 1,
+    'key': key,
+    'bilet': bilet,
+    'dev': dev,
+    'etag': etag,
+    'seq': 1,
+    'base': deepCopy(data),
+    'hist': hist,
+    'paired': at,
+    'at': at,
+    'peer': {'ad': 'Telefon', 'at': at},
+  };
 }
 
 /// Kurulum ekranlarının önizlemesi: o adıma kadar eklenmiş gibi örnek veri.
