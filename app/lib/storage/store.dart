@@ -44,8 +44,14 @@ class ProfileIndex {
     this.legacySyncUsed = false,
     List<String>? tips,
     List<ProfileInfo>? profiles,
+    List<String>? photoHide,
+    List<String>? photoFav,
+    this.photoNight = true,
+    this.photoLegacy = false,
   })  : tips = tips ?? [],
-        profiles = profiles ?? [];
+        profiles = profiles ?? [],
+        photoHide = photoHide ?? [],
+        photoFav = photoFav ?? [];
 
   factory ProfileIndex.fromJson(Json j) => ProfileIndex(
         last: j['last'] as String?,
@@ -63,7 +69,16 @@ class ProfileIndex {
           for (final p in (j['profiles'] is List ? j['profiles'] as List : const []))
             if (p is Map) ProfileInfo.fromJson(p.cast<String, dynamic>()),
         ],
+        photoHide: _ids(j['photoHide']),
+        photoFav: _ids(j['photoFav']),
+        photoNight: j['photoNight'] != false,
+        photoLegacy: j['photoLegacy'] == true,
       );
+
+  static List<String> _ids(Object? v) => [
+        for (final x in (v is List ? v : const []))
+          if (x is String && x.length < 40) x,
+      ].take(200).toList();
 
   String? last;
 
@@ -86,6 +101,15 @@ class ProfileIndex {
   final List<String> tips;
   final List<ProfileInfo> profiles;
 
+  /// Arka plan fotoğrafları: bir daha gösterilmeyecekler, daha sık gelecekler (Unsplash kimlikleri)
+  /// ve akşam teması (19.00–07.00 arası gece fotoğrafları öne çıkar).
+  final List<String> photoHide;
+  final List<String> photoFav;
+  bool photoNight;
+
+  /// Eski Mel Capital'in fotoğraf tercihleri aktarıldı mı (bir kez aktarılır).
+  bool photoLegacy;
+
   ProfileInfo? byId(String? id) {
     for (final p in profiles) {
       if (p.id == id) return p;
@@ -103,6 +127,10 @@ class ProfileIndex {
         'legacySyncUsed': legacySyncUsed,
         'tips': [...tips],
         'profiles': [for (final p in profiles) p.toJson()],
+        'photoHide': [...photoHide],
+        'photoFav': [...photoFav],
+        'photoNight': photoNight,
+        'photoLegacy': photoLegacy,
       };
 }
 

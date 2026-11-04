@@ -3,6 +3,7 @@ import 'dart:ui' show ImageFilter;
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
+import 'background.dart';
 import 'glass.dart';
 import 'i18n.dart';
 import 'native_window.dart';
@@ -110,7 +111,7 @@ class Shell extends StatelessWidget {
       body: Stack(
         fit: StackFit.expand,
         children: [
-          Background(cover: cover),
+          Background(page: tabs ? st.tab.index : 0, cover: cover, rotate: tabs),
           SafeArea(
             child: Column(
               children: [
@@ -118,6 +119,17 @@ class Shell extends StatelessWidget {
                 if (st.saveError != null) _SaveError(message: st.saveError!),
                 Expanded(child: body),
               ],
+            ),
+          ),
+          // Fotoğrafçının adı, favori ve "Gösterme": sağ altta; telefonda alt menünün üstünde, sağdaki
+          // "+" düğmesiyle çakışmasın diye solda.
+          Positioned(
+            left: phone ? 8 : null,
+            right: phone ? null : 10,
+            bottom: phone && tabs ? 76 : 6,
+            child: SafeArea(
+              top: false,
+              child: ConstrainedBox(constraints: BoxConstraints(maxWidth: phone ? 300 : 360), child: const PhotoBar()),
             ),
           ),
           // Özet'te büyük rakam sağ altta olduğu için ipucu sağ üstte durur; telefonda alt menünün üstünde.
@@ -258,33 +270,6 @@ class _SaveError extends StatelessWidget {
             ),
           ],
         ),
-      ),
-    );
-  }
-}
-
-/// Arka plan fotoğrafı; sekme değişince yumuşakça geçer.
-class Background extends StatelessWidget {
-  const Background({super.key, required this.cover});
-
-  final String cover;
-
-  @override
-  Widget build(BuildContext context) {
-    final name = cover;
-    return AnimatedSwitcher(
-      duration: const Duration(milliseconds: 900),
-      layoutBuilder: (current, previous) => Stack(
-        fit: StackFit.expand,
-        children: [...previous, if (current != null) current],
-      ),
-      child: Image.asset(
-        'assets/images/cover_$name.webp',
-        key: ValueKey<String>(name),
-        fit: BoxFit.cover,
-        alignment: const Alignment(0, -0.16),
-        filterQuality: FilterQuality.medium,
-        gaplessPlayback: true,
       ),
     );
   }

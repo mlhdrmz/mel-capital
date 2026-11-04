@@ -61,6 +61,15 @@ TARGETS += [
     ('telefon_ayarlar_bagli_tr', 'sekme=ayarlar&dil=tr&cihaz=telefon&telefon=bagli', PHONE),
 ]
 
+# Arka planda gerçek Unsplash fotoğrafları (?foto=1): fotoğraf internetten geldiği için daha uzun beklenir
+DESKTOP = (1600, 900)
+TARGETS += [
+    ('foto_ozet_tr', 'sekme=ozet&dil=tr&foto=1', DESKTOP, 12000),
+    ('foto_harcamalar_tr', 'sekme=harcamalar&dil=tr&foto=1', DESKTOP, 12000),
+    ('foto_ayarlar_tr', 'sekme=ayarlar&dil=tr&foto=1', DESKTOP, 12000),
+    ('telefon_foto_ozet_tr', 'sekme=ozet&dil=tr&foto=1&cihaz=telefon', PHONE, 12000),
+]
+
 
 def main() -> None:
     web, out = sys.argv[1], sys.argv[2]
@@ -75,6 +84,7 @@ def main() -> None:
         for target in TARGETS:
             name, query = target[0], target[1]
             width, height = target[2] if len(target) > 2 else (1600, 900)
+            wait = target[3] if len(target) > 3 else 5000
             page = browser.new_page(viewport={'width': width, 'height': height})
             logs = []
             page.on('console', lambda m, logs=logs: logs.append(f'{m.type}: {m.text}'))
@@ -84,7 +94,7 @@ def main() -> None:
                 page.wait_for_selector('flutter-view, flt-glass-pane', timeout=60000)
             except Exception as error:  # noqa: BLE001
                 logs.append(f'bekleme: {error}')
-            page.wait_for_timeout(5000)
+            page.wait_for_timeout(wait)
             name = f'{name}.png'
             page.screenshot(path=os.path.join(out, name))
             problems = [line for line in logs if line.startswith(('error', 'pageerror', 'bekleme'))]

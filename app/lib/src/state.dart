@@ -7,12 +7,14 @@ import 'package:flutter/widgets.dart';
 import '../core/calc.dart';
 import '../core/model.dart';
 import '../core/normalize.dart';
+import '../core/photos.dart';
 import '../core/sync/api.dart';
 import '../core/sync/engine.dart';
 import '../core/sync/stamp.dart';
 import '../core/update.dart';
 import '../core/util.dart';
 import '../core/version.dart';
+import '../storage/photos.dart';
 import '../storage/store.dart';
 import '../storage/updater.dart';
 
@@ -32,6 +34,7 @@ class AppState extends ChangeNotifier {
     Locale? initialLocale,
     this.updater,
     this.syncApi,
+    this.photoStore,
     bool? phone,
     this.buildNumber = kBuildNumber,
   })  : phone = phone ?? (!kIsWeb && defaultTargetPlatform == TargetPlatform.android),
@@ -91,6 +94,7 @@ class AppState extends ChangeNotifier {
     } catch (_) {
       index = ProfileIndex();
     }
+    if (!_indexReady.isCompleted) _indexReady.complete();
     final savedLang = index.lang;
     if (savedLang != null) locale.value = Locale(savedLang);
     final last = index.byId(index.last) ?? (index.profiles.isEmpty ? null : index.profiles.first);
@@ -144,6 +148,7 @@ class AppState extends ChangeNotifier {
   /// Yeni profil oluşturur (veri verilmezse boş başlar) ve açar.
   /// [setup] verilirse profil kurulum sihirbazıyla açılır.
   Future<void> createProfile(String name, {Json? data, bool setup = false, Json? syncState}) async {
+    if (!_indexReady.isCompleted) _indexReady.complete();
     final clean = name.trim().isEmpty ? (lang == 'tr' ? 'Profilim' : 'My profile') : name.trim();
     final id = newProfileId(clean, index.profiles.map((p) => p.id));
     final info = ProfileInfo(id: id, name: clean, createdAt: nowISO());
@@ -659,6 +664,119 @@ class AppState extends ChangeNotifier {
     return _enqueueChecked(() => store.saveSyncState(id, copy));
   }
 
+  // ---------------------------------------------------------------- Arka plan fotoğrafları
+
+  /// Fotoğrafların yeri (testlerde ve web önizlemesinde çoğunlukla yok: gömülü kapaklar görünür).
+  final PhotoStore? photoStore;
+
+  /// Yeni fotoğraf inince artar (arka plan ve Ayarlar'daki sayı yenilensin; bütün sayfa yeniden çizilmez).
+  final ValueNotifier<int> photoTick = ValueNotifier<int>(0);
+
+  /// Arka planda şu an görünen fotoğraf (gömülü kapaksa null): sağ alttaki fotoğrafçı yazısı ve düğmeler.
+  final ValueNotifier<Photo?> shownPhoto = ValueNotifier<Photo?>(null);
+
+  /// Profil dizini okundu mu (fotoğraf tercihleri dizinde; okunmadan yazılmasın).
+  final Completer<void> _indexReady = Completer<void>();
+  bool _photosStarted = false;
+
+  /// Fotoğrafları başlatır (ekranın boyutu bilinince, bir kez): kayıtlı fotoğraflar bulunur, eksikler arka
+  /// planda iner; eski Mel Capital'in gizlenen/favori fotoğrafları bir kez aktarılır.
+  Future<void> startPhotos(PhotoSize size) async {
+    final ps = photoStore;
+    if (ps == null || _photosStarted) return;
+    _photosStarted = true;
+    ps.onChange = () => photoTick.value++;
+    try {
+      await ps.start(size);
+    } catch (_) {
+      // fotoğraflar bulunamadıysa gömülü kapaklar kalır
+    }
+    await _indexReady.future;
+    if (index.photoLegacy) return;
+    Json? old;
+    try {
+      old = await ps.readLegacyPrefs();
+    } catch (_) {
+      old = null;
+    }
+    index.photoLegacy = true;
+    if (old != null) {
+      List<String> ids(Object? v) => [
+            for (final x in (v is List ? v : const []))
+              if (x is String && kPhotoIdRe.hasMatch(x)) x,
+          ];
+      for (final id in ids(old['photoHide'])) {
+        if (!index.photoHide.contains(id)) index.photoHide.add(id);
+      }
+      for (final id in ids(old['photoFav'])) {
+        if (!index.photoFav.contains(id) && !index.photoHide.contains(id)) index.photoFav.add(id);
+      }
+      if (old['photoNight'] == false) index.photoNight = false;
+    }
+    await _saveIndex();
+    photoTick.value++;
+    notifyListeners();
+  }
+
+  /// İndirilmiş (bu cihazda kullanılabilen) fotoğraf sayısı.
+  int get photosAvailable => photoStore?.available.length ?? 0;
+  PhotoSrc? photoSrc(String id) => photoStore?.available[id];
+
+  /// Sekmenin arka planı ([page]: sekmenin sırası; sekme dışı ekranlarda 0).
+  BgPick bgPickFor(int page, DateTime now) {
+    final av = photoStore?.available ?? const <String, PhotoSrc>{};
+    final pool = photoPool(
+      avail: av.keys.toSet(),
+      lum: {for (final e in av.entries) e.key: e.value.lum},
+      hide: index.photoHide.toSet(),
+      fav: index.photoFav.toSet(),
+      night: index.photoNight,
+      now: now,
+    );
+    return bgPick(pool, page, now);
+  }
+
+  bool isPhotoFav(String id) => index.photoFav.contains(id);
+
+  void _photoPrefsChanged() {
+    unawaited(_saveIndex());
+    photoTick.value++;
+    notifyListeners();
+  }
+
+  /// Favori: daha sık gelir. Sonuç: favori oldu mu.
+  bool togglePhotoFav(String id) {
+    final on = index.photoFav.remove(id);
+    if (!on) index.photoFav.add(id);
+    _photoPrefsChanged();
+    return !on;
+  }
+
+  /// Bu fotoğraf bir daha gösterilmez.
+  void hidePhoto(String id) {
+    index.photoHide
+      ..remove(id)
+      ..add(id);
+    index.photoFav.remove(id);
+    _photoPrefsChanged();
+  }
+
+  void unhidePhoto(String id) {
+    if (index.photoHide.remove(id)) _photoPrefsChanged();
+  }
+
+  void unhideAllPhotos() {
+    if (index.photoHide.isEmpty) return;
+    index.photoHide.clear();
+    _photoPrefsChanged();
+  }
+
+  void setPhotoNight(bool value) {
+    if (index.photoNight == value) return;
+    index.photoNight = value;
+    _photoPrefsChanged();
+  }
+
   void setSetting(String key, Object? value) {
     settings[key] = value;
     final id = profile?.id;
@@ -671,6 +789,9 @@ class AppState extends ChangeNotifier {
 
   @override
   void dispose() {
+    photoStore?.dispose();
+    photoTick.dispose();
+    shownPhoto.dispose();
     _engine?.stop();
     unawaited(_syncEvents.close());
     locale.dispose();

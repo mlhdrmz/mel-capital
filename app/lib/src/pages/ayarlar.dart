@@ -5,6 +5,7 @@ import 'package:url_launcher/url_launcher.dart';
 import '../../core/constants.dart';
 import '../../core/model.dart';
 import '../../core/normalize.dart';
+import '../../core/photos.dart';
 import '../../core/sample.dart';
 import '../../core/util.dart';
 import '../../core/version.dart';
@@ -16,6 +17,7 @@ import '../state.dart';
 import '../sync_ui.dart';
 import '../theme.dart';
 import '../ui.dart';
+import 'alisveris.dart' show openLink;
 
 /// Ayarlar: profiller, dil ve görünüm, yedekler, veri.
 class AyarlarPage extends StatelessWidget {
@@ -41,8 +43,8 @@ class AyarlarPage extends StatelessWidget {
           ]),
           // Yeni sürüm varsa "Mel Capital" bölümü en üstte durur.
           right: st.newVersion != null
-              ? const Column(children: [_AboutPanel(), SizedBox(height: 14), _ViewPanel(), SizedBox(height: 14), _DataPanel()])
-              : const Column(children: [_ViewPanel(), SizedBox(height: 14), _DataPanel(), SizedBox(height: 14), _AboutPanel()]),
+              ? const Column(children: [_AboutPanel(), SizedBox(height: 14), _ViewPanel(), SizedBox(height: 14), _PhotosPanel(), SizedBox(height: 14), _DataPanel()])
+              : const Column(children: [_ViewPanel(), SizedBox(height: 14), _PhotosPanel(), SizedBox(height: 14), _DataPanel(), SizedBox(height: 14), _AboutPanel()]),
         ),
       ],
     );
@@ -266,6 +268,79 @@ class _ViewPanel extends StatelessWidget {
           ),
         ],
       ),
+    );
+  }
+}
+
+// ---------------------------------------------------------------- Fotoğraflar
+
+/// Arka plan fotoğrafları (eski uygulamadaki gibi): kaç tanesi indi, akşam teması, gizlenenler ve
+/// favoriler, fotoğrafçılara teşekkür.
+class _PhotosPanel extends StatelessWidget {
+  const _PhotosPanel();
+
+  @override
+  Widget build(BuildContext context) {
+    final st = AppScope.of(context);
+    final s = S.of(context);
+    return ValueListenableBuilder<int>(
+      valueListenable: st.photoTick,
+      builder: (context, _, __) {
+        final n = st.photosAvailable;
+        final hidden = st.index.photoHide.length;
+        final favs = st.index.photoFav.length;
+        final where = st.phone ? s.pick('Alttaki', 'At the bottom, the') : s.pick('Sağ alttaki', 'At the bottom right, the');
+        return GlassPanel(
+          delay: const Duration(milliseconds: 130),
+          radius: 30,
+          cut: 30,
+          child: Column(
+            key: const ValueKey<String>('photos-panel'),
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              PanelHead(
+                s.pick('Fotoğraflar', 'Photos'),
+                subtitle: s.pick('$n / ${kPhotos.length} indirildi', '$n / ${kPhotos.length} downloaded'),
+                trailing: SmallButton(label: 'Unsplash', icon: Icons.open_in_new, onTap: () => openLink(context, kUnsplashRef)),
+              ),
+              SettingRow(
+                title: s.pick('Akşam teması', 'Evening theme'),
+                help: s.pick('19.00 – 07.00 arası gece şehir ve lobi fotoğrafları, gündüz havuz, deniz ve doğa fotoğrafları öne çıkar.',
+                    '7 pm – 7 am night city and lobby photos come first; during the day pools, sea and nature.'),
+                trailing: GoldSwitch(key: const ValueKey<String>('photo-night'), value: st.index.photoNight, onChanged: st.setPhotoNight),
+              ),
+              const Hairline(),
+              SettingRow(
+                title: s.pick('Gizlenen ve favoriler', 'Hidden and favourites'),
+                help: s.pick('$where fotoğraf yazısının yanındaki "Gösterme" ve kalp düğmeleriyle seçilir. $hidden gizli · $favs favori.',
+                    '$where photo credit has "Hide" and heart buttons. $hidden hidden · $favs favourites.'),
+                trailing: hidden == 0
+                    ? null
+                    : SmallButton(
+                        key: const ValueKey<String>('photo-unhide'),
+                        label: s.pick('Gizlenenleri geri getir', 'Bring hidden back'),
+                        icon: Icons.visibility_outlined,
+                        onTap: () {
+                          st.unhideAllPhotos();
+                          toast(context, s.pick('Gizlenen fotoğraflar geri geldi.', 'Hidden photos are back.'));
+                        },
+                      ),
+              ),
+              const SizedBox(height: 6),
+              Text(
+                (n >= kPhotoPages
+                        ? s.pick('Fotoğraflar ekranının çözünürlüğünde indirilir; internet olmadan da görünür.', 'Photos are downloaded at your screen resolution and show without internet too.')
+                        : s.pick('Şimdilik uygulamaya gömülü fotoğraflar kullanılıyor. İnternet bağlıyken fotoğraflar bir kez indirilir; sonra internetsiz görünür.',
+                            'Built-in photos are used for now. With internet the photos are downloaded once; after that they show offline.')) +
+                    s.pick(' Fotoğraflar Unsplash\'ten: ', ' Photos from Unsplash: ') +
+                    photoCredits().join(', ') +
+                    '.',
+                style: sans(12, color: MC.muted, height: 1.45),
+              ),
+            ],
+          ),
+        );
+      },
     );
   }
 }

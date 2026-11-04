@@ -13,6 +13,7 @@ import 'core/util.dart';
 import 'src/shell.dart';
 import 'src/state.dart';
 import 'src/theme.dart';
+import 'storage/photos_factory.dart';
 import 'storage/store.dart';
 import 'storage/store_memory.dart';
 import 'storage/sync_factory.dart';
@@ -25,7 +26,7 @@ Future<void> main() async {
     runApp(MelCapitalApp(state: await previewState(Uri.base.queryParameters)));
     return;
   }
-  final state = AppState(store: createStore(), updater: createUpdater(), syncApi: createSyncApi());
+  final state = AppState(store: createStore(), updater: createUpdater(), syncApi: createSyncApi(), photoStore: createPhotoStore());
   runApp(MelCapitalApp(state: state));
   await state.init();
   // Açılıştan birkaç saniye sonra yeni sürüme bakılır (yalnızca sürüm bilgisi istenir).
@@ -40,7 +41,8 @@ Future<void> main() async {
 /// `?ipucu=1` sayfa ipucunu, `?guncelleme=var` Ayarlar'da yeni sürüm haberini gösterir.
 /// Telefon eşitlemesi (bellekteki sunucuyla): `?cihaz=telefon` uygulamayı telefon gibi açar;
 /// `?telefon=eski` eski uygulamanın eşleştirmesini bulmuş, `?telefon=bagli` eşleşmiş hâli,
-/// `?panel=kod` eşleştirme kodunu gösterir.
+/// `?panel=kod` eşleştirme kodunu gösterir. `?foto=1` arka planda Unsplash fotoğraflarını gösterir
+/// (yoksa gömülü kapaklar).
 Future<AppState> previewState(Map<String, String> query) async {
   final lang = query['dil'];
   final screen = query['ekran'];
@@ -52,6 +54,7 @@ Future<AppState> previewState(Map<String, String> query) async {
     store: store,
     initialLocale: lang == null ? null : Locale(lang == 'en' ? 'en' : 'tr'),
     syncApi: syncApi,
+    photoStore: query['foto'] == '1' ? createPhotoStore(network: true) : null,
     phone: device,
   );
   state.showTips = query['ipucu'] != null;
