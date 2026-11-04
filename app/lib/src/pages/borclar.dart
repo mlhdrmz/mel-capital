@@ -215,7 +215,7 @@ class CardRow extends StatelessWidget {
               clipper: const ShapeBorderClipper(shape: swatchShape),
               child: CustomPaint(
                 painter: CardPatternPainter(look.pattern, look.text, look.accent),
-                child: Center(child: BankPlate(bankKey: bank, name: debt.creditor, size: 20)),
+                child: Center(child: BankPlate(bankKey: bank, name: debt.creditor, size: 18, shadow: false)),
               ),
             ),
           ),
@@ -389,7 +389,9 @@ class FindeksPanel extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          PanelHead(s.pick('Findeks notu', 'Credit score (Findeks)'), subtitle: when.isEmpty ? s.pick('Kayıt yok', 'No record') : when),
+          PanelHead(s.pick('Findeks notu', 'Credit score (Findeks)'),
+              subtitle: when.isEmpty ? s.pick('Kayıt yok', 'No record') : when,
+              trailing: LogoPlate(asset: 'assets/logos/findeks.webp', aspect: kBankLogoAspect['findeks']!, label: 'Findeks')),
           if (score == null)
             Text(s.pick('Findeks raporundaki puanı ekle.', 'Add the score from your Findeks report.'), style: sans(13, color: MC.muted))
           else ...[

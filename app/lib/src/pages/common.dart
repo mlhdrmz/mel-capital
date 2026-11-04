@@ -107,6 +107,18 @@ class SourceChip extends StatelessWidget {
 
 // ---------------------------------------------------------------- Hareketler
 
+/// Harcama satırının başı (eski uygulamadaki gibi): adı ya da yeri bilinen bir markaysa logosu,
+/// değilse kategori simgesi. Logo kategori simgesinden biraz küçüktür; yazılar aynı hizada kalır.
+Widget spendLead(String name, String place, String? category, {double size = 38}) {
+  final b = spendBrand(name, place);
+  if (b == null) return CategoryMark(category, size: size);
+  return SizedBox.square(dimension: size, child: Center(child: BrandMark(name, look: b, size: size * 0.8)));
+}
+
+/// Abonelik ya da fatura satırının başı: logosu; markası bilinmiyorsa türüne göre simge ya da baş harfler.
+Widget subLead(String name, {double size = 38}) =>
+    SizedBox.square(dimension: size, child: Center(child: BrandMark(name, size: size * 0.8)));
+
 /// Harcama, aktarma ya da ödeme satırı.
 class MovementRow extends StatelessWidget {
   const MovementRow({super.key, required this.mv, this.showDate = false, this.hideSource});
@@ -124,7 +136,7 @@ class MovementRow extends StatelessWidget {
     Widget leading;
     switch (mv.t) {
       case 'spend':
-        leading = CategoryMark(mv.cat, size: 38);
+        leading = spendLead(mv.name, mv.place, mv.cat);
         final nm = normTxt(mv.name);
         if (mv.place.isNotEmpty && normTxt(mv.place) != nm) bits.add(mv.place);
         final cl = catLabel(mv.cat, s.lang);
@@ -447,7 +459,7 @@ class CardTile extends StatelessWidget {
                 children: [
                   Row(
                     children: [
-                      BankPlate(bankKey: bankKey, name: name, size: 24),
+                      BankPlate(bankKey: bankKey, name: name, size: 22),
                       const SizedBox(width: 9),
                       Expanded(
                         child: Text(name.isEmpty ? kind : name,
@@ -663,7 +675,7 @@ class LoanRow extends StatelessWidget {
     final p = info.gross > 0 ? ((info.gross - info.current) / info.gross).clamp(0.0, 1.0).toDouble() : 1.0;
     final type = (kDebtTypes[debt.type] ?? const Lbl('Borç', 'Debt')).of(s.lang);
     return RowItem(
-      leading: BankPlate(bankKey: bankKeyOf(debt), name: debt.creditor, size: 38),
+      leading: BankPlate(bankKey: bankKeyOf(debt), name: debt.creditor, size: 28),
       title: '${debt.creditor.isEmpty ? s.pick('Borç', 'Debt') : debt.creditor} · $type${closed ? ' · ${s.pick('Kapandı', 'Closed')}' : ''}',
       subtitle: [
         bits.isEmpty ? s.pick('Ödeme planı yok', 'No payment plan') : bits.join(' · '),

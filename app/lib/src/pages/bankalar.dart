@@ -166,19 +166,20 @@ class _BankalarPageState extends State<BankalarPage> {
   Widget _bankRow(BuildContext context, Ctx ctx, String key, List<Account> loose) {
     final s = S.of(context);
     final st = AppScope.of(context);
+    final phone = isPhoneLayout(context);
     String name, label;
     int value;
     List<String> names;
     Widget logo;
     if (key == kCashKey) {
-      logo = const BankPlate(icon: Icons.payments_outlined, name: 'Nakit');
+      logo = BankPlate(icon: Icons.payments_outlined, name: 'Nakit', size: phone ? 24 : 34);
       name = s.pick('Nakit ve diğer', 'Cash and other');
       names = [for (final a in loose) a.name.isEmpty ? s.pick('Hesap', 'Account') : a.name];
       label = s.pick('Toplam', 'Total');
       value = sumK(loose, (Account a) => toK(a.balance));
     } else {
       final b = bankStats(ctx, key);
-      logo = BankPlate(bankKey: key, name: bankName(key, s.lang));
+      logo = BankPlate(bankKey: key, name: bankName(key, s.lang), size: phone ? 24 : 34, maxLogoWidth: phone ? 62 : 120);
       name = bankName(key, s.lang);
       names = [
         for (final a in b.accts) a.name.isEmpty ? s.pick('Hesap', 'Account') : a.name,
@@ -245,7 +246,7 @@ class _BankDetail extends StatelessWidget {
       return PageFrame(
         eyebrow: s.pick('BANKALAR', 'BANKS'),
         title: s.pick('Nakit ve diğer', 'Cash and other'),
-        leading: const BankPlate(icon: Icons.payments_outlined, size: 54),
+        leading: BankPlate(icon: Icons.payments_outlined, size: isPhoneLayout(context) ? 28 : 38),
         actions: [
           back,
           GoldButton(label: s.pick('Aktar', 'Transfer'), icon: Icons.swap_horiz, onTap: () => openTransferSheet(context)),
@@ -282,7 +283,7 @@ class _BankDetail extends StatelessWidget {
     return PageFrame(
       eyebrow: s.pick('BANKALAR', 'BANKS'),
       title: bankName(bankKey, s.lang),
-      leading: BankPlate(bankKey: bankKey, size: 54),
+      leading: BankPlate(bankKey: bankKey, size: isPhoneLayout(context) ? 28 : 38),
       actions: [
         back,
         GoldButton(label: s.pick('Aktar', 'Transfer'), icon: Icons.swap_horiz, onTap: () => openTransferSheet(context)),
@@ -385,7 +386,7 @@ class _AccountsPanel extends StatelessWidget {
             if (i > 0) const Hairline(),
             RowItem(
               leading: accounts[i].bank.isNotEmpty && !accounts[i].isCash
-                  ? BankPlate(bankKey: accounts[i].bank, name: accounts[i].name, size: 30)
+                  ? BankPlate(bankKey: accounts[i].bank, name: accounts[i].name, size: 28)
                   : CategoryMark(accounts[i].isCash ? 'nakit' : 'banka', size: 38),
               title: accounts[i].name.isEmpty ? s.pick('Hesap', 'Account') : accounts[i].name,
               subtitle: (kAccountTypes[accounts[i].type] ?? const Lbl('Diğer', 'Other')).of(s.lang) +

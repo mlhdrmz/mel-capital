@@ -367,6 +367,7 @@ class _AlisverisPageState extends State<AlisverisPage> {
                     child: site == null
                         ? Text(s.pick('Geçerli bir link değil (https:// ile başlamalı).', 'Not a valid link (it should start with https://).'), style: sans(12, color: MC.rose))
                         : Row(children: [
+                            if (shopPlate(site.id) case final logo?) ...[logo, const SizedBox(width: 8)],
                             Text(site.name, style: sans(12.5, weight: FontWeight.w600)),
                             const SizedBox(width: 8),
                             SmallButton(label: s.pick('Ürünü aç', 'Open product'), icon: Icons.open_in_new, onTap: () => openLink(context, _url.text)),
@@ -517,7 +518,13 @@ class _ShopTileState extends State<_ShopTile> {
             shadows: [BoxShadow(color: const Color(0x55000000), blurRadius: _hover ? 22 : 14, offset: const Offset(0, 8))],
           ),
           child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-            Expanded(child: Align(alignment: Alignment.centerLeft, child: Text(sh.name, style: serif(25, color: const Color(0xFF1B1712), weight: FontWeight.w700)))),
+            // Eski uygulamadaki gibi sitenin kendi logosu (yoksa adı).
+            Expanded(
+              child: Center(
+                child: shopLogo(sh.id, maxWidth: 140, maxHeight: 40) ??
+                    Text(sh.name, style: serif(25, color: const Color(0xFF1B1712), weight: FontWeight.w700)),
+              ),
+            ),
             Row(children: [
               Expanded(
                 child: Text(Uri.parse(sh.url).host.replaceFirst('www.', ''),
@@ -866,7 +873,7 @@ class _Purchases extends StatelessWidget {
                       fmtDate(p.date, s.lang),
                     ];
                     return RowItem(
-                      leading: BankPlate(bankKey: bankKeyOf(card), name: card?.creditor, size: 34),
+                      leading: BankPlate(bankKey: bankKeyOf(card), name: card?.creditor, size: 28),
                       title: p.name.isEmpty ? s.pick('Alışveriş', 'Purchase') : p.name,
                       subtitle: sub.join(' · '),
                       trailing: Column(crossAxisAlignment: CrossAxisAlignment.end, children: [

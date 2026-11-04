@@ -517,7 +517,7 @@ class _HarcamalarPageState extends State<HarcamalarPage> {
     for (final o in order) {
       if (o is SpendLine) {
         out.add(_SpendRow(
-          lead: CategoryMark(o.category, size: 38),
+          lead: subLead(o.name),
           name: o.name,
           sub: o.category == 'fatura' ? s.pick('Fatura', 'Bill') : s.pick('Abonelik', 'Subscription'),
           k: o.k,
@@ -533,7 +533,7 @@ class _HarcamalarPageState extends State<HarcamalarPage> {
       final subText = sub(x) + (inst > 0 ? s.pick(' · $inst taksit', ' · $inst instalments') : '');
       if (its.length == 1) {
         out.add(_SpendRow(
-          lead: CategoryMark(x.category, size: 38),
+          lead: spendLead(x.name, x.place, x.category),
           name: name,
           sub: subText,
           k: x.k,
@@ -544,7 +544,7 @@ class _HarcamalarPageState extends State<HarcamalarPage> {
       }
       final open = _open.contains(o);
       out.add(_SpendRow(
-        lead: CategoryMark(x.category, size: 38),
+        lead: spendLead(x.name, x.place, x.category),
         name: '$name  ${its.length}×',
         sub: '${its.length} × ${fmtMoney(x.k, lang: s.lang, hidden: st.hidden)}${subText.isEmpty ? '' : ' · $subText'}',
         k: sumK(its, (SpendLine y) => y.k),
@@ -690,7 +690,7 @@ class _HarcamalarPageState extends State<HarcamalarPage> {
                             border: Border.all(color: const Color(0x2EFFFFFF)),
                           ),
                           child: Row(mainAxisSize: MainAxisSize.min, children: [
-                            Monogram(name: e.$1, group: e.$2, size: 22),
+                            BrandMark(e.$1, size: 22, round: true),
                             const SizedBox(width: 7),
                             Text(e.$1, style: sans(12.5)),
                           ]),
@@ -829,7 +829,7 @@ class _SpendRow extends StatelessWidget {
   }
 }
 
-/// Abonelik kutusu: monogram, ad, grup ve gün; altta tutar, ödeme yeri ve dondur düğmesi.
+/// Abonelik kutusu: logo, ad, grup ve gün; altta tutar, ödeme yeri ve dondur düğmesi.
 class SubTile extends StatelessWidget {
   const SubTile({super.key, required this.sub});
 
@@ -882,7 +882,7 @@ class SubTile extends StatelessWidget {
             onTap: () => openSubSheet(context, sub: x),
             borderRadius: BorderRadius.circular(10),
             child: Row(children: [
-              Monogram(name: x.name, group: x.group, size: 40),
+              BrandMark(x.name, size: 40),
               const SizedBox(width: 11),
               Expanded(
                 child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
@@ -930,51 +930,6 @@ class SubTile extends StatelessWidget {
     var next = false;
     st.update((d) => next = toggleSubscription(d, id));
     toast(context, undo: () => st.restore(snap), next ? s.pick('"$name" yeniden hesaba katılıyor.', '"$name" is counted again.') : s.pick('"$name" donduruldu; hesaba katılmaz.', '"$name" is paused; it is not counted.'));
-  }
-}
-
-const Map<String, Color> _groupColors = {
-  'fatura': Color(0xFF7FC3B4),
-  'video': Color(0xFFE07A8B),
-  'muzik': Color(0xFF9FD7A5),
-  'yz': Color(0xFFD9AE68),
-  'guvenlik': Color(0xFF8FB3C9),
-  'is': Color(0xFF9AA4B5),
-  'yemek': Color(0xFFE0A36B),
-  'yayin': Color(0xFFA99BD6),
-  'iletisim': Color(0xFF8FC3E6),
-  'oyun': Color(0xFFB7A2F2),
-  'bulut': Color(0xFF8FC3E6),
-  'spor': Color(0xFFE0A3B8),
-};
-
-/// Ad baş harfli kare (abonelikler; marka logosu kullanılmaz).
-class Monogram extends StatelessWidget {
-  const Monogram({super.key, required this.name, this.group, this.size = 36});
-
-  final String name;
-  final String? group;
-  final double size;
-
-  @override
-  Widget build(BuildContext context) {
-    final c = _groupColors[group] ?? catColor(name);
-    final words = name.trim().split(RegExp(r'\s+')).where((w) => w.isNotEmpty).toList();
-    final text = words.isEmpty
-        ? '?'
-        : words.length == 1
-            ? trUpper(words.first.characters.first)
-            : trUpper(words[0].characters.first + words[1].characters.first);
-    return Container(
-      width: size,
-      height: size,
-      alignment: Alignment.center,
-      decoration: ShapeDecoration(
-        gradient: LinearGradient(begin: Alignment.topLeft, end: Alignment.bottomRight, colors: [c.withValues(alpha: 0.9), Color.lerp(c, Colors.black, 0.45)!]),
-        shape: SignatureBorder(cut: size * 0.26, radius: size * 0.28),
-      ),
-      child: Text(text, style: sans(size * (text.length > 1 ? 0.34 : 0.42), weight: FontWeight.w700, color: Colors.white)),
-    );
   }
 }
 

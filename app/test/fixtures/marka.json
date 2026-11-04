@@ -1,0 +1,1635 @@
+{
+ "note": "Eski Mel Capital (app1.js brandOf/brandHTML) çıktısı; yalnızca uydurma adlar.",
+ "cases": [
+  {
+   "name": "Spotify",
+   "brand": true,
+   "kind": "svg",
+   "key": "spotify",
+   "bg": "#1ED760",
+   "fg": "#ffffff"
+  },
+  {
+   "name": "Spotify Premium",
+   "brand": true,
+   "kind": "svg",
+   "key": "spotify",
+   "bg": "#1ED760",
+   "fg": "#ffffff"
+  },
+  {
+   "name": "YouTube Premium",
+   "brand": true,
+   "kind": "svg",
+   "key": "youtube",
+   "bg": "#FF0000",
+   "fg": "#ffffff"
+  },
+  {
+   "name": "YouTube Music",
+   "brand": true,
+   "kind": "svg",
+   "key": "youtubemusic",
+   "bg": "#FF0000",
+   "fg": "#ffffff"
+  },
+  {
+   "name": "Netflix",
+   "brand": true,
+   "kind": "svg",
+   "key": "netflix",
+   "bg": "#E50914",
+   "fg": "#ffffff"
+  },
+  {
+   "name": "Netflix Standart",
+   "brand": true,
+   "kind": "svg",
+   "key": "netflix",
+   "bg": "#E50914",
+   "fg": "#ffffff"
+  },
+  {
+   "name": "Disney+",
+   "brand": true,
+   "kind": "txt",
+   "bg": "#0f3ac8",
+   "ink": "#fff",
+   "t": "D+"
+  },
+  {
+   "name": "Amazon Prime",
+   "brand": true,
+   "kind": "txt",
+   "bg": "#00a8e1",
+   "ink": "#fff",
+   "t": "prime"
+  },
+  {
+   "name": "Prime Video",
+   "brand": true,
+   "kind": "txt",
+   "bg": "#00a8e1",
+   "ink": "#fff",
+   "t": "prime"
+  },
+  {
+   "name": "Exxen",
+   "brand": true,
+   "kind": "txt",
+   "bg": "#f7c600",
+   "ink": "#1a1400",
+   "t": "EX"
+  },
+  {
+   "name": "TOD",
+   "brand": true,
+   "kind": "txt",
+   "bg": "#6f1fd1",
+   "ink": "#fff",
+   "t": "TOD"
+  },
+  {
+   "name": "BluTV",
+   "brand": true,
+   "kind": "txt",
+   "bg": "#00b2ff",
+   "ink": "#fff",
+   "t": "blu"
+  },
+  {
+   "name": "Gain",
+   "brand": true,
+   "kind": "txt",
+   "bg": "#ff4b2b",
+   "ink": "#fff",
+   "t": "gain"
+  },
+  {
+   "name": "MUBI",
+   "brand": true,
+   "kind": "svg",
+   "key": "mubi",
+   "bg": "#2c2824",
+   "fg": "#f3eee6"
+  },
+  {
+   "name": "Twitch",
+   "brand": true,
+   "kind": "svg",
+   "key": "twitch",
+   "bg": "#9146FF",
+   "fg": "#ffffff"
+  },
+  {
+   "name": "Kick",
+   "brand": true,
+   "kind": "svg",
+   "key": "kick",
+   "bg": "#53FC19",
+   "fg": "#ffffff"
+  },
+  {
+   "name": "Discord Nitro",
+   "brand": true,
+   "kind": "svg",
+   "key": "discord",
+   "bg": "#5865F2",
+   "fg": "#ffffff"
+  },
+  {
+   "name": "Patreon",
+   "brand": true,
+   "kind": "svg",
+   "key": "patreon",
+   "bg": "#2c2824",
+   "fg": "#f3eee6"
+  },
+  {
+   "name": "LinkedIn Premium",
+   "brand": true,
+   "kind": "txt",
+   "bg": "#0a66c2",
+   "ink": "#fff",
+   "t": "in"
+  },
+  {
+   "name": "Microsoft 365",
+   "brand": true,
+   "kind": "txt",
+   "bg": "#d83b01",
+   "ink": "#fff",
+   "t": "365"
+  },
+  {
+   "name": "Office",
+   "brand": true,
+   "kind": "txt",
+   "bg": "#d83b01",
+   "ink": "#fff",
+   "t": "365"
+  },
+  {
+   "name": "GitHub Copilot",
+   "brand": true,
+   "kind": "svg",
+   "key": "githubcopilot",
+   "bg": "#2c2824",
+   "fg": "#f3eee6"
+  },
+  {
+   "name": "GitHub",
+   "brand": true,
+   "kind": "svg",
+   "key": "github",
+   "bg": "#2c2824",
+   "fg": "#f3eee6"
+  },
+  {
+   "name": "Duolingo",
+   "brand": true,
+   "kind": "svg",
+   "key": "duolingo",
+   "bg": "#58CC02",
+   "fg": "#ffffff"
+  },
+  {
+   "name": "Notion",
+   "brand": true,
+   "kind": "svg",
+   "key": "notion",
+   "bg": "#2c2824",
+   "fg": "#f3eee6"
+  },
+  {
+   "name": "Dropbox",
+   "brand": true,
+   "kind": "svg",
+   "key": "dropbox",
+   "bg": "#0061FF",
+   "fg": "#ffffff"
+  },
+  {
+   "name": "Google Drive",
+   "brand": true,
+   "kind": "svg",
+   "key": "googledrive",
+   "bg": "#4285F4",
+   "fg": "#ffffff"
+  },
+  {
+   "name": "Google One",
+   "brand": true,
+   "kind": "txt",
+   "bg": "#4285f4",
+   "ink": "#fff",
+   "t": "G1"
+  },
+  {
+   "name": "Google",
+   "brand": true,
+   "kind": "svg",
+   "key": "google",
+   "bg": "#4285F4",
+   "fg": "#ffffff"
+  },
+  {
+   "name": "Xbox Game Pass",
+   "brand": true,
+   "kind": "txt",
+   "bg": "#107c10",
+   "ink": "#fff",
+   "t": "XB"
+  },
+  {
+   "name": "PS Plus",
+   "brand": true,
+   "kind": "svg",
+   "key": "playstation",
+   "bg": "#0070D1",
+   "fg": "#ffffff"
+  },
+  {
+   "name": "PlayStation",
+   "brand": true,
+   "kind": "svg",
+   "key": "playstation",
+   "bg": "#0070D1",
+   "fg": "#ffffff"
+  },
+  {
+   "name": "Steam",
+   "brand": true,
+   "kind": "svg",
+   "key": "steam",
+   "bg": "#2c2824",
+   "fg": "#f3eee6"
+  },
+  {
+   "name": "Epic Games",
+   "brand": true,
+   "kind": "svg",
+   "key": "epicgames",
+   "bg": "#2c2824",
+   "fg": "#f3eee6"
+  },
+  {
+   "name": "Yemeksepeti",
+   "brand": true,
+   "kind": "txt",
+   "bg": "#ea004b",
+   "ink": "#fff",
+   "t": "ys"
+  },
+  {
+   "name": "Getir",
+   "brand": true,
+   "kind": "txt",
+   "bg": "#5d3ebc",
+   "ink": "#fff",
+   "t": "getir"
+  },
+  {
+   "name": "Uber Eats",
+   "brand": true,
+   "kind": "svg",
+   "key": "ubereats",
+   "bg": "#06C167",
+   "fg": "#ffffff"
+  },
+  {
+   "name": "Uber",
+   "brand": true,
+   "kind": "txt",
+   "bg": "#000000",
+   "ink": "#fff",
+   "t": "Uber"
+  },
+  {
+   "name": "Trendyol",
+   "brand": true,
+   "kind": "txt",
+   "bg": "#f27a1a",
+   "ink": "#fff",
+   "t": "ty"
+  },
+  {
+   "name": "Claude Pro",
+   "brand": true,
+   "kind": "svg",
+   "key": "claude",
+   "bg": "#D97757",
+   "fg": "#ffffff"
+  },
+  {
+   "name": "Anthropic",
+   "brand": true,
+   "kind": "svg",
+   "key": "claude",
+   "bg": "#D97757",
+   "fg": "#ffffff"
+  },
+  {
+   "name": "ChatGPT Plus",
+   "brand": true,
+   "kind": "txt",
+   "bg": "#10a37f",
+   "ink": "#fff",
+   "t": "GPT"
+  },
+  {
+   "name": "OpenAI",
+   "brand": true,
+   "kind": "txt",
+   "bg": "#10a37f",
+   "ink": "#fff",
+   "t": "GPT"
+  },
+  {
+   "name": "Gemini",
+   "brand": true,
+   "kind": "svg",
+   "key": "googlegemini",
+   "bg": "#8E75B2",
+   "fg": "#ffffff"
+  },
+  {
+   "name": "Perplexity",
+   "brand": true,
+   "kind": "svg",
+   "key": "perplexity",
+   "bg": "#1FB8CD",
+   "fg": "#ffffff"
+  },
+  {
+   "name": "Apple Music",
+   "brand": true,
+   "kind": "svg",
+   "key": "applemusic",
+   "bg": "#FA243C",
+   "fg": "#ffffff"
+  },
+  {
+   "name": "Apple TV+",
+   "brand": true,
+   "kind": "svg",
+   "key": "appletv",
+   "bg": "#2c2824",
+   "fg": "#f3eee6"
+  },
+  {
+   "name": "iCloud+",
+   "brand": true,
+   "kind": "svg",
+   "key": "icloud",
+   "bg": "#3693F3",
+   "fg": "#ffffff"
+  },
+  {
+   "name": "Deezer",
+   "brand": true,
+   "kind": "svg",
+   "key": "deezer",
+   "bg": "#A238FF",
+   "fg": "#ffffff"
+  },
+  {
+   "name": "Tidal",
+   "brand": true,
+   "kind": "svg",
+   "key": "tidal",
+   "bg": "#2c2824",
+   "fg": "#f3eee6"
+  },
+  {
+   "name": "Audible",
+   "brand": true,
+   "kind": "svg",
+   "key": "audible",
+   "bg": "#F8991C",
+   "fg": "#ffffff"
+  },
+  {
+   "name": "Storytel",
+   "brand": true,
+   "kind": "txt",
+   "bg": "#ff501a",
+   "ink": "#fff",
+   "t": "St"
+  },
+  {
+   "name": "HBO Max",
+   "brand": true,
+   "kind": "svg",
+   "key": "hbomax",
+   "bg": "#2c2824",
+   "fg": "#f3eee6"
+  },
+  {
+   "name": "Max",
+   "brand": true,
+   "kind": "svg",
+   "key": "hbomax",
+   "bg": "#2c2824",
+   "fg": "#f3eee6"
+  },
+  {
+   "name": "Crunchyroll",
+   "brand": true,
+   "kind": "svg",
+   "key": "crunchyroll",
+   "bg": "#FF5E00",
+   "fg": "#ffffff"
+  },
+  {
+   "name": "Mullvad VPN",
+   "brand": true,
+   "kind": "svg",
+   "key": "mullvad",
+   "bg": "#2c2824",
+   "fg": "#f3eee6"
+  },
+  {
+   "name": "Proton Mail",
+   "brand": true,
+   "kind": "svg",
+   "key": "protonvpn",
+   "bg": "#66DEB1",
+   "fg": "#141210"
+  },
+  {
+   "name": "NordVPN",
+   "brand": true,
+   "kind": "svg",
+   "key": "nordvpn",
+   "bg": "#4687FF",
+   "fg": "#ffffff"
+  },
+  {
+   "name": "Telegram Premium",
+   "brand": true,
+   "kind": "svg",
+   "key": "telegram",
+   "bg": "#26A5E4",
+   "fg": "#ffffff"
+  },
+  {
+   "name": "Strava",
+   "brand": true,
+   "kind": "svg",
+   "key": "strava",
+   "bg": "#FC4C02",
+   "fg": "#ffffff"
+  },
+  {
+   "name": "Headspace",
+   "brand": true,
+   "kind": "svg",
+   "key": "headspace",
+   "bg": "#F47D31",
+   "fg": "#ffffff"
+  },
+  {
+   "name": "X Premium",
+   "brand": true,
+   "kind": "svg",
+   "key": "x",
+   "bg": "#2c2824",
+   "fg": "#f3eee6"
+  },
+  {
+   "name": "Twitter Blue",
+   "brand": true,
+   "kind": "svg",
+   "key": "x",
+   "bg": "#2c2824",
+   "fg": "#f3eee6"
+  },
+  {
+   "name": "Vodafone",
+   "brand": true,
+   "kind": "svg",
+   "key": "vodafone",
+   "bg": "#2c2824",
+   "fg": "#f3eee6"
+  },
+  {
+   "name": "Turkcell",
+   "brand": true,
+   "kind": "txt",
+   "bg": "#ffc900",
+   "ink": "#13254d",
+   "t": "tcell"
+  },
+  {
+   "name": "Türk Telekom",
+   "brand": true,
+   "kind": "txt",
+   "bg": "#0f9ad7",
+   "ink": "#fff",
+   "t": "TT"
+  },
+  {
+   "name": "TTNET",
+   "brand": true,
+   "kind": "txt",
+   "bg": "#0f9ad7",
+   "ink": "#fff",
+   "t": "TT"
+  },
+  {
+   "name": "Superonline",
+   "brand": true,
+   "kind": "txt",
+   "bg": "#ffc900",
+   "ink": "#13254d",
+   "t": "SOL"
+  },
+  {
+   "name": "Doğalgaz",
+   "brand": false,
+   "kind": "gen",
+   "icon": "flame",
+   "color": "#f0a35e"
+  },
+  {
+   "name": "Dogalgaz",
+   "brand": false,
+   "kind": "gen",
+   "icon": "flame",
+   "color": "#f0a35e"
+  },
+  {
+   "name": "İGDAŞ",
+   "brand": false,
+   "kind": "gen",
+   "icon": "flame",
+   "color": "#f0a35e"
+  },
+  {
+   "name": "Gaz",
+   "brand": false,
+   "kind": "gen",
+   "icon": "flame",
+   "color": "#f0a35e"
+  },
+  {
+   "name": "Elektrik",
+   "brand": false,
+   "kind": "gen",
+   "icon": "bolt",
+   "color": "#f2cf5b"
+  },
+  {
+   "name": "Enerjisa",
+   "brand": false,
+   "kind": "gen",
+   "icon": "bolt",
+   "color": "#f2cf5b"
+  },
+  {
+   "name": "CK Boğaziçi",
+   "brand": false,
+   "kind": "gen",
+   "icon": "bolt",
+   "color": "#f2cf5b"
+  },
+  {
+   "name": "Su",
+   "brand": false,
+   "kind": "gen",
+   "icon": "drop",
+   "color": "#6fb8f0"
+  },
+  {
+   "name": "Su faturası",
+   "brand": false,
+   "kind": "gen",
+   "icon": "drop",
+   "color": "#6fb8f0"
+  },
+  {
+   "name": "İSKİ",
+   "brand": false,
+   "kind": "gen",
+   "icon": "drop",
+   "color": "#6fb8f0"
+  },
+  {
+   "name": "ASKİ",
+   "brand": false,
+   "kind": "gen",
+   "icon": "drop",
+   "color": "#6fb8f0"
+  },
+  {
+   "name": "İnternet",
+   "brand": false,
+   "kind": "gen",
+   "icon": "wifi",
+   "color": "#b7a2f2"
+  },
+  {
+   "name": "Internet",
+   "brand": false,
+   "kind": "gen",
+   "icon": "wifi",
+   "color": "#b7a2f2"
+  },
+  {
+   "name": "Fiber",
+   "brand": false,
+   "kind": "gen",
+   "icon": "wifi",
+   "color": "#b7a2f2"
+  },
+  {
+   "name": "TürkNet",
+   "brand": false,
+   "kind": "gen",
+   "icon": "wifi",
+   "color": "#b7a2f2"
+  },
+  {
+   "name": "Telefon",
+   "brand": false,
+   "kind": "gen",
+   "icon": "phone",
+   "color": "#6fd3c6"
+  },
+  {
+   "name": "Telefon hattı",
+   "brand": false,
+   "kind": "gen",
+   "icon": "phone",
+   "color": "#6fd3c6"
+  },
+  {
+   "name": "Hat",
+   "brand": false,
+   "kind": "gen",
+   "icon": "phone",
+   "color": "#6fd3c6"
+  },
+  {
+   "name": "GSM",
+   "brand": false,
+   "kind": "gen",
+   "icon": "phone",
+   "color": "#6fd3c6"
+  },
+  {
+   "name": "Kira",
+   "brand": false,
+   "kind": "gen",
+   "icon": "home",
+   "color": "#e3bf7c"
+  },
+  {
+   "name": "Aidat",
+   "brand": false,
+   "kind": "gen",
+   "icon": "home",
+   "color": "#e3bf7c"
+  },
+  {
+   "name": "Ev",
+   "brand": false,
+   "kind": "gen",
+   "icon": "home",
+   "color": "#e3bf7c"
+  },
+  {
+   "name": "Site aidatı",
+   "brand": false,
+   "kind": "gen",
+   "icon": "home",
+   "color": "#e3bf7c"
+  },
+  {
+   "name": "Konut",
+   "brand": false,
+   "kind": "gen",
+   "icon": "home",
+   "color": "#e3bf7c"
+  },
+  {
+   "name": "Fatura",
+   "brand": false,
+   "kind": "gen",
+   "icon": "file",
+   "color": "#7fc3b4"
+  },
+  {
+   "name": "Spor salonu",
+   "brand": false,
+   "kind": "gen",
+   "icon": "gauge",
+   "color": ""
+  },
+  {
+   "name": "Gym",
+   "brand": false,
+   "kind": "gen",
+   "icon": "gauge",
+   "color": ""
+  },
+  {
+   "name": "Fitness",
+   "brand": false,
+   "kind": "gen",
+   "icon": "gauge",
+   "color": ""
+  },
+  {
+   "name": "Bulut",
+   "brand": false,
+   "kind": "gen",
+   "icon": "safe",
+   "color": ""
+  },
+  {
+   "name": "Cloud depolama",
+   "brand": false,
+   "kind": "gen",
+   "icon": "safe",
+   "color": ""
+  },
+  {
+   "name": "Sigorta",
+   "brand": false,
+   "kind": "gen",
+   "icon": "shield",
+   "color": ""
+  },
+  {
+   "name": "Kasko",
+   "brand": false,
+   "kind": "gen",
+   "icon": "shield",
+   "color": ""
+  },
+  {
+   "name": "Okul",
+   "brand": false,
+   "kind": "gen",
+   "icon": "file",
+   "color": ""
+  },
+  {
+   "name": "İngilizce kursu",
+   "brand": false,
+   "kind": "gen",
+   "icon": "file",
+   "color": ""
+  },
+  {
+   "name": "Eğitim",
+   "brand": false,
+   "kind": "gen",
+   "icon": "file",
+   "color": ""
+  },
+  {
+   "name": "Metro",
+   "brand": false,
+   "kind": "gen",
+   "icon": "card",
+   "color": ""
+  },
+  {
+   "name": "Akbil",
+   "brand": false,
+   "kind": "gen",
+   "icon": "card",
+   "color": ""
+  },
+  {
+   "name": "İstanbulkart",
+   "brand": true,
+   "kind": "txt",
+   "bg": "#e30613",
+   "ink": "#fff",
+   "t": "İK"
+  },
+  {
+   "name": "Yakıt",
+   "brand": false,
+   "kind": "gen",
+   "icon": "card",
+   "color": ""
+  },
+  {
+   "name": "Benzin",
+   "brand": false,
+   "kind": "gen",
+   "icon": "card",
+   "color": ""
+  },
+  {
+   "name": "Migros",
+   "brand": true,
+   "kind": "txt",
+   "bg": "#f68b1f",
+   "ink": "#fff",
+   "t": "M"
+  },
+  {
+   "name": "A101",
+   "brand": true,
+   "kind": "txt",
+   "bg": "#00aeef",
+   "ink": "#fff",
+   "t": "A101"
+  },
+  {
+   "name": "BİM",
+   "brand": true,
+   "kind": "txt",
+   "bg": "#e30613",
+   "ink": "#fff",
+   "t": "BİM"
+  },
+  {
+   "name": "ŞOK",
+   "brand": true,
+   "kind": "txt",
+   "bg": "#ffd200",
+   "ink": "#d0021b",
+   "t": "şok"
+  },
+  {
+   "name": "Şok Market",
+   "brand": true,
+   "kind": "txt",
+   "bg": "#ffd200",
+   "ink": "#d0021b",
+   "t": "şok"
+  },
+  {
+   "name": "Carrefour",
+   "brand": true,
+   "kind": "txt",
+   "bg": "#004e9f",
+   "ink": "#fff",
+   "t": "C"
+  },
+  {
+   "name": "Starbucks",
+   "brand": true,
+   "kind": "txt",
+   "bg": "#006241",
+   "ink": "#fff",
+   "t": "SB"
+  },
+  {
+   "name": "McDonald's",
+   "brand": true,
+   "kind": "txt",
+   "bg": "#da291c",
+   "ink": "#ffc72c",
+   "t": "M"
+  },
+  {
+   "name": "Burger King",
+   "brand": true,
+   "kind": "txt",
+   "bg": "#d62300",
+   "ink": "#f5ebdc",
+   "t": "BK"
+  },
+  {
+   "name": "KFC",
+   "brand": true,
+   "kind": "txt",
+   "bg": "#a3080c",
+   "ink": "#fff",
+   "t": "KFC"
+  },
+  {
+   "name": "Domino's Pizza",
+   "brand": true,
+   "kind": "txt",
+   "bg": "#006491",
+   "ink": "#fff",
+   "t": "D"
+  },
+  {
+   "name": "Popeyes",
+   "brand": true,
+   "kind": "txt",
+   "bg": "#ff7900",
+   "ink": "#fff",
+   "t": "P"
+  },
+  {
+   "name": "Pluxee",
+   "brand": true,
+   "kind": "txt",
+   "bg": "#00a3a1",
+   "ink": "#fff",
+   "t": "px"
+  },
+  {
+   "name": "Sodexo",
+   "brand": true,
+   "kind": "txt",
+   "bg": "#00a3a1",
+   "ink": "#fff",
+   "t": "px"
+  },
+  {
+   "name": "Multinet",
+   "brand": true,
+   "kind": "txt",
+   "bg": "#e30613",
+   "ink": "#fff",
+   "t": "mn"
+  },
+  {
+   "name": "PayTR",
+   "brand": true,
+   "kind": "txt",
+   "bg": "#1d4ed8",
+   "ink": "#fff",
+   "t": "PTR"
+  },
+  {
+   "name": "iyzico",
+   "brand": true,
+   "kind": "txt",
+   "bg": "#1e64ff",
+   "ink": "#fff",
+   "t": "iyz"
+  },
+  {
+   "name": "PayPal",
+   "brand": true,
+   "kind": "txt",
+   "bg": "#003087",
+   "ink": "#fff",
+   "t": "PP"
+  },
+  {
+   "name": "IKEA",
+   "brand": true,
+   "kind": "txt",
+   "bg": "#0058a3",
+   "ink": "#ffdb00",
+   "t": "IKEA"
+  },
+  {
+   "name": "Zara",
+   "brand": true,
+   "kind": "txt",
+   "bg": "#111111",
+   "ink": "#fff",
+   "t": "Z"
+  },
+  {
+   "name": "H&M",
+   "brand": true,
+   "kind": "txt",
+   "bg": "#e50010",
+   "ink": "#fff",
+   "t": "H&M"
+  },
+  {
+   "name": "Nike",
+   "brand": true,
+   "kind": "txt",
+   "bg": "#111111",
+   "ink": "#fff",
+   "t": "✓"
+  },
+  {
+   "name": "Adidas",
+   "brand": true,
+   "kind": "txt",
+   "bg": "#111111",
+   "ink": "#fff",
+   "t": "ad"
+  },
+  {
+   "name": "Samsung",
+   "brand": true,
+   "kind": "txt",
+   "bg": "#1428a0",
+   "ink": "#fff",
+   "t": "S"
+  },
+  {
+   "name": "MediaMarkt",
+   "brand": true,
+   "kind": "txt",
+   "bg": "#df0000",
+   "ink": "#fff",
+   "t": "MM"
+  },
+  {
+   "name": "Teknosa",
+   "brand": true,
+   "kind": "txt",
+   "bg": "#e30613",
+   "ink": "#fff",
+   "t": "tk"
+  },
+  {
+   "name": "THY",
+   "brand": true,
+   "kind": "txt",
+   "bg": "#c70a0c",
+   "ink": "#fff",
+   "t": "THY"
+  },
+  {
+   "name": "Türk Hava Yolları",
+   "brand": true,
+   "kind": "txt",
+   "bg": "#c70a0c",
+   "ink": "#fff",
+   "t": "THY"
+  },
+  {
+   "name": "Turkish Airlines",
+   "brand": true,
+   "kind": "txt",
+   "bg": "#c70a0c",
+   "ink": "#fff",
+   "t": "THY"
+  },
+  {
+   "name": "Pegasus",
+   "brand": true,
+   "kind": "txt",
+   "bg": "#fdc300",
+   "ink": "#3b1d5c",
+   "t": "P"
+  },
+  {
+   "name": "Shell",
+   "brand": true,
+   "kind": "txt",
+   "bg": "#fbce07",
+   "ink": "#dd1d21",
+   "t": "Sh"
+  },
+  {
+   "name": "Opet",
+   "brand": true,
+   "kind": "txt",
+   "bg": "#004a99",
+   "ink": "#fff",
+   "t": "op"
+  },
+  {
+   "name": "Petrol Ofisi",
+   "brand": true,
+   "kind": "txt",
+   "bg": "#e30613",
+   "ink": "#fff",
+   "t": "PO"
+  },
+  {
+   "name": "Binance",
+   "brand": true,
+   "kind": "txt",
+   "bg": "#f0b90b",
+   "ink": "#1a1400",
+   "t": "B"
+  },
+  {
+   "name": "OKX",
+   "brand": true,
+   "kind": "txt",
+   "bg": "#111111",
+   "ink": "#fff",
+   "t": "OKX"
+  },
+  {
+   "name": "Coinbase",
+   "brand": true,
+   "kind": "txt",
+   "bg": "#0052ff",
+   "ink": "#fff",
+   "t": "C"
+  },
+  {
+   "name": "Midas",
+   "brand": true,
+   "kind": "txt",
+   "bg": "#111111",
+   "ink": "#fff",
+   "t": "mds"
+  },
+  {
+   "name": "Findeks",
+   "brand": true,
+   "kind": "txt",
+   "bg": "#00589c",
+   "ink": "#fff",
+   "t": "F"
+  },
+  {
+   "name": "e-Devlet",
+   "brand": true,
+   "kind": "txt",
+   "bg": "#c8102e",
+   "ink": "#fff",
+   "t": "e"
+  },
+  {
+   "name": "Cumhurbaşkanlığı",
+   "brand": true,
+   "kind": "txt",
+   "bg": "#c8102e",
+   "ink": "#fff",
+   "t": "e"
+  },
+  {
+   "name": "Belbim",
+   "brand": true,
+   "kind": "txt",
+   "bg": "#e30613",
+   "ink": "#fff",
+   "t": "İK"
+  },
+  {
+   "name": "Yandex Go",
+   "brand": true,
+   "kind": "txt",
+   "bg": "#fc3f1d",
+   "ink": "#fff",
+   "t": "Go"
+  },
+  {
+   "name": "binbin",
+   "brand": true,
+   "kind": "txt",
+   "bg": "#13c46f",
+   "ink": "#04301a",
+   "t": "bb"
+  },
+  {
+   "name": "Martı",
+   "brand": true,
+   "kind": "txt",
+   "bg": "#11a85a",
+   "ink": "#fff",
+   "t": "M"
+  },
+  {
+   "name": "BiTaksi",
+   "brand": true,
+   "kind": "txt",
+   "bg": "#ffcc00",
+   "ink": "#1a1400",
+   "t": "Bi"
+  },
+  {
+   "name": "idefix",
+   "brand": true,
+   "kind": "txt",
+   "bg": "#ff6a00",
+   "ink": "#fff",
+   "t": "idx"
+  },
+  {
+   "name": "Hepsiburada",
+   "brand": true,
+   "kind": "txt",
+   "bg": "#ff6000",
+   "ink": "#fff",
+   "t": "hb"
+  },
+  {
+   "name": "n11",
+   "brand": true,
+   "kind": "txt",
+   "bg": "#5c3ebc",
+   "ink": "#fff",
+   "t": "n11"
+  },
+  {
+   "name": "AliExpress",
+   "brand": true,
+   "kind": "txt",
+   "bg": "#e43225",
+   "ink": "#fff",
+   "t": "AE"
+  },
+  {
+   "name": "sahibinden",
+   "brand": true,
+   "kind": "txt",
+   "bg": "#ffe800",
+   "ink": "#1a1400",
+   "t": "S"
+  },
+  {
+   "name": "Temu",
+   "brand": true,
+   "kind": "txt",
+   "bg": "#fb7701",
+   "ink": "#fff",
+   "t": "temu"
+  },
+  {
+   "name": "ToptanTR",
+   "brand": true,
+   "kind": "txt",
+   "bg": "#0b6bcb",
+   "ink": "#fff",
+   "t": "TT"
+  },
+  {
+   "name": "Toptan TR",
+   "brand": true,
+   "kind": "txt",
+   "bg": "#0b6bcb",
+   "ink": "#fff",
+   "t": "TT"
+  },
+  {
+   "name": "Tambattal",
+   "brand": true,
+   "kind": "txt",
+   "bg": "#7a5c3e",
+   "ink": "#fff",
+   "t": "T"
+  },
+  {
+   "name": "Kitap",
+   "brand": false,
+   "kind": "ini",
+   "bg": "#3f6f8f",
+   "t": "Ki"
+  },
+  {
+   "name": "Mel",
+   "brand": false,
+   "kind": "ini",
+   "bg": "#6a5aa0",
+   "t": "Me"
+  },
+  {
+   "name": "Annem",
+   "brand": false,
+   "kind": "ini",
+   "bg": "#3f7f5a",
+   "t": "An"
+  },
+  {
+   "name": "?",
+   "brand": false,
+   "kind": "ini",
+   "bg": "#3f7f5a",
+   "t": "?"
+  },
+  {
+   "name": "",
+   "brand": false,
+   "kind": "ini",
+   "bg": "#8a5a8f",
+   "t": "?"
+  },
+  {
+   "name": "   ",
+   "brand": false,
+   "kind": "ini",
+   "bg": "#8a5a8f",
+   "t": "?"
+  },
+  {
+   "name": "Kahve",
+   "brand": false,
+   "kind": "ini",
+   "bg": "#3f7f5a",
+   "t": "Ka"
+  },
+  {
+   "name": "Netflixx",
+   "brand": true,
+   "kind": "svg",
+   "key": "netflix",
+   "bg": "#E50914",
+   "fg": "#ffffff"
+  },
+  {
+   "name": "Spotifyy",
+   "brand": true,
+   "kind": "svg",
+   "key": "spotify",
+   "bg": "#1ED760",
+   "fg": "#ffffff"
+  },
+  {
+   "name": "LİNKEDİN",
+   "brand": true,
+   "kind": "txt",
+   "bg": "#0a66c2",
+   "ink": "#fff",
+   "t": "in"
+  },
+  {
+   "name": "IŞIK",
+   "brand": false,
+   "kind": "ini",
+   "bg": "#3f6f8f",
+   "t": "IŞ"
+  },
+  {
+   "name": "Işık",
+   "brand": false,
+   "kind": "ini",
+   "bg": "#8f6a2f",
+   "t": "Iş"
+  },
+  {
+   "name": "İş yeri kirası",
+   "brand": false,
+   "kind": "gen",
+   "icon": "home",
+   "color": "#e3bf7c"
+  },
+  {
+   "name": "Max Mara",
+   "brand": true,
+   "kind": "svg",
+   "key": "hbomax",
+   "bg": "#2c2824",
+   "fg": "#f3eee6"
+  },
+  {
+   "name": "tod's",
+   "brand": true,
+   "kind": "txt",
+   "bg": "#6f1fd1",
+   "ink": "#fff",
+   "t": "TOD"
+  },
+  {
+   "name": "todo",
+   "brand": false,
+   "kind": "ini",
+   "bg": "#8a5a8f",
+   "t": "to"
+  },
+  {
+   "name": "Kick boks",
+   "brand": true,
+   "kind": "svg",
+   "key": "kick",
+   "bg": "#53FC19",
+   "fg": "#ffffff"
+  },
+  {
+   "name": "Epic",
+   "brand": true,
+   "kind": "svg",
+   "key": "epicgames",
+   "bg": "#2c2824",
+   "fg": "#f3eee6"
+  },
+  {
+   "name": "Steam kart",
+   "brand": true,
+   "kind": "svg",
+   "key": "steam",
+   "bg": "#2c2824",
+   "fg": "#f3eee6"
+  },
+  {
+   "name": "Apple",
+   "brand": false,
+   "kind": "ini",
+   "bg": "#8a5a8f",
+   "t": "Ap"
+  },
+  {
+   "name": "Proton",
+   "brand": true,
+   "kind": "svg",
+   "key": "protonvpn",
+   "bg": "#66DEB1",
+   "fg": "#141210"
+  },
+  {
+   "name": "Nord",
+   "brand": true,
+   "kind": "svg",
+   "key": "nordvpn",
+   "bg": "#4687FF",
+   "fg": "#ffffff"
+  },
+  {
+   "name": "Gaming",
+   "brand": false,
+   "kind": "ini",
+   "bg": "#3f6f8f",
+   "t": "Ga"
+  },
+  {
+   "name": "Xbox",
+   "brand": true,
+   "kind": "txt",
+   "bg": "#107c10",
+   "ink": "#fff",
+   "t": "XB"
+  },
+  {
+   "name": "Office 365",
+   "brand": true,
+   "kind": "txt",
+   "bg": "#d83b01",
+   "ink": "#fff",
+   "t": "365"
+  },
+  {
+   "name": "Google Play",
+   "brand": true,
+   "kind": "svg",
+   "key": "google",
+   "bg": "#4285F4",
+   "fg": "#ffffff"
+  },
+  {
+   "name": "YouTube",
+   "brand": true,
+   "kind": "svg",
+   "key": "youtube",
+   "bg": "#FF0000",
+   "fg": "#ffffff"
+  },
+  {
+   "name": "youtube music premium",
+   "brand": true,
+   "kind": "svg",
+   "key": "youtubemusic",
+   "bg": "#FF0000",
+   "fg": "#ffffff"
+  },
+  {
+   "name": "SPOTIFY",
+   "brand": true,
+   "kind": "svg",
+   "key": "spotify",
+   "bg": "#1ED760",
+   "fg": "#ffffff"
+  },
+  {
+   "name": "NETFLIX",
+   "brand": true,
+   "kind": "svg",
+   "key": "netflix",
+   "bg": "#E50914",
+   "fg": "#ffffff"
+  },
+  {
+   "name": "Disney Plus",
+   "brand": true,
+   "kind": "txt",
+   "bg": "#0f3ac8",
+   "ink": "#fff",
+   "t": "D+"
+  },
+  {
+   "name": "Amazon",
+   "brand": true,
+   "kind": "txt",
+   "bg": "#00a8e1",
+   "ink": "#fff",
+   "t": "prime"
+  },
+  {
+   "name": "123",
+   "brand": false,
+   "kind": "ini",
+   "bg": "#8a5a8f",
+   "t": "12"
+  },
+  {
+   "name": "+5",
+   "brand": false,
+   "kind": "ini",
+   "bg": "#8a5a8f",
+   "t": "+5"
+  },
+  {
+   "name": "Çay",
+   "brand": false,
+   "kind": "ini",
+   "bg": "#3f7f5a",
+   "t": "Ça"
+  },
+  {
+   "name": "Ödev",
+   "brand": false,
+   "kind": "ini",
+   "bg": "#9a4f45",
+   "t": "Öd"
+  },
+  {
+   "name": "Ülker",
+   "brand": false,
+   "kind": "ini",
+   "bg": "#8f6a2f",
+   "t": "Ül"
+  },
+  {
+   "name": "Ğğ",
+   "brand": false,
+   "kind": "ini",
+   "bg": "#3f7f5a",
+   "t": "Ğğ"
+  },
+  {
+   "name": "Mubi",
+   "brand": true,
+   "kind": "svg",
+   "key": "mubi",
+   "bg": "#2c2824",
+   "fg": "#f3eee6"
+  },
+  {
+   "name": "Strava Premium",
+   "brand": true,
+   "kind": "svg",
+   "key": "strava",
+   "bg": "#FC4C02",
+   "fg": "#ffffff"
+  },
+  {
+   "name": "Sigara",
+   "brand": false,
+   "kind": "ini",
+   "bg": "#9a4f45",
+   "t": "Si"
+  },
+  {
+   "name": "Market",
+   "brand": false,
+   "kind": "ini",
+   "bg": "#8a5a8f",
+   "t": "Ma"
+  },
+  {
+   "name": "Su arıtma",
+   "brand": false,
+   "kind": "gen",
+   "icon": "drop",
+   "color": "#6fb8f0"
+  },
+  {
+   "name": "Ev interneti",
+   "brand": false,
+   "kind": "gen",
+   "icon": "wifi",
+   "color": "#b7a2f2"
+  },
+  {
+   "name": "Mobil hat",
+   "brand": false,
+   "kind": "gen",
+   "icon": "phone",
+   "color": "#6fd3c6"
+  },
+  {
+   "name": "Telefon faturası",
+   "brand": false,
+   "kind": "gen",
+   "icon": "phone",
+   "color": "#6fd3c6"
+  },
+  {
+   "name": "Elektrik faturası",
+   "brand": false,
+   "kind": "gen",
+   "icon": "bolt",
+   "color": "#f2cf5b"
+  },
+  {
+   "name": "Doğal gaz",
+   "brand": false,
+   "kind": "gen",
+   "icon": "flame",
+   "color": "#f0a35e"
+  },
+  {
+   "name": "Spotify Aile",
+   "brand": true,
+   "kind": "svg",
+   "key": "spotify",
+   "bg": "#1ED760",
+   "fg": "#ffffff"
+  },
+  {
+   "name": "YouTube Premium Aile",
+   "brand": true,
+   "kind": "svg",
+   "key": "youtube",
+   "bg": "#FF0000",
+   "fg": "#ffffff"
+  }
+ ]
+}

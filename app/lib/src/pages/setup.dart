@@ -852,7 +852,7 @@ class _AccountsStepState extends State<_AccountsStep> with _Flushable<_AccountsS
       items: [
         for (final a in accountsSorted(d))
           _ItemRow(
-            leading: BankPlate(bankKey: a.bank.isEmpty ? null : a.bank, name: a.name, size: 32, icon: a.isCash ? Icons.payments_outlined : null),
+            leading: BankPlate(bankKey: a.bank.isEmpty ? null : a.bank, name: a.name, size: 28, icon: a.isCash ? Icons.payments_outlined : null),
             title: accLabel(a, s.lang),
             subtitle: a.isCash && toK(a.balance) == 0
                 ? s.pick('Cüzdanındaki nakdi yazmak için dokun', 'Tap to enter the cash in your wallet')
@@ -996,7 +996,7 @@ class _CardsStepState extends State<_CardsStep> with _Flushable<_CardsStep> {
       items: [
         for (final x in d.debts.where((x) => x.isCard))
           _ItemRow(
-            leading: BankPlate(bankKey: bankKeyOf(x), name: x.creditor, size: 32),
+            leading: BankPlate(bankKey: bankKeyOf(x), name: x.creditor, size: 28),
             title: x.creditor,
             subtitle: _join([
               x.limit != null ? s.pick('limit ', 'limit ') + money(toK(x.limit)) : null,
@@ -1178,7 +1178,7 @@ class _LoansStepState extends State<_LoansStep> with _Flushable<_LoansStep> {
       items: [
         for (final x in d.debts.where((x) => !x.isCard))
           _ItemRow(
-            leading: BankPlate(bankKey: bankKeyOf(x), name: x.creditor, size: 32),
+            leading: BankPlate(bankKey: bankKeyOf(x), name: x.creditor, size: 28),
             title: x.creditor,
             subtitle: _loanLine(x, s, money),
             k: m.debts[x.id]?.current,

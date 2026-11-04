@@ -16,7 +16,6 @@ import '../state.dart';
 import '../theme.dart';
 import '../ui.dart';
 import 'common.dart';
-import 'harcamalar.dart' show Monogram;
 
 const Color kIncomeColor = Color(0xFF9FD7A5);
 
@@ -464,12 +463,11 @@ class PayRow extends StatelessWidget {
     }
     final mo = int.parse(m.substring(5, 7)) - 1;
     Widget lead;
-    if (it.bank != null) {
-      lead = BankPlate(bankKey: it.bank, name: it.name, size: 30);
-    } else if (it.kind == 'sub' || it.kind == 'expense') {
-      lead = Monogram(name: it.name, group: it.kind == 'sub' ? ctx.data.subscription(it.refId)?.group : null, size: 38);
+    // Eski uygulamadaki gibi: abonelik ve bankaya bağlı olmayan giderlerde logo, diğerlerinde banka plakası.
+    if (it.kind == 'sub' || (it.kind == 'expense' && it.bank == null)) {
+      lead = BrandMark(it.name, size: 28);
     } else {
-      lead = BankPlate(name: it.name, size: 30);
+      lead = BankPlate(bankKey: it.bank, name: it.name, size: 28);
     }
     final amount = it.est && !paid
         ? Tooltip(
@@ -1571,7 +1569,7 @@ class _Definitions extends StatelessWidget {
                   final status = act ? '' : (r.startMonth.compareTo(m) > 0 ? s.pick(' · ${monthLabel(r.startMonth, s.lang)} başlar', ' · starts ${monthLabel(r.startMonth, s.lang)}') : s.pick(' · sona erdi', ' · ended'));
                   return RowItem(
                     dim: !act,
-                    leading: Monogram(name: r.name, size: 36),
+                    leading: BrandMark(r.name, size: 36),
                     title: r.name,
                     subtitle: catLabel(r.category, s.lang) + (r.day != null ? ' · ${dayOfMonthText(r.day!, s.lang)}' : '') + status,
                     trailing: Text('${money(toK(r.amount))} / ${s.pick('ay', 'mo')}', style: sans(14, weight: FontWeight.w700)),

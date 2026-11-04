@@ -1,4 +1,4 @@
-// Ortak arayüz parçaları: tutar yazısı, düğmeler, satırlar, banka plakası, boş durum.
+// Ortak arayüz parçaları: tutar yazısı, düğmeler, satırlar, boş durum (logolar logos.dart'ta).
 
 import 'dart:math' as math;
 
@@ -10,6 +10,8 @@ import 'glass.dart';
 import 'i18n.dart';
 import 'state.dart';
 import 'theme.dart';
+
+export 'logos.dart';
 
 const Map<String, IconData> kCategoryIcons = {
   'market': Icons.shopping_basket_outlined,
@@ -232,45 +234,6 @@ class PanelHead extends StatelessWidget {
         ],
       ),
     );
-  }
-}
-
-/// Banka plakası: banka renginde, baş harfli küçük kart.
-class BankPlate extends StatelessWidget {
-  const BankPlate({super.key, this.bankKey, this.name, this.size = 44, this.icon});
-
-  final String? bankKey;
-  final String? name;
-  final double size;
-  final IconData? icon;
-
-  @override
-  Widget build(BuildContext context) {
-    final b = bankKey == null ? null : kBanks[bankKey];
-    final label = b?.mono ?? _initials(b?.name ?? name ?? '?');
-    return Container(
-      width: size * 1.45,
-      height: size,
-      alignment: Alignment.center,
-      decoration: ShapeDecoration(
-        gradient: LinearGradient(
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-          colors: [b?.c1 ?? const Color(0xFF4A4038), b?.c2 ?? const Color(0xFF1C1814)],
-        ),
-        shape: SignatureBorder(cut: size * 0.22, radius: size * 0.22, side: const BorderSide(color: Color(0x30FFFFFF))),
-      ),
-      child: icon != null
-          ? Icon(icon, color: Colors.white, size: size * 0.5)
-          : Text(label, style: sans(size * 0.3, weight: FontWeight.w700, color: Colors.white, letterSpacing: 0.4)),
-    );
-  }
-
-  static String _initials(String s) {
-    final words = s.replaceAll(RegExp(r'[^0-9A-Za-zÇĞİÖŞÜçğıöşü ]'), ' ').split(' ').where((w) => w.isNotEmpty).toList();
-    if (words.isEmpty) return '?';
-    if (words.length == 1) return trUpper(words.first.length <= 4 ? words.first : words.first.substring(0, 3));
-    return trUpper(words.take(2).map((w) => w.characters.first).join());
   }
 }
 

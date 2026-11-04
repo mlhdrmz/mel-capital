@@ -824,7 +824,7 @@ class _CardPaySheetState extends State<CardPaySheet> {
                       child: Row(children: [
                         Icon(on ? Icons.radio_button_checked : Icons.radio_button_off, size: 18, color: on ? MC.gold : MC.muted),
                         const SizedBox(width: 10),
-                        BankPlate(bankKey: bankKeyOf(c), name: c.creditor, size: 24),
+                        BankPlate(bankKey: bankKeyOf(c), name: c.creditor, size: 22),
                         const SizedBox(width: 10),
                         Expanded(
                           child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
