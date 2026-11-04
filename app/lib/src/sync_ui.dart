@@ -177,12 +177,17 @@ class _SyncButtonState extends State<SyncButton> with SingleTickerProviderStateM
     if (e == null || !e.paired) return const SizedBox.shrink();
     final status = e.status;
     final busy = status == SyncStatus.busy;
-    if (busy && !_spin.isAnimating) {
-      _spin.repeat();
-    } else if (!busy && _spin.isAnimating) {
-      _spin.stop();
-      _spin.value = 0;
-    }
+    // Dönme, çizimden sonra başlar ya da durur (çizim sırasında animasyon değiştirilmez).
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      if (busy && !_spin.isAnimating) {
+        _spin.repeat();
+      } else if (!busy && _spin.isAnimating) {
+        _spin
+          ..stop()
+          ..value = 0;
+      }
+    });
     final icon = switch (status) {
       SyncStatus.offline => Icons.cloud_off_outlined,
       SyncStatus.err || SyncStatus.lost => Icons.sync_problem,

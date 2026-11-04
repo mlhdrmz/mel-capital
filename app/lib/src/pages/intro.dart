@@ -323,18 +323,30 @@ class _PrivacySlide extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final s = S.of(context);
+    final phone = AppScope.of(context).phone;
     final points = [
-      (Icons.lock_outline, s.pick('Hesap açman, şifre girmen gerekmez; verilerin internete gönderilmez.', 'No sign-up and no password; your data is never sent online.')),
-      (Icons.folder_outlined, s.pick('Her şey Belgeler › Mel Capital klasöründe durur.', 'Everything lives in Documents › Mel Capital.')),
+      (
+        Icons.lock_outline,
+        s.pick('Hesap açman, şifre girmen gerekmez. Telefonla bilgisayar arasında eşitlerken veriler yolda şifrelenir; aradaki sunucu içeriği okuyamaz.',
+            'No sign-up and no password. When your phone and computer sync, data is encrypted on the way; the server in between cannot read it.'),
+      ),
+      phone
+          ? (Icons.smartphone_outlined, s.pick('Her şey bu telefonda durur; internet yokken de çalışır.', 'Everything lives on this phone and works offline too.'))
+          : (Icons.folder_outlined, s.pick('Her şey Belgeler › Mel Capital klasöründe durur.', 'Everything lives in Documents › Mel Capital.')),
       (Icons.history, s.pick('Her gün otomatik yedek alınır; istediğin an elle de yedekleyebilirsin.', 'An automatic backup is taken every day, and you can back up by hand any time.')),
-      (Icons.people_outline, s.pick('Aynı bilgisayarda birden fazla profil açabilirsin; uygulama son kullandığınla açılır.', 'Keep several profiles on one computer; the app opens with the one you used last.')),
+      (
+        Icons.people_outline,
+        phone
+            ? s.pick('Aynı telefonda birden fazla profil açabilirsin; uygulama son kullandığınla açılır.', 'Keep several profiles on one phone; the app opens with the one you used last.')
+            : s.pick('Aynı bilgisayarda birden fazla profil açabilirsin; uygulama son kullandığınla açılır.', 'Keep several profiles on one computer; the app opens with the one you used last.'),
+      ),
     ];
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         _Head(
           eyebrow: s.pick('VERİLERİN SENDE', 'YOUR DATA STAYS WITH YOU'),
-          title: s.pick('Verilerin yalnızca\nbu bilgisayarda.', 'Your data stays\non this computer.'),
+          title: phone ? s.pick('Verilerin yalnızca\nsende.', 'Your data stays\nwith you.') : s.pick('Verilerin yalnızca\nbu bilgisayarda.', 'Your data stays\non this computer.'),
           text: s.pick('Mel Capital internete bağlanmadan çalışır. Kimse senin rakamlarını görmez.',
               'Mel Capital works without going online. Nobody else sees your figures.'),
         ),

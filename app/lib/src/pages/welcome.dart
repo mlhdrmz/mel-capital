@@ -174,8 +174,11 @@ class _StartPageState extends State<StartPage> {
                     ),
                     const SizedBox(height: 6),
                     Text(
-                      s.pick('Aynı bilgisayarda birden fazla profil açabilirsin; uygulama her açılışta son kullandığın profille açılır.',
-                          'You can keep several profiles on one computer; the app opens with the one you used last.'),
+                      st.phone
+                          ? s.pick('Aynı telefonda birden fazla profil açabilirsin; uygulama her açılışta son kullandığın profille açılır.',
+                              'You can keep several profiles on one phone; the app opens with the one you used last.')
+                          : s.pick('Aynı bilgisayarda birden fazla profil açabilirsin; uygulama her açılışta son kullandığın profille açılır.',
+                              'You can keep several profiles on one computer; the app opens with the one you used last.'),
                       style: sans(12, color: MC.dim),
                     ),
                   ],

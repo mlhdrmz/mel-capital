@@ -241,7 +241,7 @@ class _ViewPanel extends StatelessWidget {
           PanelHead(s.pick('Dil ve görünüm', 'Language and display')),
           SettingRow(
             title: s.t('settings.language'),
-            help: s.t('settings.languageHelp'),
+            help: s.t(st.phone ? 'settings.languageHelpPhone' : 'settings.languageHelp'),
             trailing: Row(mainAxisSize: MainAxisSize.min, children: [pill('tr', 'Türkçe'), const SizedBox(width: 6), pill('en', 'English')]),
           ),
           const Hairline(),
@@ -362,14 +362,15 @@ class _BackupsPanelState extends State<_BackupsPanel> {
                 runSpacing: 8,
                 children: [
                   GoldButton(label: s.pick('Şimdi yedek al', 'Back up now'), icon: Icons.save_alt, onTap: _backupNow),
-                  GlassButton(
-                    label: s.pick('Klasörü aç', 'Open folder'),
-                    icon: Icons.folder_open_outlined,
-                    onTap: () async {
-                      final ok = await st.openFolder(backups: true);
-                      if (!ok && context.mounted) toast(context, s.pick('Bu sürümde klasör açılamıyor.', 'Folders cannot be opened in this version.'));
-                    },
-                  ),
+                  if (!st.phone)
+                    GlassButton(
+                      label: s.pick('Klasörü aç', 'Open folder'),
+                      icon: Icons.folder_open_outlined,
+                      onTap: () async {
+                        final ok = await st.openFolder(backups: true);
+                        if (!ok && context.mounted) toast(context, s.pick('Bu sürümde klasör açılamıyor.', 'Folders cannot be opened in this version.'));
+                      },
+                    ),
                 ],
               ),
               const SizedBox(height: 10),
@@ -453,7 +454,13 @@ class _DataPanelState extends State<_DataPanel> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          PanelHead(s.pick('Veri', 'Data'), subtitle: s.pick('Veriler yalnızca bu bilgisayarda durur.', 'Your data stays on this computer.')),
+          PanelHead(
+            s.pick('Veri', 'Data'),
+            subtitle: (st.phone ? s.pick('Veriler bu telefonda durur.', 'Your data stays on this phone.') : s.pick('Veriler bu bilgisayarda durur.', 'Your data stays on this computer.')) +
+                (st.sync?.paired == true
+                    ? s.pick(' Eşitleme için şifreli bir kopyası sunucuda durur.', ' An encrypted copy is kept on the server for syncing.')
+                    : ''),
+          ),
           SettingRow(
             title: s.pick('Kurulum sihirbazı', 'Setup wizard'),
             help: s.pick('Hesaplarını, kartlarını, kredilerini, gelirini ve düzenli ödemelerini adım adım ekle.',
@@ -465,19 +472,22 @@ class _DataPanelState extends State<_DataPanel> {
               onTap: st.startSetup,
             ),
           ),
-          const Hairline(),
-          SettingRow(
-            title: s.pick('Veri klasörü', 'Data folder'),
-            help: s.pick('Belgeler › Mel Capital › Profiller', 'Documents › Mel Capital › Profiller'),
-            trailing: SmallButton(
-              label: s.pick('Aç', 'Open'),
-              icon: Icons.folder_open_outlined,
-              onTap: () async {
-                final ok = await st.openFolder();
-                if (!ok && context.mounted) toast(context, s.pick('Bu sürümde klasör açılamıyor.', 'Folders cannot be opened in this version.'));
-              },
+          // Telefonda klasör açılamaz.
+          if (!st.phone) ...[
+            const Hairline(),
+            SettingRow(
+              title: s.pick('Veri klasörü', 'Data folder'),
+              help: s.pick('Belgeler › Mel Capital › Profiller', 'Documents › Mel Capital › Profiller'),
+              trailing: SmallButton(
+                label: s.pick('Aç', 'Open'),
+                icon: Icons.folder_open_outlined,
+                onTap: () async {
+                  final ok = await st.openFolder();
+                  if (!ok && context.mounted) toast(context, s.pick('Bu sürümde klasör açılamıyor.', 'Folders cannot be opened in this version.'));
+                },
+              ),
             ),
-          ),
+          ],
           if (legacy != null) ...[
             const Hairline(),
             SettingRow(
