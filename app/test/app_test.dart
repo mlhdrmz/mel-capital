@@ -39,18 +39,22 @@ void main() {
     return state;
   }
 
+  /// Düğmeyi ekranın ortasına kaydırır (alttaki bildirimin altında kalmasın).
+  Future<void> reveal(WidgetTester tester, Finder f) async {
+    await Scrollable.ensureVisible(tester.element(f), alignment: 0.5);
+    await tester.pumpAndSettle();
+  }
+
   Future<void> tapKey(WidgetTester tester, String key) async {
     final f = find.byKey(ValueKey<String>(key));
-    await tester.ensureVisible(f);
-    await tester.pumpAndSettle();
+    await reveal(tester, f);
     await tester.tap(f);
     await tester.pumpAndSettle();
   }
 
   Future<void> typeKey(WidgetTester tester, String key, String text) async {
     final f = find.byKey(ValueKey<String>(key));
-    await tester.ensureVisible(f);
-    await tester.pumpAndSettle();
+    await reveal(tester, f);
     await tester.enterText(f, text);
     await tester.pumpAndSettle();
   }
