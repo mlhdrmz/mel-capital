@@ -39,8 +39,13 @@ void main() {
     return state;
   }
 
-  /// Düğmeyi ekranın ortasına kaydırır (alttaki bildirimin altında kalmasın).
+  /// Düğmeyi ekranın ortasına kaydırır; önceki işlemin alttaki bildirimi kapatılır (düğmenin üstüne gelmesin).
   Future<void> reveal(WidgetTester tester, Finder f) async {
+    for (final m in find.byType(ScaffoldMessenger).evaluate()) {
+      final ms = (m as StatefulElement).state;
+      if (ms is ScaffoldMessengerState) ms.clearSnackBars();
+    }
+    await tester.pumpAndSettle();
     await Scrollable.ensureVisible(tester.element(f), alignment: 0.5);
     await tester.pumpAndSettle();
   }

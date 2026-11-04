@@ -189,6 +189,19 @@ extension type Income(Json j) {
   int? get payDay => _io(j, 'payDay');
   String get note => _s(j, 'note');
   Map<String, double> get monthAmounts => _amounts(j, 'monthAmounts');
+
+  /// Gelirin yattığı hesap ("acc:<kimlik>"): "Maaşın yattı mı?" onayı tutarı bu hesaba ekler.
+  String? get account {
+    final v = j['account'];
+    return v is String && v.startsWith('acc:') && v.length > 4 ? v : null;
+  }
+
+  /// Gelir eklenirken brüt seçildi mi (plan her zaman hesaba yatan net tutarla çalışır; brüt bilgi içindir).
+  bool get gross => j['basis'] == 'brut';
+  double? get grossAmount => _do(j, 'grossAmount');
+
+  /// Her ay farklı yatar: henüz yatmamış aylarda son yatan tutar tahmini olarak kullanılır.
+  bool get variable => j['variable'] == true;
 }
 
 extension type OneOffIncome(Json j) {

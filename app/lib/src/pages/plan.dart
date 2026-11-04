@@ -647,7 +647,9 @@ class IncomeRow extends StatelessWidget {
           : inc.actual
               ? s.pick('${monthName(m, s.lang)} ayında yatan', 'Received in ${monthName(m, s.lang)}') +
                   (inc.planned > 0 && inc.planned != inc.k ? ' · plan ${fmtMoney(inc.planned, lang: s.lang, hidden: AppScope.of(context).hidden)}' : '')
-              : s.pick('Düzenli gelir', 'Regular income');
+              : inc.est
+                  ? s.pick('Değişken gelir · tahmini (son yatan tutar)', 'Varies · estimated (last amount received)')
+                  : s.pick('Düzenli gelir', 'Regular income');
     }
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 4),
@@ -694,7 +696,7 @@ class IncomeRow extends StatelessWidget {
           ),
         ),
         const SizedBox(width: 10),
-        MoneyText(k, signed: true, style: sans(14.5, weight: FontWeight.w700), color: k < 0 ? MC.rose : MC.mint),
+        MoneyText(k, signed: true, style: sans(14.5, weight: FontWeight.w700), color: k < 0 ? MC.rose : (inc != null && inc.est ? MC.muted : MC.mint)),
         const SizedBox(width: 8),
         if (inc != null && !inc.oneOff && m.compareTo(addM(currentMonth(), 1)) <= 0)
           Builder(builder: (context) {
@@ -1596,13 +1598,25 @@ class UpcomingSheet extends StatelessWidget {
     final st = AppScope.of(context);
     final s = S.of(context);
     final ctx = st.ctx;
+    final incomes = ctx.pendingIncomes();
     final list = ctx.upcoming(7);
-    final tot = sumK(list, (Upcoming u) => u.item.planned);
+    final late = [for (final u in list) if (u.late) u];
+    final soon = [for (final u in list) if (!u.late) u];
+    final tot = sumK(soon, (Upcoming u) => u.item.planned);
+    final bits = <String>[
+      if (incomes.isNotEmpty) s.pick('${incomes.length} gelir onay bekliyor', '${incomes.length} income to confirm'),
+      if (late.isNotEmpty) s.pick('${late.length} ödemenin günü geçti', '${late.length} past due'),
+      if (soon.isNotEmpty)
+        s.pick('7 gün içinde ${soon.length} ödeme · toplam ${fmtMoney(tot, lang: s.lang, hidden: st.hidden)}',
+            '${soon.length} payments in 7 days · total ${fmtMoney(tot, lang: s.lang, hidden: st.hidden)}'),
+    ];
+    Widget head(String text) => Padding(
+          padding: const EdgeInsets.only(top: 10, bottom: 4),
+          child: Text(text, style: sans(12, weight: FontWeight.w700, color: MC.eyebrow, letterSpacing: 0.6)),
+        );
     return SheetFrame(
-      title: s.pick('Yaklaşan ödemeler', 'Coming payments'),
-      subtitle: list.isEmpty
-          ? s.pick('Önümüzdeki 7 günde ödenecek kalem yok.', 'Nothing to pay in the next 7 days.')
-          : s.pick('7 gün içinde ${list.length} ödeme · toplam ${fmtMoney(tot, lang: s.lang, hidden: st.hidden)}', '${list.length} payments in 7 days · total ${fmtMoney(tot, lang: s.lang, hidden: st.hidden)}'),
+      title: s.pick('Hatırlatmalar', 'Reminders'),
+      subtitle: bits.isEmpty ? s.pick('Önümüzdeki 7 günde ödenecek kalem yok.', 'Nothing to pay in the next 7 days.') : bits.join(' · '),
       leftActions: [
         GlassButton(
           label: s.pick('Plan', 'Plan'),
@@ -1615,8 +1629,84 @@ class UpcomingSheet extends StatelessWidget {
       ],
       actions: [GoldButton(label: s.pick('Kapat', 'Close'), onTap: () => Navigator.of(context).pop())],
       children: [
-        for (final u in list) PayRow(ctx: ctx, item: u.item, month: u.month),
+        if (incomes.isNotEmpty) ...[
+          head(s.pick('MAAŞIN YATTI MI?', 'DID YOUR PAY ARRIVE?')),
+          for (final i in incomes) IncomeAskRow(item: i),
+        ],
+        if (late.isNotEmpty) ...[
+          head(s.pick('GÜNÜ GEÇTİ — ÖDEDİN Mİ?', 'PAST DUE — DID YOU PAY?')),
+          for (final u in late) PayRow(ctx: ctx, item: u.item, month: u.month),
+        ],
+        if (soon.isNotEmpty) ...[
+          if (incomes.isNotEmpty || late.isNotEmpty) head(s.pick('YAKLAŞAN', 'COMING UP')),
+          for (final u in soon) PayRow(ctx: ctx, item: u.item, month: u.month),
+        ],
       ],
+    );
+  }
+}
+
+/// "Maaşın yattı mı?" satırı: "Yattı" tutarı gelirin hesabına ekler; hesap seçilmemişse ya da tutar her ay
+/// değişiyorsa ayrıntı paneli açılır (tutar ve hesap orada seçilir).
+class IncomeAskRow extends StatelessWidget {
+  const IncomeAskRow({super.key, required this.item});
+
+  final IncomeItem item;
+
+  @override
+  Widget build(BuildContext context) {
+    final st = AppScope.of(context);
+    final s = S.of(context);
+    final ctx = st.ctx;
+    final m = ctx.cur;
+    final full = _incomeById(ctx.data, item.id);
+    final acc = ctx.data.account(srcAcc(item.account));
+    final day = item.payDay == null ? 1 : math.min(item.payDay!, daysInMonth(m));
+    final date = '$m-${two(day)}';
+    final quick = full != null && acc != null && !item.est;
+    void open() {
+      if (full != null) openIncomeActualSheet(context, full, m);
+    }
+
+    void confirm() {
+      if (!quick) return open();
+      final snap = st.snapshot();
+      final k = item.k, to = item.account!;
+      st.update((d) => setIncomeActual(d, item.id, m, k: k, date: date, to: to));
+      toast(
+        context,
+        s.pick('${fmtMoney(k, lang: s.lang, hidden: st.hidden)} ${accLabel(acc, s.lang)} hesabına eklendi.', '${fmtMoney(k, lang: s.lang, hidden: st.hidden)} added to ${accLabel(acc, s.lang)}.'),
+        undo: () => st.restore(snap),
+      );
+    }
+
+    final sub = <String>[
+      fmtDayShort(date, s.lang),
+      if (acc != null) accLabel(acc, s.lang) else s.pick('hesap seçilmedi', 'no account chosen'),
+      if (item.est) s.pick('tutar tahmini', 'estimated amount'),
+    ];
+    return RowItem(
+      key: ValueKey<String>('income-ask-${item.id}'),
+      leading: Container(
+        width: 38,
+        height: 38,
+        alignment: Alignment.center,
+        decoration: BoxDecoration(color: kIncomeColor.withValues(alpha: 0.16), borderRadius: BorderRadius.circular(11), border: Border.all(color: kIncomeColor.withValues(alpha: 0.5))),
+        child: Text('₺', style: serif(22, color: kIncomeColor)),
+      ),
+      title: item.name.isEmpty ? s.pick('Gelir', 'Income') : item.name,
+      subtitle: sub.join(' · '),
+      onTap: open,
+      trailing: Row(mainAxisSize: MainAxisSize.min, children: [
+        MoneyText(item.k, signed: true, style: sans(14.5, weight: FontWeight.w700), color: item.est ? MC.muted : MC.mint),
+        const SizedBox(width: 10),
+        SmallButton(
+          key: ValueKey<String>('income-yes-${item.id}'),
+          label: s.pick('Yattı', 'Arrived'),
+          icon: Icons.check,
+          onTap: confirm,
+        ),
+      ]),
     );
   }
 }

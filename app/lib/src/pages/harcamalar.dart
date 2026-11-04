@@ -62,38 +62,27 @@ int _byDateDesc(SpendLine a, SpendLine b) {
   return c != 0 ? c : b.createdAt.compareTo(a.createdAt);
 }
 
-/// Aktif abonelik ve faturalar ödeme gününde gider olarak görünür (ödendiyse ödenen tutar ve tarih).
+/// Ödenen abonelik ve faturalar ödendikleri gün gider olarak görünür (ödenen tutarla). Ödendiği
+/// onaylanmamış olanlar günü geçse de harcamaya sayılmaz: zilde ve Plan'da "Ödedin mi?" diye sorulur.
 List<SpendLine> subSpendsIn(Ctx ctx, String m) {
   final d = ctx.data;
-  final cur = ctx.cur;
-  final today = todayISO();
   final out = <SpendLine>[];
-  if (m.compareTo(cur) > 0) return out;
+  if (m.compareTo(ctx.cur) > 0) return out;
   final nD = daysInMonth(m);
   for (final s in d.subscriptions) {
     final pay = ctx.model.pay('sub', s.id, m);
+    if (pay == null) continue;
     final dayISO = '$m-${two(math.min(s.day ?? 1, nD))}';
-    int k;
-    String date;
+    final pd = pay.paidDate;
+    final date = pd != null && isDate(pd) && monthOf(pd) == m ? pd : dayISO;
     var src = s.source;
-    if (pay != null) {
-      k = pay.k;
-      final pd = pay.paidDate;
-      date = pd != null && isDate(pd) && monthOf(pd) == m ? pd : dayISO;
-      for (final p in pay.list) {
-        if (p.fromAccount != null) {
-          src = p.fromAccount;
-          break;
-        }
+    for (final p in pay.list) {
+      if (p.fromAccount != null) {
+        src = p.fromAccount;
+        break;
       }
-    } else {
-      if (!s.active) continue;
-      k = subAmountK(s, m);
-      if (k <= 0) continue;
-      date = dayISO;
-      if (m == cur && date.compareTo(today) > 0) continue;
     }
-    out.add(SpendLine(id: s.id, name: s.name, date: date, k: k, source: src, category: s.isBill ? 'fatura' : 'abonelik', isSub: true));
+    out.add(SpendLine(id: s.id, name: s.name, date: date, k: pay.k, source: src, category: s.isBill ? 'fatura' : 'abonelik', isSub: true));
   }
   return out;
 }

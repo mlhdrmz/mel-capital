@@ -323,7 +323,7 @@ class TopBar extends StatelessWidget {
             const SizedBox(width: 12),
             // Telefon eşitlemesi varsa durumu (dokununca hemen eşitler)
             if (st.sync?.paired == true) ...[const SyncButton(), const SizedBox(width: 8)],
-            _Bell(count: st.hasData ? st.ctx.upcoming(7).length : 0),
+            _Bell(count: st.hasData ? st.ctx.upcoming(7).length + st.ctx.pendingIncomes().length : 0),
             const SizedBox(width: 8),
             _SquareButton(
               icon: st.hidden ? Icons.visibility_off_outlined : Icons.visibility_outlined,
@@ -483,7 +483,8 @@ class _SquareButton extends StatelessWidget {
   }
 }
 
-/// Zil: 7 gün içindeki ödenmemiş ödemelerin sayısı (uyarı değil, yalnızca liste).
+/// Zil: onay bekleyen gelirler ("Maaşın yattı mı?"), günü geçmiş ödenmemiş kalemler ("Ödedin mi?") ve 7 gün
+/// içindeki ödemelerin sayısı (uyarı değil, yalnızca liste).
 class _Bell extends StatelessWidget {
   const _Bell({required this.count});
 
@@ -495,7 +496,7 @@ class _Bell extends StatelessWidget {
     return Stack(clipBehavior: Clip.none, children: [
       _SquareButton(
         icon: count > 0 ? Icons.notifications_outlined : Icons.notifications_none,
-        tooltip: s.pick('7 gün içindeki ödemeler', 'Payments in the next 7 days'),
+        tooltip: s.pick('Sorular ve 7 gün içindeki ödemeler', 'Questions and payments in the next 7 days'),
         onTap: () => showEditSheet<void>(context, builder: (_) => const UpcomingSheet()),
       ),
       if (count > 0)

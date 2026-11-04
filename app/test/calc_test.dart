@@ -15,6 +15,15 @@ import 'package:mel_capital/core/util.dart';
 Map<String, dynamic> _json(String path) =>
     jsonDecode(File(path).readAsStringSync()) as Map<String, dynamic>;
 
+/// Eski uygulamadan bilerek ayrılan sonuçlar (kullanıcının isteğiyle). Günü geçmiş ama "yattı" denmemiş maaş
+/// hâlâ beklenen gelir sayılır: örnek veride 15'inde yatan maaş 20'sinde onaylanmamış, "ay sonuna kadar
+/// serbest" ondan düşmez (eski uygulamada 45.000 TL düşüyordu).
+const Map<String, Map<String, Map<String, Object?>>> _deliberate = {
+  '2026-10-20': {
+    '2026-10': {'incomeRest': 4500000, 'safe': 6929818},
+  },
+};
+
 void main() {
   for (final day in ['2026-10-10', '2026-10-20']) {
     group('örnek veri, bugün $day', () {
@@ -100,7 +109,9 @@ void main() {
             ('spentCard', s.spentCard), ('estSpend', s.estSpend), ('free', s.free), ('safe', s.safe),
             ('incomeRest', s.incomeRest),
           ]) {
-            expect(f.$2, v[f.$1], reason: '$w ${f.$1}');
+            final o = _deliberate[day]?[w];
+            final want = o != null && o.containsKey(f.$1) ? o[f.$1] : v[f.$1];
+            expect(f.$2, want, reason: '$w ${f.$1}');
           }
           final items = v['items'] as List;
           expect(s.items.length, items.length, reason: '$w kalem sayısı');

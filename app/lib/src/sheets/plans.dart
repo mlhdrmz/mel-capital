@@ -451,8 +451,12 @@ class _IncomeSheetState extends State<IncomeSheet> {
   final _name = TextEditingController();
   final _day = TextEditingController();
   final _note = TextEditingController();
+  final _gross = TextEditingController();
   final List<SchedRow> _rows = [];
   bool _oneOff = false;
+  String? _account;
+  bool _isGross = false;
+  bool _variable = false;
   final _oneAmount = TextEditingController();
   String _oneDate = todayISO();
   String? _error;
@@ -474,6 +478,11 @@ class _IncomeSheetState extends State<IncomeSheet> {
       _name.text = x.name;
       _day.text = x.payDay?.toString() ?? '';
       _note.text = x.note;
+      _account = x.account;
+      _isGross = x.gross;
+      _variable = x.variable;
+      final g = x.grossAmount;
+      if (g != null) _gross.text = fmtNum(toK(g), lang: s.lang);
       final sched = x.schedule.toList()..sort((a, b) => a.from.compareTo(b.from));
       for (final r in sched) {
         _rows.add(SchedRow(r.from, r.to, fmtNum(toK(r.amount), lang: s.lang)));
@@ -486,7 +495,7 @@ class _IncomeSheetState extends State<IncomeSheet> {
 
   @override
   void dispose() {
-    for (final c in [_name, _day, _note, _oneAmount]) {
+    for (final c in [_name, _day, _note, _oneAmount, _gross]) {
       c.dispose();
     }
     for (final r in _rows) {
@@ -511,8 +520,16 @@ class _IncomeSheetState extends State<IncomeSheet> {
     if (_rows.isEmpty) return Outcome.err(s.pick('En az bir tutar dönemi ekle.', 'Add at least one period.'));
     final (sched, e2) = validateSched(readSched(_rows), openEnd: true, lang: s.lang);
     if (e2 != null) return Outcome.err(e2);
-    final id = widget.income?.id, note = _note.text.trim();
-    return Outcome.ok((d) => saveIncome(d, id: id, name: name, payDay: pd, schedule: sched, note: note), focus: maxMonth(currentMonth(), sched.first['from'] as String));
+    int? grossK;
+    if (_isGross) {
+      grossK = parseAmount(_gross.text);
+      if (grossK == null || grossK <= 0) return Outcome.err(s.pick('Brüt tutarı yaz (ör. 60.000).', 'Type the gross amount (e.g. 60,000).'));
+    }
+    final id = widget.income?.id, note = _note.text.trim(), account = _account, gross = _isGross, variable = _variable;
+    return Outcome.ok(
+      (d) => saveIncome(d, id: id, name: name, payDay: pd, schedule: sched, note: note, account: account, gross: gross, grossK: grossK, variable: variable),
+      focus: maxMonth(currentMonth(), sched.first['from'] as String),
+    );
   }
 
   @override
@@ -574,7 +591,45 @@ class _IncomeSheetState extends State<IncomeSheet> {
             right: FieldBox(label: s.pick('Ödeme günü', 'Pay day'), child: TextInput(controller: _day, number: true, hint: '1–31', onChanged: (_) => setState(() {}))),
           ),
           FieldBox(
-            label: s.pick('Tutar dönemleri', 'Amount periods'),
+            label: s.pick('Hangi hesaba yatıyor?', 'Paid into which account?'),
+            help: s.pick('Yattığını onaylayınca tutar bu hesabın bakiyesine eklenir; bu hesaptan yaptığın harcamalar da buradan düşer.',
+                'When you confirm it arrived, the amount is added to this account; spending from this account comes off it.'),
+            child: SourceSelect(key: const ValueKey<String>('income-account'), value: _account, cards: false, none: s.pick('Seçilmedi', 'Not chosen'), onChanged: (v) => setState(() => _account = v)),
+          ),
+          FieldBox(
+            label: s.pick('Tutar net mi, brüt mü?', 'Is the amount net or gross?'),
+            child: Seg<bool>(
+              key: const ValueKey<String>('income-basis'),
+              value: _isGross,
+              options: [(false, s.pick('Net (hesabına yatan)', 'Net (what you receive)')), (true, s.pick('Brüt', 'Gross'))],
+              onChanged: (v) => setState(() {
+                _isGross = v;
+                _error = null;
+              }),
+            ),
+          ),
+          if (_isGross)
+            FieldBox(
+              label: s.pick('Brüt tutar', 'Gross amount'),
+              help: s.pick('Bilgi olarak saklanır. Plan hesabına yatan net tutarla çalışır: aşağıya net tutarı yaz.',
+                  'Kept for reference. The plan works with what you actually receive: type the net amount below.'),
+              child: TextInput(key: const ValueKey<String>('income-gross'), controller: _gross, number: true, suffix: 'TL', onChanged: (_) => setState(() => _error = null)),
+            ),
+          FieldBox(
+            label: s.pick('Her ay aynı mı?', 'The same every month?'),
+            help: _variable
+                ? s.pick('Henüz yatmamış aylarda son yatan tutar "tahmini" olarak kullanılır; yattıkça gerçek tutarı girersin.',
+                    'Months not received yet use the last amount received, marked "estimated"; enter the real amount as it arrives.')
+                : null,
+            child: Seg<bool>(
+              key: const ValueKey<String>('income-variable'),
+              value: _variable,
+              options: [(false, s.pick('Her ay aynı', 'Fixed')), (true, s.pick('Değişken', 'Varies'))],
+              onChanged: (v) => setState(() => _variable = v),
+            ),
+          ),
+          FieldBox(
+            label: _isGross ? s.pick('Hesabına yatan net tutar', 'Net amount you receive') : s.pick('Tutar dönemleri', 'Amount periods'),
             help: s.pick('Zam gelirse yeni dönem ekle; önceki dönemin bitişi otomatik ayarlanır, geçmiş aylar bozulmaz.', 'After a raise, add a new period; the previous one ends automatically and past months stay intact.'),
             child: SchedEditor(rows: _rows, openEnd: true, defaultStart: _defaultStart(), onChanged: () => setState(() {})),
           ),
@@ -710,7 +765,8 @@ class _IncomeActualSheetState extends State<IncomeActualSheet> {
     }
     final day = inc.payDay == null ? 1 : (inc.payDay! < daysInMonth(m) ? inc.payDay! : daysInMonth(m));
     _date = tr?.date ?? '$m-${two(day)}';
-    _to = tr?.to;
+    // Yatırılmışsa o hesap; değilse gelirin her zaman yattığı hesap
+    _to = tr?.to ?? (st.data.account(srcAcc(inc.account)) != null ? inc.account : null);
   }
 
   @override
@@ -768,7 +824,8 @@ class _IncomeActualSheetState extends State<IncomeActualSheet> {
         ),
         FieldBox(
           label: s.pick('Hangi hesaba yattı?', 'Paid into which account?'),
-          help: s.pick('Bir hesap seçersen tutar o hesabın bakiyesine eklenir; kaldırırsan geri düşülür.', 'If you pick an account, the amount is added to its balance; it comes off again if you remove it.'),
+          help: s.pick('Seçtiğin hesabın bakiyesine eklenir ve bu gelir için hatırlanır; kaldırırsan geri düşülür.',
+              'It is added to the chosen account and remembered for this income; it comes off again if you remove it.'),
           child: SourceSelect(value: _to, cards: false, none: s.pick('Bakiyeye dokunma (bakiyeyi kendim güncelliyorum)', 'Leave balances (I update them myself)'), onChanged: (v) => setState(() => _to = v)),
         ),
       ],

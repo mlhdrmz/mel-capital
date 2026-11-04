@@ -519,6 +519,8 @@ class IncomeItem {
     this.planned = 0,
     this.actual = false,
     this.oneOff = false,
+    this.est = false,
+    this.account,
   });
   final String id;
   final String name;
@@ -527,6 +529,21 @@ class IncomeItem {
   final int planned;
   final bool actual;
   final bool oneOff;
+
+  /// Değişken gelir, henüz yatmadı: tutar son yatan tutardan tahmin.
+  final bool est;
+
+  /// Yattığı hesap ("acc:<kimlik>").
+  final String? account;
+}
+
+/// Gelirin [m] ayından önce en son yatan tutarı (hiç girilmediyse null).
+int? lastIncomeK(Income inc, String m) {
+  String? best;
+  for (final e in inc.monthAmounts.entries) {
+    if (isMonth(e.key) && e.key.compareTo(m) < 0 && (best == null || e.key.compareTo(best) > 0)) best = e.key;
+  }
+  return best == null ? null : toK(inc.monthAmounts[best]!);
 }
 
 List<IncomeItem> incomeFor(Data d, String m) {
@@ -535,9 +552,15 @@ List<IncomeItem> incomeFor(Data d, String m) {
     final planned = schedK(inc.schedule, m);
     final a = inc.monthAmounts[m];
     final act = a == null ? null : toK(a);
-    final k = act ?? planned;
+    var k = act ?? planned;
+    var est = false;
+    if (act == null && planned > 0 && inc.variable) {
+      // Değişken gelir henüz yatmadı: son yatan tutar (yoksa plandaki) tahmini olarak kullanılır
+      k = lastIncomeK(inc, m) ?? planned;
+      est = true;
+    }
     if (k > 0 || act != null) {
-      list.add(IncomeItem(id: inc.id, name: inc.name, k: k, payDay: inc.payDay, planned: planned, actual: act != null));
+      list.add(IncomeItem(id: inc.id, name: inc.name, k: k, payDay: inc.payDay, planned: planned, actual: act != null, est: est, account: inc.account));
     }
   }
   for (final o in d.oneOffIncomes) {
@@ -841,10 +864,11 @@ class Ctx {
     s.estSpend = m.compareTo(cur) > 0 ? est.k : 0;
     s.free = s.income + s.carryIn - s.total - s.savings - s.spent - s.estSpend;
     if (m == cur) {
-      // Ay sonuna kadar serbest: hesaplardaki para + bu ay henüz yatmamış gelir − ödenmemiş kalemler
-      final td = dayOf(todayISO());
+      // Ay sonuna kadar serbest: hesaplardaki para + bu ay henüz yatmamış gelir − ödenmemiş kalemler.
+      // Günü geçse de "yattı" denmemiş gelir beklenen sayılır (eski uygulamada günü geçince düşüyordu);
+      // yattığı onaylanınca hesaba eklenir, buradan çıkar. Zilde "Maaşın yattı mı?" diye sorulur.
       final rest = sumK(
-        s.incomeItems.where((i) => !i.actual && !i.oneOff && i.payDay != null && i.payDay! > td),
+        s.incomeItems.where((i) => !i.actual && !i.oneOff),
         (IncomeItem i) => i.k,
       );
       s.incomeRest = rest;
@@ -874,6 +898,16 @@ class Ctx {
       return c != 0 ? c : b.item.planned - a.item.planned;
     });
     return out;
+  }
+
+  /// "Maaşın yattı mı?": bu ay günü gelmiş, yattığı henüz onaylanmamış düzenli gelirler.
+  List<IncomeItem> pendingIncomes() {
+    if (data.closeOf(cur) != null) return const [];
+    final td = dayOf(todayISO());
+    return [
+      for (final i in sum(cur).incomeItems)
+        if (!i.actual && !i.oneOff && i.k > 0 && i.payDay != null && math.min(i.payDay!, daysInMonth(cur)) <= td) i,
+    ];
   }
 
   NextPayment? nextPayment() {

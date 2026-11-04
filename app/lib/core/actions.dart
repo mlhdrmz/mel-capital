@@ -496,8 +496,30 @@ void deleteExpense(Data data, String id) {
 
 // ---------------------------------------------------------------- Gelir
 
-String saveIncome(Data data, {String? id, required String name, int? payDay, required List<Json> schedule, String note = ''}) {
-  final rec = <String, dynamic>{'name': name, 'payDay': payDay, 'schedule': schedule, 'note': note};
+/// Düzenli gelir. [account]: yattığı hesap ("acc:<kimlik>"); [grossK]: brüt seçildiyse brüt tutar (bilgi;
+/// plan [schedule]'daki net tutarlarla çalışır); [variable]: her ay farklı yatar.
+String saveIncome(
+  Data data, {
+  String? id,
+  required String name,
+  int? payDay,
+  required List<Json> schedule,
+  String note = '',
+  String? account,
+  bool gross = false,
+  int? grossK,
+  bool variable = false,
+}) {
+  final rec = <String, dynamic>{
+    'name': name,
+    'payDay': payDay,
+    'schedule': schedule,
+    'note': note,
+    'account': account,
+    'basis': gross ? 'brut' : 'net',
+    'grossAmount': gross && grossK != null ? fromK(grossK) : null,
+    'variable': variable,
+  };
   if (id != null) {
     for (final x in data.incomes) {
       if (x.id == id) x.j.addAll(rec);
@@ -559,6 +581,8 @@ void setIncomeActual(Data data, String id, String month, {int? k, String? date, 
       'incomeRef': ref,
     }));
     accAdjust(data, to, k);
+    // Maaşın yattığı hesap hatırlanır: bundan sonraki aylarda "Yattı" demek yeter
+    i.j['account'] = to;
   }
 }
 
@@ -732,11 +756,11 @@ String addSetupLoan(Data data,
   });
 }
 
-/// Kurulumda düzenli gelir ekler (bu aydan itibaren, süresiz).
-String addSetupIncome(Data data, {required String name, required int k, int? payDay}) {
+/// Kurulumda düzenli gelir ekler (bu aydan itibaren, süresiz). [k] hesaba yatan net tutardır.
+String addSetupIncome(Data data, {required String name, required int k, int? payDay, String? account, bool gross = false, int? grossK}) {
   final b = data.balancesAsOf;
   final start = maxMonth(currentMonth(), isMonth(b) ? b : currentMonth());
-  return saveIncome(data, name: name, payDay: payDay, schedule: [
+  return saveIncome(data, name: name, payDay: payDay, account: account, gross: gross, grossK: grossK, schedule: [
     <String, dynamic>{'from': start, 'to': null, 'amount': fromK(k)},
   ]);
 }

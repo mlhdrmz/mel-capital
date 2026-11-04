@@ -1220,6 +1220,9 @@ class _IncomeStepState extends State<_IncomeStep> with _Flushable<_IncomeStep> {
   final _name = TextEditingController();
   final _amount = TextEditingController();
   final _day = TextEditingController();
+  final _gross = TextEditingController();
+  String? _account;
+  bool _isGross = false;
   String? _error;
   bool _init = false;
 
@@ -1233,7 +1236,7 @@ class _IncomeStepState extends State<_IncomeStep> with _Flushable<_IncomeStep> {
 
   @override
   void dispose() {
-    for (final c in [_name, _amount, _day]) {
+    for (final c in [_name, _amount, _day, _gross]) {
       c.dispose();
     }
     super.dispose();
@@ -1252,15 +1255,27 @@ class _IncomeStepState extends State<_IncomeStep> with _Flushable<_IncomeStep> {
     if (quiet && _amount.text.trim().isEmpty) return true;
     final name = _name.text.trim();
     if (name.isEmpty) return _fail(s.pick('Gelirin adını yaz (ör. Maaş).', 'Type a name (e.g. Salary).'));
+    int? grossK;
+    if (_isGross) {
+      grossK = parseAmount(_gross.text);
+      if (grossK == null || grossK <= 0) return _fail(s.pick('Brüt tutarı yaz (ör. 60.000).', 'Type the gross amount (e.g. 60,000).'));
+    }
     final k = parseAmount(_amount.text);
-    if (k == null || k <= 0) return _fail(s.pick('Aylık tutarı yaz (ör. 45.000).', 'Type the monthly amount (e.g. 45,000).'));
+    if (k == null || k <= 0) {
+      return _fail(_isGross
+          ? s.pick('Hesabına yatan net tutarı da yaz (ör. 45.000).', 'Also type the net amount you receive (e.g. 45,000).')
+          : s.pick('Aylık tutarı yaz (ör. 45.000).', 'Type the monthly amount (e.g. 45,000).'));
+    }
     final (day, e) = readDay(_day.text, s.pick('Yatış günü', 'Pay day'), s.lang);
     if (e != null) return _fail(e);
-    AppScope.of(context).update((d) => addSetupIncome(d, name: name, k: k, payDay: day));
+    final account = _account, gross = _isGross;
+    AppScope.of(context).update((d) => addSetupIncome(d, name: name, k: k, payDay: day, account: account, gross: gross, grossK: grossK));
     setState(() {
       _name.text = s.pick('Ek gelir', 'Other income');
       _amount.clear();
       _day.clear();
+      _gross.clear();
+      _isGross = false;
       _error = null;
     });
     return true;
@@ -1280,15 +1295,38 @@ class _IncomeStepState extends State<_IncomeStep> with _Flushable<_IncomeStep> {
           label: s.pick('Adı', 'Name'),
           child: TextInput(key: const ValueKey<String>('setup-income-name'), controller: _name, onChanged: changed),
         ),
+        FieldBox(
+          label: s.pick('Tutar net mi, brüt mü?', 'Is the amount net or gross?'),
+          child: Seg<bool>(
+            key: const ValueKey<String>('setup-income-basis'),
+            value: _isGross,
+            options: [(false, s.pick('Net (hesabına yatan)', 'Net (what you receive)')), (true, s.pick('Brüt', 'Gross'))],
+            onChanged: (v) => setState(() {
+              _isGross = v;
+              _error = null;
+            }),
+          ),
+        ),
+        if (_isGross)
+          FieldBox(
+            label: s.pick('Brüt tutar', 'Gross amount'),
+            help: s.pick('Bilgi olarak saklanır; plan hesabına yatan net tutarla çalışır.', 'Kept for reference; the plan works with what you actually receive.'),
+            child: TextInput(key: const ValueKey<String>('setup-income-gross'), controller: _gross, number: true, suffix: 'TL', onChanged: changed),
+          ),
         FieldPair(
           left: FieldBox(
-            label: s.pick('Aylık tutar', 'Monthly amount'),
+            label: _isGross ? s.pick('Hesabına yatan net tutar', 'Net amount you receive') : s.pick('Aylık tutar', 'Monthly amount'),
             child: TextInput(key: const ValueKey<String>('setup-income-amount'), controller: _amount, number: true, suffix: 'TL', hint: s.pick('ör. 45.000', 'e.g. 45,000'), onChanged: changed),
           ),
           right: FieldBox(
             label: s.pick('Yatış günü', 'Pay day'),
             child: TextInput(key: const ValueKey<String>('setup-income-day'), controller: _day, number: true, hint: '1–31', onChanged: changed, onSubmitted: (_) => _add()),
           ),
+        ),
+        FieldBox(
+          label: s.pick('Hangi hesaba yatıyor?', 'Paid into which account?'),
+          help: s.pick('Yattığını onaylayınca bu hesabın bakiyesine eklenir.', 'When you confirm it arrived, it is added to this account.'),
+          child: SourceSelect(key: const ValueKey<String>('setup-income-account'), value: _account, cards: false, none: s.pick('Seçilmedi', 'Not chosen'), onChanged: (v) => setState(() => _account = v)),
         ),
       ],
       error: _error,
