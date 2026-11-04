@@ -62,11 +62,12 @@ void main() {
 
   test('bütün simge yolları çözülür ve 24×24 alana sığar', () {
     void check(String name, String data) {
+      // Sınırlar eğrilerin denetim noktalarını da içerir: biraz pay bırakılır.
       final b = svgPath(data).getBounds();
-      expect(b.left, greaterThan(-0.6), reason: name);
-      expect(b.top, greaterThan(-0.6), reason: name);
-      expect(b.right, lessThan(24.6), reason: name);
-      expect(b.bottom, lessThan(24.6), reason: name);
+      expect(b.left, greaterThan(-1), reason: name);
+      expect(b.top, greaterThan(-1), reason: name);
+      expect(b.right, lessThan(25), reason: name);
+      expect(b.bottom, lessThan(25), reason: name);
       expect(math.max(b.width, b.height), greaterThan(10), reason: name);
     }
 
