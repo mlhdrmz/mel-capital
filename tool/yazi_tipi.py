@@ -16,6 +16,9 @@ SOURCE = 'https://raw.githubusercontent.com/google/fonts/main/ofl/manrope/'
 
 
 def main() -> None:
+    # Windows'ta konsol kodlaması Türkçe harfleri yazamayabilir
+    if hasattr(sys.stdout, 'reconfigure'):
+        sys.stdout.reconfigure(encoding='utf-8', errors='replace')
     out = sys.argv[1]
     os.makedirs(out, exist_ok=True)
     targets = {w: os.path.join(out, f'Manrope-{name}.ttf') for w, name in WEIGHTS.items()}
