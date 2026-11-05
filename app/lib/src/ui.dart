@@ -49,10 +49,7 @@ class MoneyText extends StatelessWidget {
   Widget build(BuildContext context) {
     final st = AppScope.of(context);
     final lang = S.of(context).lang;
-    final base = style.copyWith(
-      color: color ?? style.color,
-      fontFeatures: const [FontFeature.tabularFigures()],
-    );
+    final base = numStyle(style).copyWith(color: color ?? style.color);
     String text(int v) {
       final s = fmtMoney(v, lang: lang, hidden: st.hidden);
       return signed && v > 0 && !st.hidden ? '+$s' : s;
@@ -507,7 +504,7 @@ class Kpi extends StatelessWidget {
             fit: BoxFit.scaleDown,
             alignment: Alignment.centerLeft,
             child: text != null
-                ? Text(text!, style: serif(31, color: valueColor ?? MC.text))
+                ? Text(text!, style: numStyle(serif(31, color: valueColor ?? MC.text)))
                 : MoneyText(k, count: true, style: serif(31, color: valueColor ?? (k < 0 ? MC.rose : MC.text))),
           ),
           const SizedBox(height: 5),

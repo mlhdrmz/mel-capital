@@ -569,7 +569,7 @@ class _AffordOut extends StatelessWidget {
             if (site != null) TextSpan(text: ' · $site', style: sans(13, color: MC.muted)),
           ])),
         ),
-        Text(money(k), style: serif(30, color: MC.gold)),
+        Text(money(k), style: numStyle(serif(30, color: MC.gold))),
       ]),
       const SizedBox(height: 8),
       for (final o in opts)

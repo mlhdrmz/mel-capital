@@ -22,6 +22,9 @@ class MC {
 
   static const String sans = 'Inter';
   static const String serif = 'Cormorant';
+
+  /// Rakamlar: tutarlar ve büyük sayılar (kullanıcının seçimi: Manrope).
+  static const String numbers = 'Manrope';
 }
 
 /// Fotoğraf üzerindeki yazıların okunması için hafif gölge.
@@ -93,5 +96,19 @@ ThemeData buildTheme() {
       ),
       textStyle: TextStyle(fontFamily: MC.sans, fontSize: 12, color: MC.text),
     ),
+  );
+}
+
+/// Rakam yazısı: tutarlar ve büyük sayılar Manrope ile, eşit genişlikte rakamlarla. Başlık yazı tipiyle
+/// (Cormorant) verilmiş büyük rakamlar biraz küçültülür: Manrope'un rakamları daha iri, yerleşim bozulmasın.
+TextStyle numStyle(TextStyle base) {
+  final fromSerif = base.fontFamily == MC.serif;
+  final size = base.fontSize;
+  return base.copyWith(
+    fontFamily: MC.numbers,
+    fontSize: fromSerif && size != null ? size * 0.9 : size,
+    fontWeight: fromSerif ? FontWeight.w600 : base.fontWeight,
+    letterSpacing: fromSerif && size != null ? -0.01 * size : base.letterSpacing,
+    fontFeatures: const [FontFeature.tabularFigures()],
   );
 }

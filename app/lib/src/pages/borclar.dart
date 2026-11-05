@@ -398,7 +398,7 @@ class FindeksPanel extends StatelessWidget {
             Row(
               crossAxisAlignment: CrossAxisAlignment.end,
               children: [
-                Text(hide ? '•••' : score.round().toString(), style: serif(54)),
+                Text(hide ? '•••' : score.round().toString(), style: numStyle(serif(54))),
                 const SizedBox(width: 8),
                 Padding(padding: const EdgeInsets.only(bottom: 8), child: Text('/ 1900', style: sans(13, color: MC.muted))),
               ],

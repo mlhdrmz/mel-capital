@@ -42,6 +42,11 @@ jobs:
           channel: stable
           cache: true
       - run: flutter --version
+      - name: Yazı tipleri (Manrope)
+        working-directory: .
+        env:
+          PIP_BREAK_SYSTEM_PACKAGES: '1'
+        run: python3 tool/yazi_tipi.py app/assets/fonts
       - run: flutter pub get
       - name: Kod denetimi
         run: |
@@ -108,6 +113,25 @@ jobs:
           python3 -m playwright install --with-deps chromium > /dev/null
           python3 ../tool/screenshots.py build/web ../ekran
           python3 ../tool/annotate.py notice "Ekran görüntüleri" ../ekran/rapor.txt 40
+          # Tasarım seçenekleri için birkaç örnek fotoğraf (uygulamanın Unsplash listesinden)
+          mkdir -p ../ekran/foto
+          for id in 1735770517146-e95c872226fc 1758551139137-5cad5a98e99f 1625244724120-1fd1d34d00f6 1697898109604-e06e88b15271 1693942864574-2d8efeb5cf57 1558196876-76dcb9d1993f 1579285014902-da8d2ba6007b 1562281302-809108fd533c; do
+            curl -sfL "https://images.unsplash.com/photo-$id?ixlib=rb-4.1.0&w=1600&fit=max&q=80&fm=jpg" -o "../ekran/foto/$id.jpg" || true
+          done
+      - name: Yazı tiplerini ayrı dala koy (depoda yoksa)
+        if: github.event_name == 'push'
+        working-directory: .
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          git ls-files --error-unmatch app/assets/fonts/Manrope-SemiBold.ttf > /dev/null 2>&1 && exit 0
+          mkdir -p ../yazi && cp app/assets/fonts/Manrope-*.ttf app/assets/fonts/OFL-Manrope.txt ../yazi/
+          cd ../yazi
+          git init -q
+          git checkout -q -b yazi-tipleri
+          git add -A
+          git -c user.name="mel-capital-ci" -c user.email="ci@users.noreply.github.com" commit -qm "Manrope ${GITHUB_SHA::7}"
+          git push -qf "https://x-access-token:${GH_TOKEN}@github.com/${GITHUB_REPOSITORY}.git" yazi-tipleri
       - name: Ekran görüntülerini ayrı dala koy
         if: github.event_name == 'push'
         working-directory: ekran
@@ -141,6 +165,12 @@ jobs:
         with:
           go-version: '1.24.x'
           cache: false
+      - name: Yazı tipleri (Manrope)
+        working-directory: .
+        shell: bash
+        env:
+          PIP_BREAK_SYSTEM_PACKAGES: '1'
+        run: python tool/yazi_tipi.py app/assets/fonts
       - run: flutter pub get
       - name: Sürüm
         id: surum
@@ -260,6 +290,11 @@ jobs:
           flutter-version: ${{ env.FLUTTER_VERSION }}
           channel: stable
           cache: true
+      - name: Yazı tipleri (Manrope)
+        working-directory: .
+        env:
+          PIP_BREAK_SYSTEM_PACKAGES: '1'
+        run: python3 tool/yazi_tipi.py app/assets/fonts
       - run: flutter pub get
       - name: Android NDK (indirme bazen yarıda kalıyor; birkaç kez denenir)
         run: |
