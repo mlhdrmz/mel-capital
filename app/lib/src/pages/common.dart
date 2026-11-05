@@ -449,20 +449,28 @@ class CardTile extends StatelessWidget {
           children: [
             BankPlate(bankKey: bankKey, name: name, size: 22),
             const SizedBox(width: 8),
-            const Spacer(),
-            ConstrainedBox(
-              constraints: BoxConstraints(maxWidth: width * 0.64),
-              child: Column(crossAxisAlignment: CrossAxisAlignment.end, children: [
-                Text(name.isEmpty ? kind : name,
-                    textAlign: TextAlign.right,
-                    maxLines: 2,
-                    overflow: TextOverflow.ellipsis,
-                    style: sans(11.5, weight: FontWeight.w700, color: ink, letterSpacing: 0.46, height: 1.25)),
-                if (showKind) ...[
-                  const SizedBox(height: 2),
-                  Text(trUpper(kind), maxLines: 1, style: sans(8.5, weight: FontWeight.w600, color: ink.withValues(alpha: 0.75), letterSpacing: 1.36)),
-                ],
-              ]),
+            // Kart adı sağda; uzunsa iki satıra iner, logoya çarpmaz
+            Expanded(
+              child: Align(
+                alignment: Alignment.topRight,
+                child: ConstrainedBox(
+                  constraints: BoxConstraints(maxWidth: width * 0.64),
+                  child: Column(crossAxisAlignment: CrossAxisAlignment.end, children: [
+                    Text(name.isEmpty ? kind : name,
+                        textAlign: TextAlign.right,
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
+                        style: sans(11.5, weight: FontWeight.w700, color: ink, letterSpacing: 0.46, height: 1.25)),
+                    if (showKind) ...[
+                      const SizedBox(height: 2),
+                      Text(trUpper(kind),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: sans(8.5, weight: FontWeight.w600, color: ink.withValues(alpha: 0.75), letterSpacing: 1.36)),
+                    ],
+                  ]),
+                ),
+              ),
             ),
           ],
         ),
@@ -489,10 +497,17 @@ class CardTile extends StatelessWidget {
           ),
           const SizedBox(height: 4),
           Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Text(s.pick('Borç ', 'Debt ') + (st.hidden ? '•••' : fmtNum(debtK!, lang: s.lang)), style: sans(10, color: ink.withValues(alpha: 0.9))),
-              const Spacer(),
-              Text('Limit ${st.hidden ? '•••' : fmtNum(limitK!, lang: s.lang)}', style: sans(10, color: ink.withValues(alpha: 0.9))),
+              Flexible(
+                child: Text(s.pick('Borç ', 'Debt ') + (st.hidden ? '•••' : fmtNum(debtK!, lang: s.lang)),
+                    maxLines: 1, overflow: TextOverflow.ellipsis, style: sans(10, color: ink.withValues(alpha: 0.9))),
+              ),
+              const SizedBox(width: 8),
+              Flexible(
+                child: Text('Limit ${st.hidden ? '•••' : fmtNum(limitK!, lang: s.lang)}',
+                    maxLines: 1, overflow: TextOverflow.ellipsis, textAlign: TextAlign.right, style: sans(10, color: ink.withValues(alpha: 0.9))),
+              ),
             ],
           ),
         ],
