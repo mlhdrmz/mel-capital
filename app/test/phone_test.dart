@@ -23,6 +23,7 @@ Future<void> loadRealFonts() async {
 
   await family('Inter', ['Inter-Regular.ttf', 'Inter-Medium.ttf', 'Inter-SemiBold.ttf', 'Inter-Bold.ttf']);
   await family('Cormorant', ['CormorantGaramond-Medium.ttf', 'CormorantGaramond-SemiBold.ttf', 'CormorantGaramond-Bold.ttf']);
+  await family('Manrope', ['Manrope-Regular.ttf', 'Manrope-Medium.ttf', 'Manrope-SemiBold.ttf', 'Manrope-Bold.ttf', 'Manrope-ExtraBold.ttf']);
 }
 
 /// Çizim hatalarını (ör. taşmalar) bütün ayrıntısıyla toplar: hangi dosyanın hangi satırındaki
