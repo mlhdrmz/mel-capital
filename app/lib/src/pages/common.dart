@@ -1,13 +1,12 @@
 // Sayfalar arasında ortak parçalar: hareket satırı, kart görseli, kredi satırı, paneller.
 
-import 'dart:math' as math;
-
 import 'package:flutter/material.dart';
 
 import '../../core/calc.dart';
 import '../../core/constants.dart';
 import '../../core/model.dart';
 import '../../core/util.dart';
+import '../card_art.dart';
 import '../glass.dart';
 import '../i18n.dart';
 import '../sheet.dart';
@@ -431,89 +430,103 @@ class CardTile extends StatelessWidget {
     final s = S.of(context);
     final st = AppScope.of(context);
     final ink = look.text;
-    final soft = ink.withValues(alpha: 0.78);
+    final darkInk = look.ink == 'dark';
+    final soft = ink.withValues(alpha: 0.8);
     final kind = kindLabel.of(s.lang);
     final lowerName = trLower(name);
     final showKind = kind.isNotEmpty &&
         !lowerName.contains(trLower(kind)) &&
         !lowerName.contains('${trLower(kind.split(' ').first)} kart');
     final used = limitK != null && limitK! > 0 && debtK != null ? (debtK! / limitK!).clamp(0.0, 1.0).toDouble() : null;
-    const shape = SignatureBorder(cut: 26, radius: 18, side: BorderSide(color: Color(0x38FFFFFF)));
-    final tile = SizedBox(
-      width: width,
-      height: width * 0.6,
-      child: DecoratedBox(
-        decoration: ShapeDecoration(
-          gradient: LinearGradient(begin: Alignment.topLeft, end: Alignment.bottomRight, colors: [look.c1, look.c2]),
-          shape: shape,
-          shadows: const [BoxShadow(color: Color(0x66000000), blurRadius: 26, offset: Offset(0, 12))],
-        ),
-        child: ClipPath(
-          clipper: const ShapeBorderClipper(shape: shape),
-          child: CustomPaint(
-            painter: CardPatternPainter(look.pattern, ink, look.accent),
-            child: Padding(
-              padding: const EdgeInsets.fromLTRB(18, 15, 18, 14),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Row(
-                    children: [
-                      BankPlate(bankKey: bankKey, name: name, size: 22),
-                      const SizedBox(width: 9),
-                      Expanded(
-                        child: Text(name.isEmpty ? kind : name,
-                            maxLines: 1, overflow: TextOverflow.ellipsis, style: sans(13.5, weight: FontWeight.w700, color: ink)),
-                      ),
-                      if (showKind) Text(kind, style: sans(10.5, color: soft)),
-                    ],
-                  ),
-                  const SizedBox(height: 10),
-                  Row(
-                    children: [
-                      const _Chip(),
-                      const Spacer(),
-                      if (network != null) Text(network!, style: sans(12, weight: FontWeight.w700, color: soft, letterSpacing: 0.4)),
-                    ],
-                  ),
-                  const Spacer(),
-                  if (midLabel.tr.isNotEmpty) Text(midLabel.of(s.lang), style: sans(11, color: soft, letterSpacing: 0.3)),
-                  if (midValue != null) MoneyText(midValue!, style: serif(27, color: ink)),
-                  if (used != null) ...[
-                    const SizedBox(height: 5),
-                    ProgressLine(used, color: used > 0.9 ? MC.rose : ink, height: 3),
-                    const SizedBox(height: 4),
-                    Row(
-                      children: [
-                        Text(s.pick('Borç ', 'Debt ') + (st.hidden ? '•••' : fmtNum(debtK!, lang: s.lang)), style: sans(10.5, color: soft)),
-                        const Spacer(),
-                        Text('Limit ${st.hidden ? '•••' : fmtNum(limitK!, lang: s.lang)}', style: sans(10.5, color: soft)),
-                      ],
-                    ),
-                  ],
+    // Eski uygulamadaki kart: gerçek kart oranı (1,586), yuvarlak köşeler, logo solda, kart adı sağda.
+    final height = width / 1.586;
+    final radius = BorderRadius.circular(15);
+    final content = Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            BankPlate(bankKey: bankKey, name: name, size: 22),
+            const SizedBox(width: 8),
+            const Spacer(),
+            ConstrainedBox(
+              constraints: BoxConstraints(maxWidth: width * 0.64),
+              child: Column(crossAxisAlignment: CrossAxisAlignment.end, children: [
+                Text(name.isEmpty ? kind : name,
+                    textAlign: TextAlign.right,
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
+                    style: sans(11.5, weight: FontWeight.w700, color: ink, letterSpacing: 0.46, height: 1.25)),
+                if (showKind) ...[
+                  const SizedBox(height: 2),
+                  Text(trUpper(kind), maxLines: 1, style: sans(8.5, weight: FontWeight.w600, color: ink.withValues(alpha: 0.75), letterSpacing: 1.36)),
                 ],
-              ),
+              ]),
+            ),
+          ],
+        ),
+        const SizedBox(height: 8),
+        Row(children: [
+          const CardChip(),
+          const Spacer(),
+          if (network != null)
+            Text(network!, style: TextStyle(fontFamily: MC.sans, fontSize: 12, fontWeight: FontWeight.w800, fontStyle: FontStyle.italic, color: ink.withValues(alpha: 0.92))),
+        ]),
+        const Spacer(),
+        if (midLabel.tr.isNotEmpty) Text(midLabel.of(s.lang), style: sans(10, color: soft, letterSpacing: 0.2)),
+        if (midValue != null) MoneyText(midValue!, style: sans(width < 260 ? 16 : 18, weight: FontWeight.w700, color: ink, height: 1.2)),
+        if (used != null) ...[
+          const SizedBox(height: 5),
+          ClipRRect(
+            borderRadius: BorderRadius.circular(9),
+            child: Container(
+              height: 4,
+              color: (darkInk ? Colors.black : Colors.white).withValues(alpha: 0.24),
+              alignment: Alignment.centerLeft,
+              child: FractionallySizedBox(widthFactor: used, heightFactor: 1, child: ColoredBox(color: ink)),
             ),
           ),
+          const SizedBox(height: 4),
+          Row(
+            children: [
+              Text(s.pick('Borç ', 'Debt ') + (st.hidden ? '•••' : fmtNum(debtK!, lang: s.lang)), style: sans(10, color: ink.withValues(alpha: 0.9))),
+              const Spacer(),
+              Text('Limit ${st.hidden ? '•••' : fmtNum(limitK!, lang: s.lang)}', style: sans(10, color: ink.withValues(alpha: 0.9))),
+            ],
+          ),
+        ],
+      ],
+    );
+    Widget tile = Container(
+      width: width,
+      height: height,
+      decoration: BoxDecoration(
+        borderRadius: radius,
+        boxShadow: const [BoxShadow(color: Color(0x59000000), blurRadius: 30, offset: Offset(0, 14))],
+      ),
+      child: ClipRRect(
+        borderRadius: radius,
+        child: Stack(
+          fit: StackFit.expand,
+          children: [
+            CustomPaint(painter: CardArtPainter(c1: look.c1, c2: look.c2, pattern: look.pattern, darkInk: darkInk, accent: look.accent)),
+            Padding(padding: EdgeInsets.fromLTRB(look.accent != null ? 19 : 15, 13, 15, 13), child: content),
+            const IgnorePointer(child: CustomPaint(painter: CardShinePainter())),
+            IgnorePointer(
+              child: DecoratedBox(
+                decoration: BoxDecoration(
+                  borderRadius: radius,
+                  border: Border.all(color: darkInk ? const Color(0x1A000000) : const Color(0x1FFFFFFF)),
+                ),
+              ),
+            ),
+            if (closed) ClosedRibbon(text: s.pick('KAPALI', 'CLOSED')),
+          ],
         ),
       ),
     );
-    final body = closed
-        ? Stack(
-            children: [
-              Opacity(opacity: 0.5, child: tile),
-              Positioned(
-                top: 14,
-                right: 14,
-                child: Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-                  decoration: BoxDecoration(color: const Color(0xCC000000), borderRadius: BorderRadius.circular(6)),
-                  child: Text(s.pick('KAPALI', 'CLOSED'), style: sans(10.5, weight: FontWeight.w700, letterSpacing: 1.2)),
-                ),
-              ),
-            ],
-          )
-        : tile;
+    if (closed) tile = ColorFiltered(colorFilter: kClosedCardFilter, child: tile);
     final d = debt;
     final c = card;
     final tap = onTap ??
@@ -522,124 +535,9 @@ class CardTile extends StatelessWidget {
             : d != null
                 ? () => openDebtSheet(context, debt: d)
                 : null);
-    if (tap == null) return body;
-    return MouseRegion(cursor: SystemMouseCursors.click, child: GestureDetector(onTap: tap, child: body));
+    if (tap == null) return tile;
+    return MouseRegion(cursor: SystemMouseCursors.click, child: GestureDetector(onTap: tap, child: tile));
   }
-}
-
-class _Chip extends StatelessWidget {
-  const _Chip();
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      width: 34,
-      height: 25,
-      decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(5),
-        gradient: const LinearGradient(
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-          colors: [Color(0xFFF1D9A4), Color(0xFFC59B52), Color(0xFFE9CC8C)],
-        ),
-        border: Border.all(color: const Color(0x55000000), width: 0.6),
-      ),
-      child: CustomPaint(painter: _ChipLines()),
-    );
-  }
-}
-
-class _ChipLines extends CustomPainter {
-  @override
-  void paint(Canvas canvas, Size size) {
-    final p = Paint()
-      ..color = const Color(0x66000000)
-      ..strokeWidth = 0.7
-      ..style = PaintingStyle.stroke;
-    canvas.drawLine(Offset(0, size.height / 2), Offset(size.width, size.height / 2), p);
-    canvas.drawLine(Offset(size.width * 0.36, 0), Offset(size.width * 0.36, size.height), p);
-    canvas.drawLine(Offset(size.width * 0.64, 0), Offset(size.width * 0.64, size.height), p);
-  }
-
-  @override
-  bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
-}
-
-/// Kart deseni: çizgiler, dalgalar, noktalar, halkalar, geometrik, ışık, konfeti.
-class CardPatternPainter extends CustomPainter {
-  CardPatternPainter(this.pattern, this.ink, this.accent);
-
-  final String pattern;
-  final Color ink;
-  final Color? accent;
-
-  @override
-  void paint(Canvas canvas, Size size) {
-    final w = size.width, h = size.height;
-    final line = Paint()
-      ..color = ink.withValues(alpha: 0.09)
-      ..style = PaintingStyle.stroke
-      ..strokeWidth = 1.2;
-    final fill = Paint()..color = ink.withValues(alpha: 0.08);
-    switch (pattern) {
-      case 'lines':
-        for (var x = -h; x < w; x += 14) {
-          canvas.drawLine(Offset(x, h), Offset(x + h, 0), line);
-        }
-      case 'waves':
-        for (var i = 0; i < 6; i++) {
-          final path = Path();
-          final y0 = h * (0.35 + i * 0.12);
-          path.moveTo(0, y0);
-          for (var x = 0.0; x <= w; x += 6) {
-            path.lineTo(x, y0 + math.sin((x / w) * math.pi * 2.4 + i * 0.6) * h * 0.06);
-          }
-          canvas.drawPath(path, line);
-        }
-      case 'dots':
-        for (var y = 10.0; y < h; y += 13) {
-          for (var x = (y ~/ 13).isEven ? 8.0 : 14.5; x < w; x += 13) {
-            canvas.drawCircle(Offset(x, y), 1.4, fill);
-          }
-        }
-      case 'rings':
-        for (var r = 26.0; r < w; r += 22) {
-          canvas.drawCircle(Offset(w * 0.92, h * 1.02), r, line);
-        }
-      case 'geo':
-        final pg = Paint()..color = ink.withValues(alpha: 0.07);
-        canvas.drawPath(Path()..moveTo(w * 0.45, h)..lineTo(w, h * 0.18)..lineTo(w, h)..close(), pg);
-        canvas.drawPath(Path()..moveTo(w * 0.7, h)..lineTo(w, h * 0.55)..lineTo(w, h)..close(), pg);
-        canvas.drawPath(Path()..moveTo(w * 0.62, 0)..lineTo(w * 0.86, 0)..lineTo(w * 0.5, h * 0.62)..close(), pg);
-      case 'glow':
-        canvas.drawRect(
-          Offset.zero & size,
-          Paint()
-            ..shader = RadialGradient(
-              center: const Alignment(0.75, -0.8),
-              radius: 0.9,
-              colors: [ink.withValues(alpha: 0.28), ink.withValues(alpha: 0)],
-            ).createShader(Offset.zero & size),
-        );
-      case 'confetti':
-        final rnd = math.Random(7);
-        final cp = Paint()
-          ..strokeWidth = 2.2
-          ..strokeCap = StrokeCap.round;
-        for (var i = 0; i < 38; i++) {
-          final x = rnd.nextDouble() * w, y = rnd.nextDouble() * h, a = rnd.nextDouble() * math.pi;
-          cp.color = (i % 3 == 0 ? (accent ?? MC.gold) : ink).withValues(alpha: 0.16);
-          canvas.drawLine(Offset(x, y), Offset(x + math.cos(a) * 6, y + math.sin(a) * 6), cp);
-        }
-    }
-    final acc = accent;
-    if (acc != null) {
-      canvas.drawRect(Rect.fromLTWH(0, h - 5, w, 5), Paint()..color = acc.withValues(alpha: 0.85));
-    }
-  }
-
-  @override
-  bool shouldRepaint(covariant CardPatternPainter old) => old.pattern != pattern || old.ink != ink || old.accent != accent;
 }
 
 // ---------------------------------------------------------------- Kredi satırı

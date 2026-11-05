@@ -320,7 +320,7 @@ class AnimatedMoney extends StatelessWidget {
         maxLines: 1,
         softWrap: false,
         overflow: TextOverflow.fade,
-        style: style.copyWith(fontFeatures: const [FontFeature.tabularFigures()]),
+        style: numStyle(style),
       ),
     );
   }

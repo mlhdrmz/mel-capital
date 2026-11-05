@@ -6,6 +6,7 @@ import '../../core/calc.dart';
 import '../../core/constants.dart';
 import '../../core/model.dart';
 import '../../core/util.dart';
+import '../card_art.dart';
 import '../dialogs.dart';
 import '../glass.dart';
 import '../i18n.dart';
@@ -197,25 +198,22 @@ class CardRow extends StatelessWidget {
           text: s.pick(' · abonelikler ${fmtMoney(info.subsK, lang: s.lang, hidden: st.hidden)}/ay',
               ' · subscriptions ${fmtMoney(info.subsK, lang: s.lang, hidden: st.hidden)}/mo')));
     }
-    const swatchShape = SignatureBorder(cut: 11, radius: 9, side: BorderSide(color: Color(0x40FFFFFF)));
     final swatch = Tooltip(
       message: s.pick('Kart kaydını aç', 'Open the card'),
       child: MouseRegion(
         cursor: SystemMouseCursors.click,
         child: GestureDetector(
           onTap: () => openDebtSheet(context, debt: debt),
+          // Eski uygulamadaki küçük kart örneği: kartın renkleri ve banka logosu
           child: Container(
-            width: 70,
-            height: 44,
-            decoration: ShapeDecoration(
-              gradient: LinearGradient(begin: Alignment.topLeft, end: Alignment.bottomRight, colors: [look.c1, look.c2]),
-              shape: swatchShape,
-            ),
-            child: ClipPath(
-              clipper: const ShapeBorderClipper(shape: swatchShape),
+            width: 62,
+            height: 40,
+            decoration: BoxDecoration(borderRadius: BorderRadius.circular(8), border: Border.all(color: const Color(0x24FFFFFF))),
+            child: ClipRRect(
+              borderRadius: BorderRadius.circular(7),
               child: CustomPaint(
-                painter: CardPatternPainter(look.pattern, look.text, look.accent),
-                child: Center(child: BankPlate(bankKey: bank, name: debt.creditor, size: 18, shadow: false)),
+                painter: CardArtPainter(c1: look.c1, c2: look.c2, pattern: look.pattern, darkInk: look.ink == 'dark', patternOn: false),
+                child: Center(child: BankPlate(bankKey: bank, name: debt.creditor, size: 18, shadow: false, maxLogoWidth: 44)),
               ),
             ),
           ),

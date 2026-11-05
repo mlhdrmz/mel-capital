@@ -23,9 +23,16 @@ def main() -> None:
     if all(os.path.exists(p) for p in targets.values()) and os.path.exists(license_path):
         print('Manrope hazır')
         return
-    subprocess.run([sys.executable, '-m', 'pip', 'install', '--quiet', 'fonttools'], check=True)
-    from fontTools.ttLib import TTFont  # noqa: E402 (fonttools yeni kuruldu)
-    from fontTools.varLib import instancer  # noqa: E402
+    try:
+        from fontTools.ttLib import TTFont
+        from fontTools.varLib import instancer
+    except ImportError:
+        # fonttools yoksa kurulur ve betik yeni bir süreçte yeniden çalışır (yeni paket bu süreçte görünmez)
+        if '--kuruldu' in sys.argv:
+            raise
+        subprocess.run([sys.executable, '-m', 'pip', 'install', '--quiet', 'fonttools'], check=True)
+        subprocess.run([sys.executable, __file__, out, '--kuruldu'], check=True)
+        return
 
     variable = os.path.join(out, '_Manrope-degisken.ttf')
     urllib.request.urlretrieve(SOURCE + 'Manrope%5Bwght%5D.ttf', variable)
