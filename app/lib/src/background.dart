@@ -1,6 +1,7 @@
 // Arka plan, eski Mel Capital'deki gibi: sekmenin Unsplash fotoğrafı (her sekmede farklı, 4 saatte bir kayar,
 // akşamları gece fotoğrafları), fotoğraflar henüz inmemişse uygulamaya gömülü kapaklar. Fotoğraf
-// değişince yumuşakça geçer; üstüne karartma ya da buğu konmaz. Sağ altta fotoğrafçının adı, favori ve
+// değişince yumuşakça (kısa) geçer; üstüne karartma ya da buğu konmaz. Gösterilen fotoğrafın bulanık
+// kopyası bir kez hazırlanır (bulanik.dart): yazıların arkasındaki bulanıklık onu kullanır. Sağ altta fotoğrafçının adı, favori ve
 // "Gösterme" düğmeleri.
 
 import 'dart:async';
@@ -9,6 +10,7 @@ import 'package:flutter/material.dart';
 
 import '../core/photos.dart';
 import '../storage/photos.dart';
+import 'bulanik.dart';
 import 'i18n.dart';
 import 'pages/alisveris.dart' show openLink;
 import 'photo_image_stub.dart' if (dart.library.io) 'photo_image_io.dart';
@@ -122,8 +124,11 @@ class _BackgroundState extends State<Background> {
           }
         }
         final shown = _shown ?? AssetImage('assets/images/cover_${widget.cover}.webp');
+        // Yazıların arkasındaki bulanıklık için bu fotoğrafın bulanık kopyası (bir kez hazırlanır)
+        unawaited(bulanikKopyaHazirla(_shownKey ?? 'kapak-${widget.cover}', shown, createLocalImageConfiguration(context)));
         return AnimatedSwitcher(
-          duration: const Duration(milliseconds: 1200),
+          // Kısa geçiş: sayfa değişirken uygulama takılmasın
+          duration: const Duration(milliseconds: 400),
           layoutBuilder: (current, previous) => Stack(
             fit: StackFit.expand,
             children: [...previous, if (current != null) current],

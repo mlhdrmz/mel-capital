@@ -45,76 +45,79 @@ class OzetPage extends StatelessWidget {
     final total = m.liquid + m.cardAvail;
     final name = st.profile?.name;
 
-    return SingleChildScrollView(
-      padding: isPhoneLayout(context) ? const EdgeInsets.fromLTRB(16, 6, 16, 96) : const EdgeInsets.fromLTRB(28, 14, 28, 56),
-      child: LayoutBuilder(
-        builder: (context, c) {
-          final narrow = c.maxWidth < 900;
-          final items = [
-            _HomeItem(
-              label: s.pick('Hesaplarda', 'In accounts'),
-              k: m.liquid,
-              note: accNote,
-              onTap: () => st.setTab(AppTab.bankalar),
-            ),
-            _HomeItem(
-              label: s.pick('Kartlarda boş limit', 'Available card limit'),
-              k: m.cardLimit > 0 ? m.cardAvail : null,
-              note: cardNote,
-              onTap: () => st.setTab(AppTab.borclar),
-            ),
-          ];
-          final big = _HomeItem(
-            label: s.pick('Harcanabilir', 'Spendable'),
-            k: total,
-            note: s.pick('Hesaplar + kartlardaki boş limit', 'Accounts + available card limit'),
-            big: true,
-          );
-          return ConstrainedBox(
-            constraints: BoxConstraints(minHeight: MediaQuery.sizeOf(context).height - 160),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Reveal(
-                  child: Hale(
-                    child: Text(
-                      '${greet.toUpperCase()}${name == null ? '' : ', ${trUpper(name)}'} · ${fmtDate(today, s.lang).toUpperCase()}, ${trUpper(weekdayName(today, s.lang))}',
-                      style: sans(12, color: MC.eyebrow, weight: FontWeight.w700, letterSpacing: 2.2, shadows: kPhotoTextShadow),
+    // Özet'te rakamlar sayarak yükselir (başka sayfalarda hemen görünür)
+    return SayarakYukselir(
+      child: SingleChildScrollView(
+        padding: isPhoneLayout(context) ? const EdgeInsets.fromLTRB(16, 6, 16, 96) : const EdgeInsets.fromLTRB(28, 14, 28, 56),
+        child: LayoutBuilder(
+          builder: (context, c) {
+            final narrow = c.maxWidth < 900;
+            final items = [
+              _HomeItem(
+                label: s.pick('Hesaplarda', 'In accounts'),
+                k: m.liquid,
+                note: accNote,
+                onTap: () => st.setTab(AppTab.bankalar),
+              ),
+              _HomeItem(
+                label: s.pick('Kartlarda boş limit', 'Available card limit'),
+                k: m.cardLimit > 0 ? m.cardAvail : null,
+                note: cardNote,
+                onTap: () => st.setTab(AppTab.borclar),
+              ),
+            ];
+            final big = _HomeItem(
+              label: s.pick('Harcanabilir', 'Spendable'),
+              k: total,
+              note: s.pick('Hesaplar + kartlardaki boş limit', 'Accounts + available card limit'),
+              big: true,
+            );
+            return ConstrainedBox(
+              constraints: BoxConstraints(minHeight: MediaQuery.sizeOf(context).height - 160),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Reveal(
+                    child: Hale(
+                      child: Text(
+                        '${greet.toUpperCase()}${name == null ? '' : ', ${trUpper(name)}'} · ${fmtDate(today, s.lang).toUpperCase()}, ${trUpper(weekdayName(today, s.lang))}',
+                        style: sans(12, color: MC.eyebrow, weight: FontWeight.w700, letterSpacing: 2.2, shadows: kPhotoTextShadow),
+                      ),
                     ),
                   ),
-                ),
-                SizedBox(height: narrow ? 40 : 120),
-                Reveal(
-                  delay: const Duration(milliseconds: 140),
-                  child: narrow
-                      ? Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            big,
-                            const SizedBox(height: 34),
-                            items[0],
-                            const SizedBox(height: 26),
-                            items[1],
-                            // Telefonda fotoğrafçının adı en altta, rakamların üstüne binmez
-                            if (fotoBilgisiSayfada(Sahne.sakin, isPhoneLayout(context), ozet: true)) ...[const SizedBox(height: 26), const PhotoBar()],
-                          ],
-                        )
-                      : Row(
-                          crossAxisAlignment: CrossAxisAlignment.end,
-                          children: [
-                            Expanded(child: items[0]),
-                            const SizedBox(width: 48),
-                            Expanded(child: items[1]),
-                            const SizedBox(width: 48),
-                            Expanded(flex: 5, child: Align(alignment: Alignment.bottomRight, child: big)),
-                          ],
-                        ),
-                ),
-              ],
-            ),
-          );
-        },
+                  SizedBox(height: narrow ? 40 : 120),
+                  Reveal(
+                    delay: const Duration(milliseconds: 140),
+                    child: narrow
+                        ? Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              big,
+                              const SizedBox(height: 34),
+                              items[0],
+                              const SizedBox(height: 26),
+                              items[1],
+                              // Telefonda fotoğrafçının adı en altta, rakamların üstüne binmez
+                              if (fotoBilgisiSayfada(Sahne.sakin, isPhoneLayout(context), ozet: true)) ...[const SizedBox(height: 26), const PhotoBar()],
+                            ],
+                          )
+                        : Row(
+                            crossAxisAlignment: CrossAxisAlignment.end,
+                            children: [
+                              Expanded(child: items[0]),
+                              const SizedBox(width: 48),
+                              Expanded(child: items[1]),
+                              const SizedBox(width: 48),
+                              Expanded(flex: 5, child: Align(alignment: Alignment.bottomRight, child: big)),
+                            ],
+                          ),
+                  ),
+                ],
+              ),
+            );
+          },
+        ),
       ),
     );
   }

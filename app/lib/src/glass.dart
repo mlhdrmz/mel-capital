@@ -8,6 +8,7 @@ import 'i18n.dart';
 import 'sahne.dart';
 import 'state.dart';
 import 'theme.dart';
+import 'ui.dart' show SayarakYukselir;
 
 /// "İmza köşe": sol üst köşesi kesik, diğer üç köşesi yuvarlak çerçeve.
 class SignatureBorder extends ShapeBorder {
@@ -183,6 +184,8 @@ class _GlassPanelState extends State<GlassPanel>
           child: Padding(padding: EdgeInsets.fromLTRB(0, pad.top, 0, pad.bottom), child: widget.child),
         );
       }
+      // Sakin sahnede bölümler kayarak gelmez, hemen görünür (sayfa değişirken takılmasın)
+      if (sahne == Sahne.sakin) return yuz;
       return AnimatedBuilder(
         animation: _appear,
         child: yuz,
@@ -344,6 +347,8 @@ class _RevealState extends State<Reveal> with SingleTickerProviderStateMixin {
 
   @override
   Widget build(BuildContext context) {
+    // Sakin sahnede kayarak gelmez, hemen görünür (sayfa değişirken takılmasın)
+    if (SahneScope.of(context) == Sahne.sakin) return widget.child;
     return FadeTransition(
       opacity: _appear,
       child: SlideTransition(
@@ -372,16 +377,22 @@ class AnimatedMoney extends StatelessWidget {
   Widget build(BuildContext context) {
     final hidden = AppScope.of(context).hidden;
     final lang = S.of(context).lang;
-    return TweenAnimationBuilder<double>(
-      tween: Tween<double>(begin: 0, end: value),
-      duration: duration,
-      curve: Curves.easeOutCubic,
-      builder: (context, v, _) => Text(
-        money(v, lang: lang, hidden: hidden),
-        maxLines: 1,
-        softWrap: false,
-        overflow: TextOverflow.fade,
-        style: numStyle(style),
+    // Rakamlar yalnızca Özet'te sayarak yükselir; başka yerde hemen görünür
+    if (!SayarakYukselir.burada(context)) {
+      return Text(money(value, lang: lang, hidden: hidden), maxLines: 1, softWrap: false, overflow: TextOverflow.fade, style: numStyle(style));
+    }
+    return RepaintBoundary(
+      child: TweenAnimationBuilder<double>(
+        tween: Tween<double>(begin: 0, end: value),
+        duration: duration,
+        curve: Curves.easeOutCubic,
+        builder: (context, v, _) => Text(
+          money(v, lang: lang, hidden: hidden),
+          maxLines: 1,
+          softWrap: false,
+          overflow: TextOverflow.fade,
+          style: numStyle(style),
+        ),
       ),
     );
   }

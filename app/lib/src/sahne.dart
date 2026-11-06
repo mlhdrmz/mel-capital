@@ -15,11 +15,10 @@
 // (Özet gibi, fotoğraf görünür). Açılır pencereler "pencere" kalır. Dergi, kemer ve sayfa
 // kodda duruyor; istenirse yeniden kullanılabilir.
 
-import 'dart:ui' as ui;
-
 import 'package:flutter/material.dart';
 
 import 'background.dart' show PhotoBar;
+import 'bulanik.dart';
 import 'state.dart';
 import 'ui.dart' show isPhoneLayout;
 
@@ -285,13 +284,6 @@ class _HaleArka extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    Widget katman(double iceri, double sigma) => Padding(
-          padding: EdgeInsets.symmetric(horizontal: iceri, vertical: iceri / 2),
-          child: ClipRRect(
-            borderRadius: BorderRadius.circular(genis ? 26 : 18),
-            child: BackdropFilter(filter: ui.ImageFilter.blur(sigmaX: sigma, sigmaY: sigma), child: const SizedBox.expand()),
-          ),
-        );
     return Stack(fit: StackFit.expand, children: [
       // Yumuşak kenarlı koyu ton (kutunun kendisi saydam; yalnızca bulanık gölgesi görünür)
       Padding(
@@ -303,8 +295,11 @@ class _HaleArka extends StatelessWidget {
           ),
         ),
       ),
-      // Bulanıklık kenarlardan içeri doğru artar
-      if (genis) ...[katman(6, 4), katman(16, 8)] else ...[katman(4, 4), katman(10, 7)],
+      // Fotoğrafın bulanık kopyası (bir kez hazırlanır; canlı bulanıklık yok), kenarları yumuşak
+      Padding(
+        padding: genis ? const EdgeInsets.symmetric(horizontal: 4, vertical: 2) : const EdgeInsets.symmetric(horizontal: 2, vertical: 1),
+        child: BulanikZemin(yaricap: genis ? 26 : 18, yumusaklik: genis ? 7 : 4),
+      ),
     ]);
   }
 }

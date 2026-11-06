@@ -100,6 +100,14 @@ Kurallar:
 - Bütün sekmeler ve giriş ekranları Özet gibi "sakin" sahnede (6. bölüm): siyah sayfalar yok,
   fotoğraf görünür; bölümlerin ve başlıkların arkasında yalnızca yumuşak kenarlı hafif
   bulanıklık. Açılır pencereler düz koyu ("pencere").
+- Performans (Windows'ta sayfa değişirken takılma): canlı bulanıklık (BackdropFilter) kaldırıldı.
+  Arka plan değişince fotoğrafın küçük bulanık kopyası bir kez hazırlanır (`bulanik.dart`:
+  `bulanikKopyaHazirla`, `kBulanikArka`); bölümler arkalarına kopyanın ekranda kendilerine denk
+  gelen yerini yumuşak kenarlı çizer (`BulanikZemin`). Fotoğraf geçişi 0,4 sn; sakin sahnede
+  bölümler kayarak gelmez; rakamlar yalnızca Özet'te sayarak yükselir (`SayarakYukselir`). Arka
+  plan ve sayan rakamlar ayrı katmanda (`RepaintBoundary`). Testte sekmelerde BackdropFilter
+  olmadığı denetlenir. Dikkat: `BulanikZemin` ile kaydırılan içerik arasına `RepaintBoundary` ya
+  da `ListView` konmamalı (kaydırınca kopya yerinden kayar).
 - Telefonda Özet'te fotoğrafçının adı sayfanın en altında (rakamların üstüne binmiyor); diğer
   sayfalarda alt menünün üstünde.
 - Ekstre ekleme (Borçlar ve Bankalar'da "Ekstre ekle"): PDF seçilir (şifreliyse şifre sorulur,
@@ -166,7 +174,8 @@ onarımı) da sakin. Açılır pencereler, düzenleme panelleri ve ipucu kartlar
 Dağıtım (Melih'in kararı, 06.11.2026): siyah sayfalar gereksiz bulundu ve ekranda çok yer
 kaplıyordu. Bütün sekmeler ve giriş ekranları (tanıtım, karşılama, kurulum, veri onarımı) 3
 (sakin). Sakin sahnede paneller `HaleZemini` ile çizilir: kutu ve kenar yok; arkalarında yumuşak
-kenarlı hafif bulanıklık ve hafif koyu ton, yazılarda hafif gölge (`kHaleYaziGolgesi`). Sayfa
+kenarlı hafif bulanıklık (fotoğrafın bir kez hazırlanan bulanık kopyası, `BulanikZemin`) ve hafif
+koyu ton, yazılarda hafif gölge (`kHaleYaziGolgesi`). Sayfa
 başlıkları da `Hale` ile sarılır. Açılır pencereler "pencere" kalır. Dergi, kemer ve sayfa
 kodda duruyor ama kullanılmıyor. Gece modu yalnızca fotoğrafları değiştirir (19.00–07.00 gece
 fotoğrafları); renkler aynıdır.
@@ -191,3 +200,4 @@ tutarlar Manrope.
 | 2026-11-06 | Claude | Kısa adlarda Türkçe harf yoksa Latin büyük/küçük harf ("TEKNOSA ONLINE" → "Teknosa Online") |
 | 2026-11-07 | Claude | Gömülü "lobby" kapağı (içinde 3 kişi) silindi, Melih'in onayıyla yerine "highrise"; tanıtımın 2. sayfası "lock"; kapak sırası testi yeniden hesaplandı |
 | 2026-11-07 | Claude | Resmî sürüm yayınlandı: s65 (Mel Capital 07.11.2026-01.51), Melih'in onayıyla; kullanılabilir bakiye, kısa adlar, yeni abonelikler, sakin tasarım, lobby kapağının kaldırılması içinde |
+| 2026-11-07 | Claude | Performans: canlı bulanıklık yerine bir kez hazırlanan bulanık kopya (`bulanik.dart`); fotoğraf geçişi 0,4 sn, bölümler kayarak gelmez, rakamlar yalnızca Özet'te sayar; arka plan ve sayan rakam ayrı katmanda (Melih'in onayıyla) |

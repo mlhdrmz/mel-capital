@@ -93,6 +93,8 @@ void main() {
       await tapTab(tester, tab);
       expect(state.tab, tab);
       expect(tester.takeException(), isNull, reason: tab.name);
+      // Canlı bulanıklık sayfa değişirken uygulamayı takıyordu: yerine bir kez hazırlanan bulanık kopya
+      expect(find.byType(BackdropFilter), findsNothing, reason: '${tab.name}: canlı bulanıklık olmamalı');
     }
   });
 

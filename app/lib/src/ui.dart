@@ -56,20 +56,37 @@ class MoneyText extends StatelessWidget {
       return signed && v > 0 && !st.hidden ? '+$s' : s;
     }
 
-    if (!count || st.hidden) return Text(text(k), style: base, maxLines: 1, softWrap: false, overflow: TextOverflow.fade);
-    return TweenAnimationBuilder<double>(
-      tween: Tween<double>(begin: 0, end: k.toDouble()),
-      duration: const Duration(milliseconds: 900),
-      curve: Curves.easeOutCubic,
-      builder: (context, v, _) => Text(
-        text(v.round() == k ? k : (v / 100).round() * 100),
-        style: base,
-        maxLines: 1,
-        softWrap: false,
-        overflow: TextOverflow.fade,
+    // Rakamlar yalnızca Özet'te sayarak yükselir; başka yerde hemen görünür
+    if (!count || st.hidden || !SayarakYukselir.burada(context)) {
+      return Text(text(k), style: base, maxLines: 1, softWrap: false, overflow: TextOverflow.fade);
+    }
+    // Ayrı katman: sayarken yalnızca rakam yeniden çizilir, sayfanın geri kalanı değil
+    return RepaintBoundary(
+      child: TweenAnimationBuilder<double>(
+        tween: Tween<double>(begin: 0, end: k.toDouble()),
+        duration: const Duration(milliseconds: 900),
+        curve: Curves.easeOutCubic,
+        builder: (context, v, _) => Text(
+          text(v.round() == k ? k : (v / 100).round() * 100),
+          style: base,
+          maxLines: 1,
+          softWrap: false,
+          overflow: TextOverflow.fade,
+        ),
       ),
     );
   }
+}
+
+/// Altındaki rakamlar ([MoneyText] count, [AnimatedMoney]) sayarak yükselir. Yalnızca Özet'te
+/// kullanılır; başka sayfalarda rakamlar hemen görünür (sayfa değişirken takılmasın).
+class SayarakYukselir extends InheritedWidget {
+  const SayarakYukselir({super.key, required super.child});
+
+  static bool burada(BuildContext context) => context.getInheritedWidgetOfExactType<SayarakYukselir>() != null;
+
+  @override
+  bool updateShouldNotify(SayarakYukselir oldWidget) => false;
 }
 
 /// Sayfa iskeleti: kaydırılabilir içerik, başlık ve sağda düğmeler.

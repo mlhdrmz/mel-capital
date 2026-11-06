@@ -122,7 +122,8 @@ class Shell extends StatelessWidget {
       body: Stack(
         fit: StackFit.expand,
         children: [
-          Background(page: tabs ? st.tab.index : 0, cover: cover, rotate: tabs),
+          // Ayrı katman: sayfa yeniden çizilirken fotoğraf yeniden çizilmez (ve tersi)
+          RepaintBoundary(child: Background(page: tabs ? st.tab.index : 0, cover: cover, rotate: tabs)),
           SahneZemini(sahne: sahne),
           SafeArea(
             child: Column(
