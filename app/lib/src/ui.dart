@@ -105,14 +105,17 @@ class PageFrame extends StatelessWidget {
                   mainAxisSize: MainAxisSize.min,
                   children: [
                     if (leading != null) ...[leading!, const SizedBox(width: 14)],
-                    Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Text(eyebrow, style: sans(11.5, color: MC.eyebrow, weight: FontWeight.w700, letterSpacing: 2.6, shadows: kPhotoTextShadow)),
-                        const SizedBox(height: 6),
-                        Text(title, style: serif(phone ? 34 : 44, shadows: kPhotoTextShadow)),
-                      ],
+                    // Dar sütunda (dergi sahnesi) uzun başlık alt satıra iner
+                    Flexible(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Text(eyebrow, style: sans(11.5, color: MC.eyebrow, weight: FontWeight.w700, letterSpacing: 2.6, shadows: kPhotoTextShadow)),
+                          const SizedBox(height: 6),
+                          Text(title, style: serif(phone ? 34 : 44, shadows: kPhotoTextShadow)),
+                        ],
+                      ),
                     ),
                   ],
                 ),
