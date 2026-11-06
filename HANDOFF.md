@@ -116,7 +116,7 @@ Kurallar:
 2. **Tasarım sahneleri** (6. bölüm): bütün ekranlara uygulandı; Melih'in yorumu bekleniyor.
 3. Yatırımlar bölümü (henüz başlanmadı; sorular sorulacak).
 4. İçinde insan olan diğer fotoğrafların taranması (75 fotoğrafın hepsine bakılamadı).
-5. Resmî sürüm (Melih'in onayı) ve imzalı APK (gizli anahtarlar).
+5. İmzalı APK (gizli anahtarlar eklenmedi; resmî sürümde yalnızca Windows dosyaları var).
 
 ## 6. Tasarım: sahneler
 
@@ -147,3 +147,4 @@ tutarlar Manrope.
 | 2026-11-06 | Claude | Sayfa başlığı dar sütunda alt satıra iner; Özet'teki hale tasarım sayfasındaki kadar belirgin yapıldı; sekme testi taşmanın yerini yazar |
 | 2026-11-06 | Claude | Tanıtım ve karşılama kemer, kurulum ve onarım dergi, açılır pencereler "pencere" görünümü; telefonda Özet'te fotoğrafçının adı en altta |
 | 2026-11-06 | Claude | Ekstre Motoru (`motor/ekstre.dart`), PDF okuma (`storage/pdf_metin*.dart`, pdfrx), ekstre paneli (`src/sheets/ekstre.dart`), testleri |
+| 2026-11-06 | Claude | Resmî sürüm yayınlandı: s56 (Mel Capital 06.11.2026-20.15), Melih'in onayıyla |
