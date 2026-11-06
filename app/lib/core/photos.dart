@@ -90,7 +90,8 @@ const List<Photo> kPhotos = [
 ];
 
 /// Fotoğraflar inmemişken kullanılan, uygulamaya gömülü kapaklar (assets/images/cover_<ad>.webp).
-const List<String> kCovers = ['lobby', 'courtyard', 'mountain', 'villa', 'highrise', 'palm', 'santorini', 'lock'];
+/// "lobby" kapağı çıkarıldı: içinde insan vardı (Melih'in isteği); yerine "highrise" kullanılır.
+const List<String> kCovers = ['courtyard', 'mountain', 'villa', 'highrise', 'palm', 'santorini', 'lock'];
 
 /// Sekme sayısı: her sekmede farklı fotoğraf olabilmesi için havuzda en az bu kadar fotoğraf gerekir.
 /// İçinde insan görünen fotoğraflar: arka planda hiç gösterilmez (kullanıcının isteği).

@@ -1,5 +1,5 @@
 {
- "note": "Eski Mel Capital (app4.js photoPool/bgPhoto) çıktısı. Teması olmayan fotoğrafların parlaklıkları uydurmadır.",
+ "note": "Eski Mel Capital (app4.js photoPool/bgPhoto) çıktısı. Teması olmayan fotoğrafların parlaklıkları uydurmadır. Kapak durumları (az fotoğraf) 'lobby' kapağı çıkarıldıktan sonra (içinde insan var; Melih'in isteği) aynı kuralla yeniden hesaplandı.",
  "lum": {
   "1790276317950-cd0cad99655d": 0.21,
   "1774423864869-702b21c2490a": 0.55,
@@ -488,13 +488,13 @@
    "at": "2026-11-04T09:15:00Z",
    "evening": false,
    "picks": [
-    "villa",
     "santorini",
+    "mountain",
+    "palm",
     "courtyard",
     "highrise",
     "lock",
-    "mountain",
-    "palm"
+    "villa"
    ]
   },
   {
@@ -502,13 +502,13 @@
    "at": "2026-11-04T15:59:59Z",
    "evening": false,
    "picks": [
-    "santorini",
+    "mountain",
+    "palm",
     "courtyard",
     "highrise",
     "lock",
-    "mountain",
-    "palm",
-    "lobby"
+    "villa",
+    "santorini"
    ]
   },
   {
@@ -516,13 +516,13 @@
    "at": "2026-11-04T16:00:00Z",
    "evening": true,
    "picks": [
-    "santorini",
+    "mountain",
+    "palm",
     "courtyard",
     "highrise",
     "lock",
-    "mountain",
-    "palm",
-    "lobby"
+    "villa",
+    "santorini"
    ]
   },
   {
@@ -530,13 +530,13 @@
    "at": "2026-11-04T21:30:00Z",
    "evening": true,
    "picks": [
+    "courtyard",
     "highrise",
     "lock",
-    "mountain",
-    "palm",
-    "lobby",
     "villa",
-    "santorini"
+    "santorini",
+    "mountain",
+    "palm"
    ]
   },
   {
@@ -544,12 +544,12 @@
    "at": "2026-11-05T03:59:00Z",
    "evening": true,
    "picks": [
+    "highrise",
     "lock",
-    "mountain",
-    "palm",
-    "lobby",
     "villa",
     "santorini",
+    "mountain",
+    "palm",
     "courtyard"
    ]
   },
@@ -558,12 +558,12 @@
    "at": "2026-11-05T04:00:00Z",
    "evening": false,
    "picks": [
+    "highrise",
     "lock",
-    "mountain",
-    "palm",
-    "lobby",
     "villa",
     "santorini",
+    "mountain",
+    "palm",
     "courtyard"
    ]
   },
@@ -572,13 +572,13 @@
    "at": "2026-12-31T23:00:00Z",
    "evening": true,
    "picks": [
-    "santorini",
+    "palm",
     "courtyard",
     "highrise",
     "lock",
-    "mountain",
-    "palm",
-    "lobby"
+    "villa",
+    "santorini",
+    "mountain"
    ]
   },
   {
@@ -586,13 +586,13 @@
    "at": "2027-03-15T11:45:00Z",
    "evening": false,
    "picks": [
+    "palm",
     "courtyard",
     "highrise",
     "lock",
-    "mountain",
-    "palm",
-    "lobby",
-    "villa"
+    "villa",
+    "santorini",
+    "mountain"
    ]
   },
   {

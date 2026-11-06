@@ -25,7 +25,7 @@ import 'tips.dart';
 import 'ui.dart' show isPhoneLayout, showToast;
 
 const Map<AppTab, String> _covers = {
-  AppTab.ozet: 'lobby',
+  AppTab.ozet: 'highrise',
   AppTab.harcamalar: 'courtyard',
   AppTab.borclar: 'mountain',
   AppTab.bankalar: 'villa',
@@ -52,7 +52,7 @@ class Shell extends StatelessWidget {
   Widget build(BuildContext context) {
     final st = AppScope.of(context);
     var tabs = false;
-    var cover = 'lobby';
+    var cover = 'highrise';
     Sahne? sahne;
     Widget body = const _Loading();
     final introCover = kIntroCovers[introIndex(st.introSlide)];
@@ -65,7 +65,7 @@ class Shell extends StatelessWidget {
           sahne = kTanitimSahnesi;
           body = const IntroPage();
         } else {
-          cover = 'lobby';
+          cover = 'highrise';
           sahne = kKarsilamaSahnesi;
           body = const StartPage();
         }
@@ -80,17 +80,17 @@ class Shell extends StatelessWidget {
           sahne = kTanitimSahnesi;
           body = const IntroPage();
         } else if (st.addingProfile) {
-          cover = 'lobby';
+          cover = 'highrise';
           sahne = kKarsilamaSahnesi;
           body = StartPage(addingProfile: true, onCancel: () => st.setAddingProfile(false));
         } else if (step != null) {
-          cover = kSetupCovers[step] ?? 'lobby';
+          cover = kSetupCovers[step] ?? 'highrise';
           sahne = kKurulumSahnesi;
           body = const SetupPage();
         } else {
           tabs = true;
           sahne = kSekmeSahnesi[st.tab]!;
-          cover = _covers[st.tab] ?? 'lobby';
+          cover = _covers[st.tab] ?? 'highrise';
           // Sekme değişince yeni sayfa sıfırdan kurulur; paneller kendileri
           // buğulanarak belirir (sayfanın üstüne saydamlık konmaz).
           body = KeyedSubtree(

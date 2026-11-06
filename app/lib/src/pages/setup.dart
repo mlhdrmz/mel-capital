@@ -20,13 +20,13 @@ import 'common.dart';
 
 /// Sihirbaz adımlarının arka plan fotoğrafları (eklenenlerin sonra görüneceği sayfanınki).
 const Map<String, String> kSetupCovers = {
-  'ekstre': 'lobby',
+  'ekstre': 'highrise',
   'hesaplar': 'villa',
   'kartlar': 'mountain',
   'krediler': 'mountain',
   'gelir': 'highrise',
   'giderler': 'courtyard',
-  'bitti': 'lobby',
+  'bitti': 'highrise',
 };
 
 class _StepInfo {

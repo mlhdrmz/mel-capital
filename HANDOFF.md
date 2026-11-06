@@ -91,7 +91,8 @@ Kurallar:
 ## 4. Son durum
 
 - Logolar (banka, mağaza, abonelik/fatura), eski arka plan fotoğrafları (75; içinde insan olan 2'si
-  gösterilmiyor: `kPeoplePhotos`), kart görselleri eski uygulamadaki gibi, tutarlar Manrope
+  gösterilmiyor: `kPeoplePhotos`; içinde insan olan gömülü "lobby" kapağı silindi, yerine
+  "highrise"), kart görselleri eski uygulamadaki gibi, tutarlar Manrope
   yazı tipiyle (tarih ve gün rakamları Manrope değil).
 - Maaş ↔ banka bağlantısı: gelir hangi hesaba yatıyorsa seçilir; zilde "Maaşın yattı mı?" →
   "Yattı" o hesaba ekler. Abonelikler her ay "Ödedin mi?" diye sorulur. Net/brüt ve değişken gelir.
@@ -188,3 +189,4 @@ tutarlar Manrope.
 | 2026-11-06 | Claude | Resmî sürüm yayınlandı: s60 (Mel Capital 06.11.2026-22.37), Melih'in onayıyla; hesap dökümü okuma düzeltmesi içinde |
 | 2026-11-06 | Claude | Melih'in istekleri: hesap dökümünde para "Kullanılabilir Bakiye"den; işlemler kısa adla (`ekstreAdi`); kayıtsız bilinen abonelikler aboneliklere eklenir; bütün sekmeler ve giriş ekranları sakin sahne (siyah sayfalar kalktı, `HaleZemini`) |
 | 2026-11-06 | Claude | Kısa adlarda Türkçe harf yoksa Latin büyük/küçük harf ("TEKNOSA ONLINE" → "Teknosa Online") |
+| 2026-11-07 | Claude | Gömülü "lobby" kapağı (içinde 3 kişi) silindi, Melih'in onayıyla yerine "highrise"; tanıtımın 2. sayfası "lock"; kapak sırası testi yeniden hesaplandı |

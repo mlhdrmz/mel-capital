@@ -11,7 +11,7 @@ import '../theme.dart';
 import '../ui.dart';
 
 /// Tanıtım ekranlarının arka plan fotoğrafları.
-const List<String> kIntroCovers = ['lobby', 'highrise', 'villa'];
+const List<String> kIntroCovers = ['highrise', 'lock', 'villa'];
 
 /// Geçerli tanıtım ekranı sırası (0–2).
 int introIndex(int i) => i < 0 ? 0 : (i >= kIntroCovers.length ? kIntroCovers.length - 1 : i);
