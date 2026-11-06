@@ -312,6 +312,8 @@ void main() {
     expect(a('00123/4567890 VERGİ').ad, 'Vergi');
     expect(a('FAİZ % 10,00000').ad, 'Faiz');
     expect(a('BİLİNMEYEN DÜKKAN 1234567 KADIKÖY').ad, 'Bilinmeyen Dükkan Kadıköy');
+    expect(a('TEKNOSA ONLINE').ad, 'Teknosa Online', reason: 'Türkçe harf yok: I Latin harfi');
+    expect(a('AYŞE YILMAZ-FAST-CEP ŞUBE-1000000001').ad, 'Ayşe Yılmaz');
   });
 
   test('hesap hareketleri uygulanır: maaş yattı, fatura ve abonelik ödendi, kayıtsız abonelikler eklenir, aktarmalar harcama değil; ikinci kez eklenmez', () {

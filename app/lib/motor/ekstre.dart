@@ -220,7 +220,9 @@ EkstreAdi _adiBul(String aciklama) {
     if (RegExp(b.desen).hasMatch(duz)) return EkstreAdi(b.ad, kategori: b.kategori);
   }
   final kisa = kelimeler.where((k) => k.length > 1).take(4).join(' ');
-  return EkstreAdi(_basHarfler(kisa.isEmpty ? _temizAciklama(aciklama) : kisa));
+  // Türkçe harf yoksa "I" Latin harfidir ("ONLINE" → "Online", "Onlıne" değil)
+  final turkce = RegExp('[İıŞşĞğÇçÖöÜü]').hasMatch(aciklama);
+  return EkstreAdi(_basHarfler(kisa.isEmpty ? _temizAciklama(aciklama) : kisa, turkce: turkce));
 }
 
 /// Açıklamanın ad sözcükleri: kart numarası parçaları, döviz tutarı, havale/FAST kuyruğu, ödeme
@@ -248,12 +250,14 @@ List<String> _adSozcukleri(String aciklama) {
 }
 
 /// Hepsi büyük ya da hepsi küçük harfli yazının sözcüklerinin baş harfi büyük ("MİGROS KADIKÖY" →
-/// "Migros Kadıköy"); karışık yazı olduğu gibi kalır.
-String _basHarfler(String t) {
+/// "Migros Kadıköy"); karışık yazı olduğu gibi kalır. [turkce] değilse Latin kurallarıyla.
+String _basHarfler(String t, {bool turkce = true}) {
   final s = t.trim();
   if (s.isEmpty) return 'Harcama';
-  if (s != trUpper(s) && s != trLower(s)) return s;
-  return s.split(' ').map((w) => w.isEmpty ? w : '${trUpper(w.substring(0, 1))}${trLower(w.substring(1))}').join(' ');
+  final buyuk = turkce ? trUpper : (String x) => x.toUpperCase();
+  final kucuk = turkce ? trLower : (String x) => x.toLowerCase();
+  if (s != buyuk(s) && s != kucuk(s)) return s;
+  return s.split(' ').map((w) => w.isEmpty ? w : '${buyuk(w.substring(0, 1))}${kucuk(w.substring(1))}').join(' ');
 }
 
 class EkstreOkuma {
