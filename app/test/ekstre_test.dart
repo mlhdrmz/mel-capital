@@ -52,6 +52,32 @@ const List<List<String>> _hesapDokumu = [
   ],
 ];
 
+/// Garanti benzeri hesap hareketleri: en yeni üstte, etiket sütunu, "+/-" işaretli tutar, özette
+/// "Bakiye" ve "Kullanılabilir Bakiye"; açıklamalarda tutara benzeyen sayılar (uydurma kişi ve hesap).
+const List<List<String>> _hesapHareketleri = [
+  [
+    'T. Garanti Bankası A.Ş.',
+    'www.garantibbva.com.tr',
+    'Sayın AYŞE YILMAZ, 08 Kasım 2026 tarihi saat 10:00 itibarıyla 01/11/2026 - 08/11/2026 tarihleri arasındaki Hesap Hareketleri bilgileriniz aşağıdaki gibidir.',
+    'Ad Soyad / Unvan\t: AYŞE YILMAZ',
+    'IBAN\t: TR12 0006 2000 1110 0001 2345 67',
+    'Bakiye\t:\t8.000,00 TL',
+    'Kullanılabilir Bakiye\t:\t36.600,00 TL',
+    '01/11/2026 - 08/11/2026 aralığında 9 kayıt bulunmuştur.',
+    'Tarih\tAçıklama\tEtiket\tTutar\tBakiye',
+    '07.11.2026\tYanımda Hesaptan Transfer, Yanımda Toplam: 28.600,00 TL\tYatırım\t+1.400,00 TL\t8.000,00 TL',
+    '07.11.2026\t1234- 10.00USD-SPOTIFY P1-SATIŞ\tAlışveriş\t-341,63 TL\t6.600,00 TL',
+    '06.11.2026\tSATIŞ-517040*1234-MİGROS KADIKÖY\tAlışveriş\t-263,45 TL\t6.941,63 TL',
+    '05.11.2026\tMehmet Kaya-FAST-CEP ŞUBE-1000000002\tPara Transferi\t-1.000,00 TL\t7.205,08 TL',
+    '05.11.2026\tAYŞE YILMAZ-FAST-CEP ŞUBE-1000000001\tPara Transferi\t-2.000,00 TL\t8.205,08 TL',
+    '05.11.2026\tKESİNTİ VE EKLERİ-\tDiğer\t-8,37 TL\t10.205,08 TL',
+    '04.11.2026\tYanımda Hesaba Transfer, Yanımda Toplam: 30.000,00 TL\tYatırım\t-30.000,00 TL\t10.213,45 TL',
+    // İşaretsiz tutar: yön yürüyen bakiyeden (döküm yeniden eskiye)
+    '03.11.2026\tAESAŞ- 1000000001 2OF20260000000001\tKurum Ödemesi\t786,55 TL\t40.213,45 TL',
+    '03.11.2026\tEKİM MAAŞ ÖDEMESİ\tMaaş\t+40.000,00 TL\t41.000,00 TL',
+  ],
+];
+
 List<EkstreEslesme> _eklenecek(List<EkstreEslesme> e) => [for (final x in e) if (x.durum == EslesmeDurumu.yeni) x];
 
 void main() {
@@ -237,7 +263,77 @@ void main() {
     expect(odeme.durum, EslesmeDurumu.eklenmez);
   });
 
-  test('PDF harflerinden satırlar kurulur: boşluklar ve sütunlar', () {
+  test('hesap hareketleri (en yeni üstte): bakiye özetten, yön işaretten ya da bakiyeden, kendi hesapların arası', () {
+    final o = ekstreOku(_hesapHareketleri);
+    expect(o.tur, EkstreTuru.hesap);
+    expect(o.banka, 'garanti');
+    expect(o.iban4, '4567');
+    expect(o.kapanisBakiye, 800000, reason: 'özetteki "Bakiye" (en yeni işlemin bakiyesi), en eskininki ya da "Kullanılabilir" değil');
+    expect(o.donemSonu, '2026-11-08');
+    expect(o.islemler.map((i) => '${i.tur} ${i.k}'), [
+      'aktarma 140000', // Yanımda'dan
+      'cikis 34163', // açıklamadaki "10.00USD" tutar sayılmaz
+      'cikis 26345',
+      'cikis 100000', // başkasına FAST
+      'aktarma 200000', // kendi adına FAST
+      'cikis 837',
+      'aktarma 3000000', // Yanımda'ya
+      'cikis 78655', // işaretsiz: bakiye düştü
+      'giris 4000000', // maaş
+    ]);
+    String? kategori(String parca) => o.islemler.firstWhere((i) => i.aciklama.contains(parca)).kategori;
+    expect(kategori('Mehmet Kaya'), 'transfer');
+    expect(kategori('KESİNTİ'), 'banka');
+    expect(kategori('AESAŞ'), 'fatura');
+    expect(o.islemler.firstWhere((i) => i.aciklama.contains('MİGROS')).etiket, 'Alışveriş');
+  });
+
+  test('hesap hareketleri uygulanır: maaş geliri yattı, fatura ve abonelik ödendi, aktarmalar harcama değil; ikinci kez eklenmez', () {
+    final d = _sample();
+    final o = ekstreOku(_hesapHareketleri);
+    final h = ekstreHedefleri(d, o);
+    expect(h.first.yeni, isTrue, reason: 'örnek veride Garanti hesabı yok');
+    final e = ekstreEslestir(d, o, h.first);
+    EkstreEslesme bul(String parca) => e.firstWhere((x) => x.islem.aciklama.contains(parca));
+    expect(bul('SPOTIFY').abonelikId, 'spotify');
+    expect(bul('AESAŞ').abonelikId, 'elektrik', reason: 'elektrik dağıtım şirketi ↔ "Elektrik" faturası');
+    expect(bul('MAAŞ').gelirId, 'maas');
+    expect(e.where((x) => x.islem.tur == 'aktarma').map((x) => x.durum).toSet(), {EslesmeDurumu.eklenmez});
+
+    final once = _kopya(d);
+    final id = ekstreUygula(d, o, h.first, _eklenecek(e));
+    expect(uyumDenetimi(once, d), isEmpty);
+    final src = 'acc:$id';
+    final a = d.account(id)!;
+    expect(a.bank, 'garanti');
+    expect(a.j['iban4'], '4567');
+    expect(toK(a.balance), 800000);
+    expect(toK(d.incomes.firstWhere((i) => i.id == 'maas').monthAmounts['2026-11']), 4000000);
+    expect(d.transfers.where((t) => t.to == src && t.incomeRef != null).map((t) => toK(t.amount)), [4000000]);
+    expect(d.payments.any((p) => p.kind == 'sub' && p.refId == 'elektrik' && p.month == '2026-11' && p.fromAccount == src), isTrue);
+    expect(d.payments.any((p) => p.kind == 'sub' && p.refId == 'spotify' && p.month == '2026-11' && p.fromAccount == src), isTrue);
+    expect(d.spends.where((s) => s.source == src).map((s) => toK(s.amount)), unorderedEquals([26345, 100000, 837]));
+    expect(d.spends.firstWhere((s) => s.source == src && toK(s.amount) == 837).category, 'banka');
+
+    // Aynı döküm yeniden: hesap IBAN'ın son 4 hanesiyle bulunur, hiçbir işlem yeni değil
+    final h2 = ekstreHedefleri(d, o);
+    expect(h2.first.id, id);
+    expect(_eklenecek(ekstreEslestir(d, o, h2.first)), isEmpty);
+  });
+
+  test('PDF harfleri okuma sırasıyla: satır sonu, kelime boşluğu, sütun aralığı; noktalama ayrı satır olmaz', () {
+    PdfHarf h(String c, double x, {double y = 700, double boy = 10}) => PdfHarf(c, x, y + boy, x + 6, y);
+    final harfler = <PdfHarf>[
+      h('A', 10), h('.', 16, y: 698, boy: 2), h('Ş', 22, boy: 13), h('.', 28, y: 698, boy: 2),
+      h(' ', 34), h('B', 40),
+      for (var i = 0; i < 5; i++) h('12,50'[i], 120 + i * 6.0, y: 699),
+      const PdfHarf('\r', 0, 0, 0, 0), const PdfHarf('\n', 0, 0, 0, 0),
+      h('X', 10, y: 680), h('Y', 16, y: 680),
+    ];
+    expect(satirlariKur(harfler), ['A.Ş. B\t12,50', 'XY']);
+  });
+
+  test('PDF harflerinden satırlar kurulur (okuma sırasında satır sonu yoksa): boşluklar ve sütunlar', () {
     PdfHarf h(String c, double x, double y) => PdfHarf(c, x, y + 10, x + 6, y);
     final harfler = <PdfHarf>[
       // Aynı satır (y=700): "AB CD" sonra sütun aralığı, "12,00"

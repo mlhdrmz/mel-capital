@@ -17,12 +17,15 @@
 
 import 'dart:math' as math;
 
+import '../core/brands.dart' show brandIndex;
 import '../core/constants.dart';
 import '../core/model.dart';
 import '../core/util.dart';
 import 'borc.dart';
 import 'cekirdek.dart';
+import 'gelir.dart';
 import 'gider.dart';
+import 'plan.dart';
 
 // ---------------------------------------------------------------- Okuma sonucu
 
@@ -37,6 +40,9 @@ class EkstreIslem {
     required this.tur,
     this.taksitNo,
     this.taksitSayisi,
+    this.etiket,
+    this.kategori,
+    this.arti = false,
     this.ham = '',
   });
 
@@ -44,18 +50,28 @@ class EkstreIslem {
   final String tarih;
   final String aciklama;
 
-  /// Kuruş, her zaman artı. Yönü [tur] söyler.
+  /// Kuruş, her zaman artı. Yönü [tur] ve [arti] söyler.
   final int k;
 
-  /// harcama | ucret | odeme | iade (kart); cikis | giris (hesap)
+  /// harcama | ucret | odeme | iade (kart); cikis | giris | aktarma (hesap; aktarma: kendi
+  /// hesapların arası, ör. "Yanımda" ya da kendi adına havale)
   final String tur;
   final int? taksitNo;
   final int? taksitSayisi;
+
+  /// Bankanın verdiği etiket (ör. "Alışveriş", "Kurum Ödemesi", "Maaş").
+  final String? etiket;
+
+  /// Etiketten çıkan kategori (yoksa harcama adından tahmin edilir).
+  final String? kategori;
+
+  /// Para girdi mi (hesaba giriş, karta ödeme ya da iade).
+  final bool arti;
   final String ham;
 
   bool get taksitli => (taksitSayisi ?? 1) > 1;
 
-  /// Uygulamaya harcama olarak eklenebilir mi (kart ödemeleri ve iadeler bakiyede zaten var).
+  /// Uygulamaya eklenebilir mi (kart ödemeleri, iadeler ve kendi hesapların arası eklenmez).
   bool get eklenebilir => tur == 'harcama' || tur == 'ucret' || tur == 'cikis' || tur == 'giris';
 }
 
@@ -199,11 +215,16 @@ int? tutarCevir(String s) {
 }
 
 class _Tutar {
-  const _Tutar(this.k, this.eksi, this.basla, this.bitis);
+  const _Tutar(this.k, this.eksi, this.arti, this.basla, this.bitis);
   final int k;
   final bool eksi;
+
+  /// Açıkça "+" yazılmış.
+  final bool arti;
   final int basla;
   final int bitis;
+
+  int get isaretli => eksi ? -k : k;
 }
 
 List<_Tutar> _tutarlar(String satir) {
@@ -216,9 +237,31 @@ List<_Tutar> _tutarlar(String satir) {
     if (RegExp(r'[0-9./]').hasMatch(once)) continue;
     final on = m.group(1) ?? '';
     final son = (m.group(3) ?? '').replaceAll(RegExp(r'[()]'), '').toUpperCase();
-    out.add(_Tutar(k, on == '-' || son == '-' || son == 'A', m.start, m.end));
+    out.add(_Tutar(k, on == '-' || son == '-' || son == 'A', on == '+' || son == '+', m.start, m.end));
   }
   return out;
+}
+
+/// Bir satırın (tarihten sonrası) hücreleri: yalnızca tutardan oluşan hücreler ve yazı hücreleri.
+/// Hücre yoksa ya da tutar/yazı hücresi bulunmazsa null (satır düz metin olarak okunur).
+(List<String>, List<_Tutar>)? _hucrele(String govde) {
+  final hs = govde.split('\t').map((h) => h.trim()).where((h) => h.isNotEmpty).toList();
+  if (hs.length < 2) return null;
+  final yazilar = <String>[];
+  final tutarlar = <_Tutar>[];
+  for (final h in hs) {
+    // Yalnızca tarihten oluşan hücre (ör. işlem tarihinden sonra gelen hesaba geçiş tarihi)
+    if (tarihCevir(h) != null && h.replaceAll(_tarihRe, '').trim().isEmpty) continue;
+    final t = _tutarlar(h);
+    final kalan = h.replaceAll(_tutarRe, '').replaceAll(RegExp(r'TL|TRY|₺|\s'), '');
+    if (t.length == 1 && kalan.isEmpty) {
+      tutarlar.add(t.first);
+    } else {
+      yazilar.add(h);
+    }
+  }
+  if (tutarlar.isEmpty || yazilar.isEmpty) return null;
+  return (yazilar, tutarlar);
 }
 
 String _duz(String s) => normTxt(s.replaceAll('\t', ' '));
@@ -231,9 +274,11 @@ T? _deger<T>(List<String> satirlar, List<String> basliklar, T? Function(String) 
     for (var c = 0; c < hucreler.length; c++) {
       final h = _duz(hucreler[c]);
       String? bulunan;
+      var tam = false;
       for (final b in basliklar) {
-        if (h.contains(b)) {
-          bulunan = b;
+        if (b.startsWith('=') ? h.replaceAll(RegExp(r'[\s:]+$'), '') == b.substring(1) : h.contains(b)) {
+          bulunan = b.startsWith('=') ? b.substring(1) : b;
+          tam = b.startsWith('=');
           break;
         }
       }
@@ -250,7 +295,7 @@ T? _deger<T>(List<String> satirlar, List<String> basliklar, T? Function(String) 
         if (v != null) return v;
         if (RegExp(r'[a-zçğıöşü]{4,}', caseSensitive: false).hasMatch(hucreler[d])) break;
       }
-      if (!sonrakiSatir) continue;
+      if (!sonrakiSatir || tam) continue;
       // Alttaki satırlar: aynı sütun, yoksa ilk değer
       for (var j = i + 1; j <= i + 2 && j < satirlar.length; j++) {
         final alt = satirlar[j].split('\t');
@@ -282,9 +327,64 @@ const List<String> _hesapBasliklari = [
   'iban', 'hesap hareketleri', 'hesap ozeti', 'hesap dokumu', 'bakiye', 'vadesiz', 'hesap no', 'alacak', 'musteri no',
 ];
 
-/// Özet satırları: işlem sayılmaz.
+/// Özet satırları (açıklaması bunlarla başlayan): işlem sayılmaz.
 final RegExp _ozetSatiri = RegExp(
-    r'onceki donem|devreden|donem borcu|toplam|asgari|hesap kesim|son odeme|kart limiti|kullanilabilir|acilis bakiye|kapanis bakiye|onceki bakiye|^bakiye$');
+    r'^(onceki donem|devreden|donem borcu|toplam|asgari|hesap kesim|son odeme|kart limiti|kullanilabilir|acilis bakiye|kapanis bakiye|onceki bakiye|bakiye$)');
+
+int? _ilkBakiye(String s) {
+  final t = _tutarlar(s);
+  return t.isEmpty ? null : t.first.isaretli;
+}
+
+/// Hesap sahibinin adı (kendi hesaplarına aktarmaları tanımak için; hiçbir yere kaydedilmez).
+String? _sahipAdi(List<String> satirlar) {
+  String? ad = _deger(satirlar, const ['unvan', 'ad soyad', 'musteri adi', 'hesap sahibi'], (s) {
+    final t = s.replaceAll(RegExp(r'^[\s:/]+'), '').trim();
+    return RegExp(r'[a-zA-ZçğıöşüÇĞİÖŞÜ]{2,}').hasMatch(t) ? t : null;
+  }, sonrakiSatir: false);
+  if (ad == null) {
+    for (final l in satirlar) {
+      final m = RegExp(r'(?:Sayın|SAYIN)\s+([^,\t]{3,60}),').firstMatch(l);
+      if (m != null) {
+        ad = m.group(1);
+        break;
+      }
+    }
+  }
+  final n = normTxt(ad);
+  return n.length >= 5 && n.contains(' ') ? n : null;
+}
+
+/// "30/10/2026 - 06/11/2026" gibi dönemin son günü.
+String? _donemSonu(List<String> satirlar) {
+  for (final l in satirlar) {
+    final m = RegExp(r'(\d{1,2}[./]\d{1,2}[./]\d{4})\s*-\s*(\d{1,2}[./]\d{1,2}[./]\d{4})').firstMatch(l);
+    if (m != null) {
+      final a = tarihCevir(m.group(1)!), b = tarihCevir(m.group(2)!);
+      if (a != null && b != null && a.compareTo(b) <= 0) return b;
+    }
+  }
+  return null;
+}
+
+/// Kendi hesapların arası (birikim hesabı, "Yanımda", yatırım, kendi adına havale): harcama değil.
+bool _icAktarma(String da, String? sahip) {
+  if (RegExp(r'maas').hasMatch(da)) return false;
+  if (RegExp(r'yanimda|hesaplar arasi|virman|kendi hesab|vadeli hesab|birikim hesab|(^| )yatirim( |$)').hasMatch(da)) return true;
+  return sahip != null && da.contains(sahip);
+}
+
+/// Bankanın etiketinden ya da açıklamadan kategori (bilinmiyorsa null: adından tahmin edilir).
+String? _etiketKategorisi(String? etiket, String aciklama) {
+  final e = _duz(etiket ?? '');
+  final a = _duz(aciklama);
+  if (RegExp(r'kredi karti|kart odeme|kk odeme').hasMatch(a)) return 'kart_asgari';
+  if (RegExp(r'kesinti|masraf|ucret|komisyon|vergi|bsmv').hasMatch(a) || RegExp(r'faiz|komisyon|vergi|ucret').hasMatch(e)) return 'banka';
+  if (RegExp(r'kurum odeme|fatura|telekom|elektrik|dogalgaz').hasMatch(e)) return 'fatura';
+  if (RegExp(r'atm|nakit cekim|para cekme').hasMatch(a) || RegExp(r'nakit|atm').hasMatch(e)) return 'nakit';
+  if (RegExp(r'para transfer|havale|eft').hasMatch(e) || RegExp(r'(^| )(eft|havale|fast)( |-|$)').hasMatch(a)) return 'transfer';
+  return null;
+}
 
 /// PDF satırlarından ekstreyi okur. [sayfalar]: sayfa sayfa satırlar (büyük boşluklar '\t').
 EkstreOkuma ekstreOku(List<List<String>> sayfalar) {
@@ -347,11 +447,13 @@ EkstreOkuma ekstreOku(List<List<String>> sayfalar) {
     if (o.donemBorcu == null) o.eksikler.add('Dönem borcu okunamadı.');
     o.islemler = _kartIslemleri(satirlar);
   } else if (o.tur == EkstreTuru.hesap) {
-    o.acilisBakiye = _deger(satirlar, const ['devreden bakiye', 'onceki bakiye', 'acilis bakiyesi', 'donem basi bakiye'], _ilkTutar);
-    final (islemler, sonBakiye, sonTarih) = _hesapIslemleri(satirlar, o.acilisBakiye);
+    o.acilisBakiye = _deger(satirlar, const ['devreden bakiye', 'onceki bakiye', 'acilis bakiyesi', 'donem basi bakiye'], _ilkBakiye);
+    final (islemler, sonBakiye, sonTarih) = _hesapIslemleri(satirlar, o.acilisBakiye, _sahipAdi(satirlar));
     o.islemler = islemler;
-    o.kapanisBakiye = _deger(satirlar, const ['kapanis bakiyesi', 'donem sonu bakiye', 'guncel bakiye', 'son bakiye'], _ilkTutar) ?? sonBakiye;
-    o.donemSonu = _deger(satirlar, const ['donem sonu', 'bitis tarihi', 'son tarih'], _ilkTarih) ?? sonTarih;
+    // Özetteki bakiye ("Bakiye : ..."; "Kullanılabilir Bakiye" değil), yoksa en yeni işlemin bakiyesi
+    o.kapanisBakiye =
+        _deger(satirlar, const ['kapanis bakiyesi', 'donem sonu bakiye', 'guncel bakiye', 'son bakiye', '=bakiye', '=hesap bakiyesi'], _ilkBakiye) ?? sonBakiye;
+    o.donemSonu = _donemSonu(satirlar) ?? sonTarih;
     if (o.kapanisBakiye == null) o.eksikler.add('Dökümün son bakiyesi okunamadı.');
   } else {
     o.eksikler.add('Bu belge kredi kartı ekstresine ya da hesap dökümüne benzemiyor.');
@@ -365,6 +467,25 @@ String _temizAciklama(String s) {
   return t;
 }
 
+final RegExp _taksitRe = RegExp(r'(?<![\d/.])(\d{1,2})\s?/\s?(\d{1,2})(?![\d/.])');
+final RegExp _harfRe = RegExp(r'[a-zA-ZçğıöşüÇĞİÖŞÜ]');
+
+/// Satırın tarihten sonrası: (açıklama, etiket, tutarlar). Sütunlu satırda tutarlar yalnızca tutar
+/// hücrelerinden alınır (açıklamadaki "24.00USD" ya da "Toplam: 7.272,58" tutar sayılmaz).
+(String, String?, List<_Tutar>) _satirParcalari(String govde) {
+  final hc = _hucrele(govde);
+  if (hc != null) {
+    final (yazilar, tutarlar) = hc;
+    return (yazilar.first, yazilar.length > 1 ? yazilar.sublist(1).join(' ') : null, tutarlar);
+  }
+  final tutarlar = _tutarlar(govde);
+  if (tutarlar.isEmpty) return ('', null, tutarlar);
+  var aciklama = govde.substring(0, tutarlar.first.basla);
+  final ikinciTarih = _tarihRe.firstMatch(aciklama.trim());
+  if (ikinciTarih != null && ikinciTarih.start < 3) aciklama = aciklama.trim().substring(ikinciTarih.end);
+  return (aciklama, null, tutarlar);
+}
+
 /// Kart ekstresinin işlem satırları: tarihle başlayan, tutarla biten satırlar.
 List<EkstreIslem> _kartIslemleri(List<String> satirlar) {
   final out = <EkstreIslem>[];
@@ -375,100 +496,126 @@ List<EkstreIslem> _kartIslemleri(List<String> satirlar) {
     final tarih = tarihCevir(tm.group(0)!);
     if (tarih == null) continue;
     final govde = s.substring(tm.end);
-    final tutarlar = _tutarlar(govde);
+    var (aciklama, etiket, tutarlar) = _satirParcalari(govde);
     if (tutarlar.isEmpty) continue;
-    final duzGovde = _duz(govde);
-    if (_ozetSatiri.hasMatch(duzGovde)) continue;
-    // Puan sütunu (bonus, worldpuan, maxipuan...) varsa son tutar puandır
-    var secilen = tutarlar.last;
-    if (tutarlar.length >= 2) {
-      final onceki = tutarlar[tutarlar.length - 2];
-      final puanli = RegExp(r'puan|bonus|chip|mil\b|miles').hasMatch(duzGovde) && tutarlar.last.k < onceki.k;
-      // Puan çoğu zaman tutarın binde beşi kadardır: çok küçük son sayı puandır
-      if (puanli || tutarlar.last.k * 20 < onceki.k) secilen = onceki;
-    }
-    // Açıklama: tarihten sonra ilk tutara kadar (ikinci tarih varsa o da atlanır)
-    var aciklama = govde.substring(0, tutarlar.first.basla);
-    final ikinciTarih = _tarihRe.firstMatch(aciklama);
-    if (ikinciTarih != null && ikinciTarih.start < 3) aciklama = aciklama.substring(ikinciTarih.end);
-    // Taksit: "2/6" ya da "2. taksit / 6"
+    // Taksit: "2/6" (açıklamada ya da ayrı sütunda)
     int? no, sayi;
-    final tk = RegExp(r'(?<![\d/.])(\d{1,2})\s?/\s?(\d{1,2})(?![\d/.])').firstMatch(aciklama);
-    if (tk != null) {
+    for (final metin in [aciklama, etiket ?? '']) {
+      final tk = _taksitRe.firstMatch(metin);
+      if (tk == null) continue;
       final a = int.parse(tk.group(1)!), b = int.parse(tk.group(2)!);
       if (b >= 2 && b <= 36 && a >= 1 && a <= b) {
         no = a;
         sayi = b;
-        aciklama = aciklama.replaceRange(tk.start, tk.end, ' ');
+        if (identical(metin, aciklama)) aciklama = aciklama.replaceRange(tk.start, tk.end, ' ');
+        break;
       }
     }
     aciklama = _temizAciklama(aciklama.replaceAll(RegExp(r'taksit(li)?', caseSensitive: false), ''));
-    if (!RegExp(r'[a-zA-ZçğıöşüÇĞİÖŞÜ]').hasMatch(aciklama)) continue;
+    if (!_harfRe.hasMatch(aciklama)) continue;
     final da = _duz(aciklama);
+    if (_ozetSatiri.hasMatch(da)) continue;
+    // Puan sütunu (bonus, worldpuan, maxipuan...): çok küçük son sayı puandır
+    var secilen = tutarlar.last;
+    if (tutarlar.length >= 2) {
+      final onceki = tutarlar[tutarlar.length - 2];
+      final puanli = RegExp(r'puan|bonus|chip|mil\b|miles').hasMatch(_duz(govde)) && tutarlar.last.k < onceki.k;
+      if (puanli || tutarlar.last.k * 20 < onceki.k) secilen = onceki;
+    }
     String tur;
     if (RegExp(r'odeme|tahsilat|hesaptan aktarim|otomatik odeme|odemeniz').hasMatch(da)) {
       tur = 'odeme';
-    } else if (RegExp(r'iade|iptal').hasMatch(da) || (secilen.eksi && !RegExp(r'faiz|ucret').hasMatch(da))) {
-      tur = 'iade';
+    } else if (RegExp(r'iade|iptal').hasMatch(da) || ((secilen.eksi || secilen.arti) && !RegExp(r'faiz|ucret').hasMatch(da))) {
+      // Kart ekstresinde işaretli tutar (eksi ya da artı) borçtan düşer: iade
+      tur = secilen.arti && !secilen.eksi && !RegExp(r'iade|iptal').hasMatch(da) ? 'harcama' : 'iade';
     } else if (RegExp(r'faiz|bsmv|kkdf|ucret|aidat|komisyon|gecikme').hasMatch(da)) {
       tur = 'ucret';
     } else {
       tur = 'harcama';
     }
-    if (aciklama.isEmpty) aciklama = tur == 'odeme' ? 'Ödeme' : 'Harcama';
-    out.add(EkstreIslem(tarih: tarih, aciklama: aciklama, k: secilen.k, tur: tur, taksitNo: no, taksitSayisi: sayi, ham: s));
+    out.add(EkstreIslem(
+      tarih: tarih,
+      aciklama: aciklama,
+      k: secilen.k,
+      tur: tur,
+      taksitNo: no,
+      taksitSayisi: sayi,
+      etiket: etiket,
+      kategori: tur == 'ucret' ? 'banka' : null,
+      arti: tur == 'odeme' || tur == 'iade',
+      ham: s,
+    ));
   }
   return out;
 }
 
-/// Hesap dökümünün işlem satırları. Yön, yürüyen bakiyeden (varsa) ya da işaretten bulunur.
-(List<EkstreIslem>, int?, String?) _hesapIslemleri(List<String> satirlar, int? acilis) {
-  final out = <EkstreIslem>[];
-  int? onceki = acilis;
-  int? sonBakiye;
-  String? sonTarih;
+class _HesapSatiri {
+  const _HesapSatiri(this.tarih, this.aciklama, this.etiket, this.miktar, this.bakiye, this.ham);
+  final String tarih;
+  final String aciklama;
+  final String? etiket;
+  final _Tutar miktar;
+  final int? bakiye;
+  final String ham;
+}
+
+/// Hesap dökümünün işlem satırları. Yön: açık işaret (+/-), yoksa yürüyen bakiye (döküm eskiden
+/// yeniye ya da yeniden eskiye sıralı olabilir), o da yoksa açıklama. Son bakiye en yeni işlemin.
+(List<EkstreIslem>, int?, String?) _hesapIslemleri(List<String> satirlar, int? acilis, String? sahip) {
+  var acilisBakiye = acilis;
+  final rows = <_HesapSatiri>[];
   for (final satir in satirlar) {
     final s = satir.trim();
     final tm = _tarihRe.firstMatch(s);
     if (tm == null || tm.start > 2) continue;
     final tarih = tarihCevir(tm.group(0)!);
     if (tarih == null) continue;
-    final govde = s.substring(tm.end);
-    final tutarlar = _tutarlar(govde);
+    final (ham, etiket, tutarlar) = _satirParcalari(s.substring(tm.end));
     if (tutarlar.isEmpty) continue;
-    final duzGovde = _duz(govde);
-    if (_ozetSatiri.hasMatch(duzGovde)) {
-      if (RegExp(r'devreden|onceki bakiye|acilis').hasMatch(duzGovde)) onceki = tutarlar.last.k * (tutarlar.last.eksi ? -1 : 1);
+    final aciklama = _temizAciklama(ham);
+    final da = _duz(aciklama);
+    if (_ozetSatiri.hasMatch(da)) {
+      if (RegExp(r'^(devreden|onceki bakiye|acilis)').hasMatch(da)) acilisBakiye ??= tutarlar.last.isaretli;
       continue;
     }
-    var aciklama = govde.substring(0, tutarlar.first.basla);
-    final ikinciTarih = _tarihRe.firstMatch(aciklama);
-    if (ikinciTarih != null && ikinciTarih.start < 3) aciklama = aciklama.substring(ikinciTarih.end);
-    aciklama = _temizAciklama(aciklama);
-    if (!RegExp(r'[a-zA-ZçğıöşüÇĞİÖŞÜ]').hasMatch(aciklama)) continue;
-    int tutar;
-    bool giris;
-    if (tutarlar.length >= 2) {
-      final bakiye = tutarlar.last.k * (tutarlar.last.eksi ? -1 : 1);
-      final miktar = tutarlar[tutarlar.length - 2];
-      tutar = miktar.k;
-      if (onceki != null && (bakiye - onceki).abs() == tutar) {
-        giris = bakiye > onceki;
-      } else {
-        giris = !miktar.eksi && !RegExp(r'odeme|harcama|pos|cekim|eft gonder|havale gonder|giden|fatura|ucret|komisyon').hasMatch(_duz(aciklama));
-      }
-      onceki = bakiye;
-      sonBakiye = bakiye;
-    } else {
-      final miktar = tutarlar.first;
-      tutar = miktar.k;
-      giris = !miktar.eksi && RegExp(r'gelen|maas|yatan|alacak|iade|faiz geliri').hasMatch(_duz(aciklama));
-    }
-    if (aciklama.isEmpty) aciklama = giris ? 'Para girişi' : 'Harcama';
-    sonTarih = tarih;
-    out.add(EkstreIslem(tarih: tarih, aciklama: aciklama, k: tutar, tur: giris ? 'giris' : 'cikis', ham: s));
+    if (!_harfRe.hasMatch(aciklama)) continue;
+    final miktar = tutarlar.length >= 2 ? tutarlar[tutarlar.length - 2] : tutarlar.first;
+    final bakiye = tutarlar.length >= 2 ? tutarlar.last.isaretli : null;
+    rows.add(_HesapSatiri(tarih, aciklama, etiket, miktar, bakiye, s));
   }
-  return (out, sonBakiye, sonTarih);
+  if (rows.isEmpty) return (const <EkstreIslem>[], null, null);
+  final artan = rows.first.tarih.compareTo(rows.last.tarih) <= 0;
+  final out = <EkstreIslem>[];
+  for (var i = 0; i < rows.length; i++) {
+    final r = rows[i];
+    final da = _duz('${r.aciklama} ${r.etiket ?? ''}');
+    bool giris;
+    if (r.miktar.arti) {
+      giris = true;
+    } else if (r.miktar.eksi) {
+      giris = false;
+    } else {
+      final onceki = artan ? (i > 0 ? rows[i - 1].bakiye : acilisBakiye) : (i + 1 < rows.length ? rows[i + 1].bakiye : acilisBakiye);
+      final b = r.bakiye;
+      if (onceki != null && b != null && (b - onceki).abs() == r.miktar.k) {
+        giris = b > onceki;
+      } else {
+        giris = RegExp(r'maas|gelen|yatan|alacak|iade|faiz geliri').hasMatch(da);
+      }
+    }
+    out.add(EkstreIslem(
+      tarih: r.tarih,
+      aciklama: r.aciklama,
+      k: r.miktar.k,
+      tur: _icAktarma(da, sahip) ? 'aktarma' : (giris ? 'giris' : 'cikis'),
+      etiket: r.etiket,
+      kategori: giris ? null : _etiketKategorisi(r.etiket, r.aciklama),
+      arti: giris,
+      ham: r.ham,
+    ));
+  }
+  final son = artan ? rows.last : rows.first;
+  return (out, son.bakiye, son.tarih);
 }
 
 // ---------------------------------------------------------------- Hedef: hangi kart ya da hesap
@@ -559,9 +706,15 @@ List<EkstreHedefi> ekstreHedefleri(Data d, EkstreOkuma o) {
 enum EslesmeDurumu { yeni, var_, supheli, eklenmez }
 
 class EkstreEslesme {
-  const EkstreEslesme(this.islem, this.durum, {this.kayitId, this.kayitAdi, this.kayitTarihi});
+  const EkstreEslesme(this.islem, this.durum, {this.kayitId, this.kayitAdi, this.kayitTarihi, this.abonelikId, this.gelirId});
   final EkstreIslem islem;
   final EslesmeDurumu durum;
+
+  /// Abonelik ya da fatura ödemesi: harcama yerine o ayki "ödendi" işareti konur.
+  final String? abonelikId;
+
+  /// Maaş: o ayki gelir "yattı" olarak işaretlenir (hesaba giriş Gelir Motoru'ndan).
+  final String? gelirId;
 
   /// Eşleşen uygulama kaydı (harcama, aktarma ya da ödeme).
   final String? kayitId;
@@ -642,15 +795,81 @@ List<EkstreEslesme> ekstreEslestir(Data d, EkstreOkuma o, EkstreHedefi h) {
       // Eski bir taksitli alışverişin bu ayki taksiti: alışveriş zaten girilmiş
       kullanilan.add(e.$1);
       out.add(EkstreEslesme(i, EslesmeDurumu.var_, kayitId: e.$1, kayitAdi: e.$2, kayitTarihi: e.$3));
-    } else if (kaynaksiz.where((k) => !kullanilan.contains(k.$1)).isNotEmpty) {
-      final k = kaynaksiz.firstWhere((k) => !kullanilan.contains(k.$1));
-      kullanilan.add(k.$1);
-      out.add(EkstreEslesme(i, EslesmeDurumu.supheli, kayitId: k.$1, kayitAdi: k.$2, kayitTarihi: k.$3));
     } else {
-      out.add(EkstreEslesme(i, EslesmeDurumu.yeni));
+      final ay = monthOf(i.tarih);
+      final sub = i.tur == 'cikis' || i.tur == 'harcama' ? _abonelikBul(d, i) : null;
+      final inc = i.tur == 'giris' ? _gelirBul(d, i, src) : null;
+      final kalanKaynaksiz = kaynaksiz.where((k) => !kullanilan.contains(k.$1)).toList();
+      if (sub != null) {
+        final odendi = d.payments.any((p) => p.kind == 'sub' && p.refId == sub.id && p.month == ay && p.viaRefId == null);
+        out.add(odendi
+            ? EkstreEslesme(i, EslesmeDurumu.var_, kayitId: sub.id, kayitAdi: sub.name)
+            : EkstreEslesme(i, EslesmeDurumu.yeni, abonelikId: sub.id, kayitAdi: sub.name));
+      } else if (inc != null) {
+        final yatti = inc.monthAmounts.containsKey(ay);
+        out.add(yatti
+            ? EkstreEslesme(i, EslesmeDurumu.var_, kayitId: inc.id, kayitAdi: inc.name)
+            : EkstreEslesme(i, EslesmeDurumu.yeni, gelirId: inc.id, kayitAdi: inc.name));
+      } else if (kalanKaynaksiz.isNotEmpty) {
+        final k = kalanKaynaksiz.first;
+        kullanilan.add(k.$1);
+        out.add(EkstreEslesme(i, EslesmeDurumu.supheli, kayitId: k.$1, kayitAdi: k.$2, kayitTarihi: k.$3));
+      } else {
+        out.add(EkstreEslesme(i, EslesmeDurumu.yeni));
+      }
     }
   }
   return out;
+}
+
+/// Fatura şirketleri: abonelik adındaki fatura türüyle eşleşir (ör. "Elektrik" ↔ AESAŞ, BEDAŞ).
+const Map<String, List<String>> _faturaSirketleri = {
+  'elektrik': ['aesas', 'bedas', 'ayedas', 'enerjisa', 'ck enerji', 'ck bogazici', 'toroslar', 'gediz', 'uludag elektrik', 'elektrik'],
+  'dogalgaz': ['igdas', 'baskentgaz', 'izmirgaz', 'aksa', 'enerya', 'dogalgaz'],
+  'su': ['iski', 'aski', 'izsu', 'buski', 'asat', 'maski', 'su idaresi'],
+  'internet': ['turkst', 'superonline', 'ttnet', 'turk telekom', 'turknet', 'millenicom'],
+  'telefon': ['vodafo', 'turkcell', 'turk telekom'],
+  'vodafone': ['vodafo'],
+};
+
+/// Ekstredeki ödemenin uygulamadaki aboneliği ya da faturası (adından, markasından ya da fatura
+/// şirketinden).
+Subscription? _abonelikBul(Data d, EkstreIslem i) {
+  final a = _duz(i.aciklama);
+  final bitisik = a.replaceAll(' ', '');
+  final marka = brandIndex(i.aciklama);
+  for (final s in d.subscriptions) {
+    if (!s.active) continue;
+    final ad = normTxt(s.name);
+    if (ad.isEmpty) continue;
+    final ilk = ad.split(' ').first;
+    if (ilk.length >= 4 && bitisik.contains(ilk)) return s;
+    if (marka != null && brandIndex(s.name) == marka) return s;
+    for (final e in _faturaSirketleri.entries) {
+      if (RegExp('(^| )${e.key}( |\$)').hasMatch(ad) && e.value.any(a.contains)) return s;
+    }
+  }
+  return null;
+}
+
+/// Ekstredeki maaşın uygulamadaki geliri (o ay planlı tutarı en yakın olan; başka hesaba yatan
+/// gelir sayılmaz).
+Income? _gelirBul(Data d, EkstreIslem i, String? src) {
+  if (!RegExp(r'maas').hasMatch(_duz('${i.aciklama} ${i.etiket ?? ''}'))) return null;
+  final ay = monthOf(i.tarih);
+  Income? en;
+  var fark = 0;
+  for (final inc in d.incomes) {
+    if (src != null && inc.account != null && inc.account != src) continue;
+    final plan = schedK(inc.schedule, ay);
+    if (plan <= 0 && !inc.monthAmounts.containsKey(ay)) continue;
+    final f = (plan - i.k).abs();
+    if (en == null || f < fark) {
+      en = inc;
+      fark = f;
+    }
+  }
+  return en;
 }
 
 // ---------------------------------------------------------------- Uygulama
@@ -697,6 +916,12 @@ String _kartUygula(Data d, EkstreOkuma o, EkstreHedefi h, List<EkstreEslesme> ek
   final idx = learnIndex(d);
   for (final e in ekle) {
     final i = e.islem;
+    final abonelik = e.abonelikId;
+    if (abonelik != null) {
+      // Karttan ödenen abonelik: o ayki ödendi işareti (borç ekstrede zaten var)
+      savePayment(d, kind: 'sub', refId: abonelik, month: monthOf(i.tarih), k: i.k, date: i.tarih);
+      continue;
+    }
     final n = i.taksitSayisi ?? 1;
     final no = i.taksitNo ?? 1;
     final ilkAy = ay == null ? null : addM(ay, -(no - 1));
@@ -705,7 +930,7 @@ String _kartUygula(Data d, EkstreOkuma o, EkstreHedefi h, List<EkstreEslesme> ek
       'date': i.tarih,
       'name': ad,
       'place': '',
-      'category': i.tur == 'ucret' ? 'banka' : smartCategory(d, ad, idx),
+      'category': i.kategori ?? smartCategory(d, ad, idx),
       'amount': fromK(n > 1 ? i.k * n : i.k),
       'source': 'card:$id',
       'installments': n,
@@ -755,17 +980,17 @@ String _hesapUygula(Data d, EkstreOkuma o, EkstreHedefi h, List<EkstreEslesme> e
   for (final e in ekle) {
     final i = e.islem;
     final ad = _ad(i.aciklama);
-    if (i.tur == 'giris') {
+    final gelir = e.gelirId, abonelik = e.abonelikId;
+    if (gelir != null) {
+      // Maaş: gelir "yattı" olur, hesaba girişi Gelir Motoru yazar
+      setIncomeActual(d, gelir, monthOf(i.tarih), k: i.k, date: i.tarih, to: src);
+    } else if (abonelik != null) {
+      savePayment(d, kind: 'sub', refId: abonelik, month: monthOf(i.tarih), k: i.k, date: i.tarih, from: src);
+    } else if (i.tur == 'giris') {
       saveTransfer(d, from: 'ext', to: src, k: i.k, date: i.tarih, note: ad);
     } else {
-      final da = normTxt(ad);
-      final kategori = RegExp(r'kredi karti|kart odeme|kk odeme').hasMatch(da)
-          ? 'kart_asgari'
-          : RegExp(r'eft|havale|fast').hasMatch(da)
-              ? 'transfer'
-              : RegExp(r'atm|nakit cekim|para cekme').hasMatch(da)
-                  ? 'nakit'
-                  : smartCategory(d, ad, idx);
+      var kategori = i.kategori ?? smartCategory(d, ad, idx);
+      if (kategori == 'diger' && normTxt(i.etiket).contains('alisveris')) kategori = 'alisveris';
       saveSpend(d, <String, dynamic>{
         'date': i.tarih,
         'name': ad,
@@ -816,9 +1041,54 @@ class PdfHarf {
   double get yukseklik => (ust - alt).abs();
 }
 
-/// Bir sayfanın harflerinden satırları kurar: aynı yükseklikteki harfler soldan sağa birleşir;
-/// küçük boşluklar ' ', sütun aralığı kadar büyük boşluklar '\t' olur.
+/// Bir sayfanın harflerinden satırları kurar. Harfler PDF'in okuma sırasıyla gelir (PDFium satır
+/// sonlarını '\r\n', kelime aralarını ' ' olarak verir): satırlar oradan bölünür; sütunlar arasındaki
+/// büyük boşluk '\t' olur. Okuma sırasında satır sonu yoksa harflerin yerlerinden satır kurulur.
 List<String> satirlariKur(List<PdfHarf> harfler) {
+  if (!harfler.any((h) => h.c == '\n' || h.c == '\r')) return _geometrikSatirlar(harfler);
+  final out = <String>[];
+  final b = StringBuffer();
+  PdfHarf? onceki;
+  var bosluk = false;
+  void bitir() {
+    final t = b.toString().trim();
+    if (t.isNotEmpty) out.add(t);
+    b.clear();
+    onceki = null;
+    bosluk = false;
+  }
+
+  for (final h in harfler) {
+    if (h.c == '\n' || h.c == '\r') {
+      bitir();
+      continue;
+    }
+    if (h.c.trim().isEmpty) {
+      bosluk = true;
+      continue;
+    }
+    final o = onceki;
+    if (o != null) {
+      final aralik = h.sol - o.sag;
+      final yuk = math.max(o.yukseklik, h.yukseklik);
+      if (aralik > math.max(yuk * 1.5, 6)) {
+        b.write('\t');
+      } else if (bosluk) {
+        b.write(' ');
+      }
+    } else if (bosluk && b.isNotEmpty) {
+      b.write(' ');
+    }
+    b.write(h.c);
+    onceki = h;
+    bosluk = false;
+  }
+  bitir();
+  return out;
+}
+
+/// Okuma sırasında satır sonu olmayan PDF'ler: aynı yükseklikteki harfler soldan sağa birleşir.
+List<String> _geometrikSatirlar(List<PdfHarf> harfler) {
   final hs = harfler.where((h) => h.c.trim().isNotEmpty && h.yukseklik > 0).toList()
     ..sort((a, b) {
       final c = b.orta.compareTo(a.orta);

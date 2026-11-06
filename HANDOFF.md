@@ -105,18 +105,39 @@ Kurallar:
   işlemler, "zaten var" ve "bu o mu?" gösterilir. Kart borcu ve limit kesim tarihindeki hâliyle,
   hesap bakiyesi dökümün son bakiyesiyle yazılır. Kart ödemeleri ve iadeler ekstre borcunda
   zaten var, ayrıca eklenmez. Testler uydurma ekstrelerle (`test/ekstre_test.dart`).
+- Hesap dökümü okuma gerçek bir döküm düzeniyle denenip düzeltildi. Belge repoya konmadı;
+  testteki döküm uydurma ("Hesap Hareketleri" düzeni). Düzeltilenler:
+  - Satırlar PDF'in okuma sırasından kurulur (`satirlariKur`): virgül, nokta ve Ş ayrı satıra
+    düşmez, kelimelerin içine boşluk girmez.
+  - Döküm yeniden eskiye sıralı olabilir. Son bakiye özetteki "Bakiye"den, yoksa en yeni işlemden
+    alınır. Dönemin son günü "gg/aa/yyyy - gg/aa/yyyy"den okunur.
+  - Yön "+/-" işaretinden, yoksa yürüyen bakiyeden (iki sıralamada da) bulunur.
+  - Tutar yalnızca tutar sütunundan alınır; açıklamadaki "10.00USD" ya da "Toplam: …" tutar
+    sayılmaz.
+  - Kendi hesapların arası harcama sayılmaz (tür `aktarma`): Yanımda, birikim, vadeli, virman,
+    hesap sahibinin kendi adına havale/FAST. Hesap sahibinin adı yalnızca okurken kullanılır,
+    kaydedilmez.
+  - Bankanın "Etiket" sütunu kategoriye çevrilir: Kurum Ödemesi ve Telekomünikasyon → fatura,
+    Faiz/Komisyon ve kesinti → banka, Para Transferi → transfer, Alışveriş → alışveriş.
+  - Maaş satırı gelirle eşleşir: gelir o ay "yattı" olur, giriş Gelir Motoru'ndan yazılır.
+    Fatura ve abonelik ödemeleri o ayki "ödendi" işareti olur; eşleştirme adla, markayla
+    (`brandIndex`) ya da fatura şirketiyle yapılır (ör. Elektrik ↔ AESAŞ/BEDAŞ, Su ↔ İSKİ,
+    Doğalgaz ↔ İGDAŞ).
 
 ## 5. Kalan işler
 
 1. **Ekstre: resimli PDF** (2. aşama): yazısı olmayan (taranmış/fotoğraf) PDF'ler için cihazın
    kendi yazı tanıması: Windows'ta Windows.Media.Ocr, Android'de cihaz içi yazı tanıma; çıkan
-   satırlar aynı `ekstreOku`'ya verilir. Melih'in gerçek ekstreleri görülmedi: bir bankada okuma
-   yanlışsa Melih söyleyecek, o bankanın işaretleri/başlıkları `ekstre.dart`'ta düzeltilecek.
-   Melih ekstreleri sohbetten göndermek istemiyor; her şey uygulamanın içinden.
-2. **Tasarım sahneleri** (6. bölüm): bütün ekranlara uygulandı; Melih'in yorumu bekleniyor.
-3. Yatırımlar bölümü (henüz başlanmadı; sorular sorulacak).
-4. İçinde insan olan diğer fotoğrafların taranması (75 fotoğrafın hepsine bakılamadı).
-5. İmzalı APK (gizli anahtarlar eklenmedi; resmî sürümde yalnızca Windows dosyaları var).
+   satırlar aynı `ekstreOku`'ya verilir. Bir bankada okuma yanlışsa Melih söyleyecek, o bankanın
+   işaretleri/başlıkları `ekstre.dart`'ta düzeltilecek. Gerçek ekstreler ve kişisel bilgiler
+   (ad, IBAN, hesap no, tutarlar) asla repoya, testlere ya da bu dosyaya konmaz.
+2. **Alt hesaplar (ör. Yanımda)**: dökümdeki "Bakiye" vadesiz hesabındır; "Kullanılabilir
+   Bakiye" alt hesaptaki parayı da içerir. Alt hesabın ayrı bir hesap olarak izlenip
+   izlenmeyeceği soruldu; cevaba göre yapılacak.
+3. **Tasarım sahneleri** (6. bölüm): bütün ekranlara uygulandı; Melih'in yorumu bekleniyor.
+4. Yatırımlar bölümü (henüz başlanmadı; sorular sorulacak).
+5. İçinde insan olan diğer fotoğrafların taranması (75 fotoğrafın hepsine bakılamadı).
+6. İmzalı APK (gizli anahtarlar eklenmedi; resmî sürümde yalnızca Windows dosyaları var).
 
 ## 6. Tasarım: sahneler
 
@@ -148,3 +169,4 @@ tutarlar Manrope.
 | 2026-11-06 | Claude | Tanıtım ve karşılama kemer, kurulum ve onarım dergi, açılır pencereler "pencere" görünümü; telefonda Özet'te fotoğrafçının adı en altta |
 | 2026-11-06 | Claude | Ekstre Motoru (`motor/ekstre.dart`), PDF okuma (`storage/pdf_metin*.dart`, pdfrx), ekstre paneli (`src/sheets/ekstre.dart`), testleri |
 | 2026-11-06 | Claude | Resmî sürüm yayınlandı: s56 (Mel Capital 06.11.2026-20.15), Melih'in onayıyla |
+| 2026-11-06 | Claude | Hesap dökümü okuma düzeltildi (okuma sırasıyla satırlar, yeniden eskiye sıra, özetteki bakiye, kendi hesapların arası, etiketten kategori, maaş/fatura/abonelik eşleştirme); uydurma Garanti benzeri test eklendi |

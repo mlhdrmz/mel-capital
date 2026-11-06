@@ -51,6 +51,17 @@ const int _darkInk = 0xFF141210;
 const int _genericDefault = 0xFFE3BF7C;
 const List<int> _initialColors = [0xFF8A5A8F, 0xFF3F6F8F, 0xFF8F6A2F, 0xFF3F7F5A, 0xFF6A5AA0, 0xFF9A4F45];
 
+/// Adın uyduğu marka kuralının sırası (yoksa null). İki adın aynı markayı gösterip göstermediğini
+/// anlamak için (ör. abonelik "Spotify Premium" ile ekstredeki "SPOTIFY P1").
+int? brandIndex(String? name) {
+  final s = brandKey(name);
+  if (s.isEmpty) return null;
+  for (var i = 0; i < _brandRes.length; i++) {
+    if (_brandRes[i].hasMatch(s)) return i;
+  }
+  return null;
+}
+
 /// Bilinen bir markaysa logosu (simge ya da kısaltma), değilse null. Harcama satırları bunu kullanır:
 /// markası bilinmeyen harcamada kategori simgesi kalır.
 BrandLook? brandOf(String? name) {

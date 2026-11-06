@@ -213,6 +213,11 @@ class _StatementSheetState extends State<StatementSheet> {
             _Satir(
               e: _eslesmeler[i],
               money: money,
+              not: _eslesmeler[i].abonelikId != null
+                  ? s.pick('${_eslesmeler[i].kayitAdi} · bu ay ödendi olarak işaretlenir', '${_eslesmeler[i].kayitAdi} · marked as paid this month')
+                  : _eslesmeler[i].gelirId != null
+                      ? s.pick('${_eslesmeler[i].kayitAdi} · bu ay yattı olarak işaretlenir', '${_eslesmeler[i].kayitAdi} · marked as received this month')
+                      : null,
               leading: Checkbox(
                 value: _ekle[i],
                 activeColor: MC.gold,
@@ -253,10 +258,17 @@ class _StatementSheetState extends State<StatementSheet> {
             for (final i in var_) _Satir(e: _eslesmeler[i], money: money, soluk: true),
         ],
         if (eklenmez.isNotEmpty) ...[
-          _Baslik(s.pick('Ödemeler ve iadeler', 'Payments and refunds'), eklenmez.length),
+          _Baslik(
+              o.tur == EkstreTuru.kart ? s.pick('Ödemeler ve iadeler', 'Payments and refunds') : s.pick('Kendi hesapların arası', 'Between your own accounts'),
+              eklenmez.length),
           Padding(
             padding: const EdgeInsets.only(bottom: 6),
-            child: Text(s.pick('Bunlar ekstredeki borçta zaten hesaba katıldı; ayrıca eklenmez.', 'These are already counted in the statement balance.'), style: sans(12, color: MC.dim)),
+            child: Text(
+                o.tur == EkstreTuru.kart
+                    ? s.pick('Bunlar ekstredeki borçta zaten hesaba katıldı; ayrıca eklenmez.', 'These are already counted in the statement balance.')
+                    : s.pick('Kendi hesaplarına, birikimine ya da yatırımına aktarılan para harcama sayılmaz; hesabın son bakiyesinde zaten var.',
+                        'Money moved to your own accounts or savings is not spending; the closing balance already includes it.'),
+                style: sans(12, color: MC.dim)),
           ),
           for (final i in eklenmez) _Satir(e: _eslesmeler[i], money: money, soluk: true),
         ],
@@ -290,19 +302,22 @@ class _Baslik extends StatelessWidget {
 }
 
 class _Satir extends StatelessWidget {
-  const _Satir({required this.e, required this.money, this.leading, this.soluk = false});
+  const _Satir({required this.e, required this.money, this.leading, this.soluk = false, this.not});
 
   final EkstreEslesme e;
   final String Function(int) money;
   final Widget? leading;
   final bool soluk;
 
+  /// Satırın altında küçük not (ör. hangi aboneliğe yazılacağı).
+  final String? not;
+
   @override
   Widget build(BuildContext context) {
     final s = S.of(context);
     final i = e.islem;
     final taksit = i.taksitli ? ' · ${s.pick('taksit', 'instalment')} ${i.taksitNo}/${i.taksitSayisi}' : '';
-    final giris = i.tur == 'giris' || i.tur == 'odeme' || i.tur == 'iade';
+    final giris = i.arti;
     final renk = soluk ? MC.dim : MC.text;
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 3),
@@ -312,6 +327,7 @@ class _Satir extends StatelessWidget {
           child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
             Text(i.aciklama, maxLines: 1, overflow: TextOverflow.ellipsis, style: sans(13.5, weight: FontWeight.w600, color: renk)),
             Text('${fmtDayShort(i.tarih, s.lang)}$taksit', style: sans(11.5, color: MC.dim)),
+            if (not != null) Text(not!, maxLines: 1, overflow: TextOverflow.ellipsis, style: sans(11.5, color: MC.gold)),
           ]),
         ),
         const SizedBox(width: 10),
