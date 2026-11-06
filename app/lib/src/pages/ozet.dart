@@ -5,6 +5,7 @@ import '../../core/constants.dart';
 import '../../core/util.dart';
 import '../glass.dart';
 import '../i18n.dart';
+import '../sahne.dart';
 import '../state.dart';
 import '../theme.dart';
 import '../ui.dart';
@@ -75,9 +76,11 @@ class OzetPage extends StatelessWidget {
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
                 Reveal(
-                  child: Text(
-                    '${greet.toUpperCase()}${name == null ? '' : ', ${trUpper(name)}'} · ${fmtDate(today, s.lang).toUpperCase()}, ${trUpper(weekdayName(today, s.lang))}',
-                    style: sans(12, color: MC.eyebrow, weight: FontWeight.w700, letterSpacing: 2.2, shadows: kPhotoTextShadow),
+                  child: Hale(
+                    child: Text(
+                      '${greet.toUpperCase()}${name == null ? '' : ', ${trUpper(name)}'} · ${fmtDate(today, s.lang).toUpperCase()}, ${trUpper(weekdayName(today, s.lang))}',
+                      style: sans(12, color: MC.eyebrow, weight: FontWeight.w700, letterSpacing: 2.2, shadows: kPhotoTextShadow),
+                    ),
                   ),
                 ),
                 SizedBox(height: narrow ? 40 : 120),
@@ -125,14 +128,18 @@ class _HomeItem extends StatelessWidget {
       crossAxisAlignment: big ? CrossAxisAlignment.end : CrossAxisAlignment.start,
       mainAxisSize: MainAxisSize.min,
       children: [
-        Text(trUpper(label), style: sans(12, color: MC.eyebrow, weight: FontWeight.w700, letterSpacing: 2.2, shadows: kPhotoTextShadow)),
+        Hale(child: Text(trUpper(label), style: sans(12, color: MC.eyebrow, weight: FontWeight.w700, letterSpacing: 2.2, shadows: kPhotoTextShadow))),
         const SizedBox(height: 8),
-        FittedBox(
-          fit: BoxFit.scaleDown,
-          child: value == null ? Text('—', style: style) : MoneyText(value, count: true, style: style),
+        Hale(
+          yatay: 18,
+          dikey: 2,
+          child: FittedBox(
+            fit: BoxFit.scaleDown,
+            child: value == null ? Text('—', style: style) : MoneyText(value, count: true, style: style),
+          ),
         ),
         const SizedBox(height: 6),
-        Text(note, textAlign: big ? TextAlign.right : TextAlign.left, style: sans(13, color: MC.muted, shadows: kPhotoTextShadow)),
+        Hale(child: Text(note, textAlign: big ? TextAlign.right : TextAlign.left, style: sans(13, color: MC.muted, shadows: kPhotoTextShadow))),
       ],
     );
     if (onTap == null) return body;

@@ -6,26 +6,30 @@ bölümlerini güncelle.**
 
 ## 1. Kurallar (ikimiz için de geçerli)
 
-1. **Aynı anda yalnızca biri çalışır.** Başlamadan önce `git pull`; bitince commit + `git push` ve
-   bu dosyayı güncelle. Diğeri o zamana kadar dokunmaz.
-2. **Depo herkese açıktır.** Kişisel veri, gerçek tutarlar, banka ekstreleri, veri dosyası
+1. **Aynı anda yalnızca biri çalışır.** Başlamadan önce `git pull`; bitince commit + `git push`.
+   Diğeri o zamana kadar dokunmaz.
+2. **Bu dosya her değişiklikte güncellenir** (Melih'in isteği): eklenen her özellik, her değişiklik
+   ve her karar aynı commit'te "Son durum", "Kalan işler" ve "Devir kaydı" bölümlerine yazılır.
+   Böylece öbür yapay zekâ projeyi her zaman güncel hâliyle devralır.
+3. **Depo herkese açıktır.** Kişisel veri, gerçek tutarlar, banka ekstreleri, veri dosyası
    (`*.json` profil verisi), yedekler, PIN, kart/hesap numaraları, IBAN, TC kimlik, imza anahtarı
    (`*.jks`) ve şifreler **asla** depoya konmaz. Bu dosyaya da gerçek rakam yazılmaz. Testlerde
    yalnızca uydurma ya da `app/assets/sample/ornek.json` örnek verisi kullanılır.
-3. **Kendi kafana göre değişiklik yok.** Melih'in istemediği hiçbir şey (tasarım, fotoğraf,
+4. **Kendi kafana göre değişiklik yok.** Melih'in istemediği hiçbir şey (tasarım, fotoğraf,
    içerik, davranış) değiştirilmez. Emin değilsen sor.
-4. **Büyük işten önce numaralı sorular.** Yeni özellik ya da büyük değişiklikten önce Melih'e
+5. **Büyük işten önce numaralı sorular.** Yeni özellik ya da büyük değişiklikten önce Melih'e
    numaralı bir soru listesi sorulur; onay gelmeden başlanmaz.
-5. **Testler geçmeden iş bitmiş sayılmaz.** `flutter analyze` ve `flutter test` temiz olmalı;
+6. **Testler geçmeden iş bitmiş sayılmaz.** `flutter analyze` ve `flutter test` temiz olmalı;
    GitHub Actions'taki "Derleme" iş akışı yeşil olmalı.
-6. **Uygulama açıkken veri dosyasına yazılmaz.** Eski uygulamanın dosyaları (eski veri dosyası,
+7. **Uygulama açıkken veri dosyasına yazılmaz.** Eski uygulamanın dosyaları (eski veri dosyası,
    `senkron.json`, `%LOCALAPPDATA%\Mel Capital` altındaki fotoğraf önbelleği ve `ayarlar.json`)
    yalnızca okunur, asla değiştirilmez.
-7. Masaüstü uygulamasında şifre, kilit, şifreleme ve öneri/uyarı sistemi yoktur; uygulama
+8. Masaüstü uygulamasında şifre, kilit, şifreleme ve öneri/uyarı sistemi yoktur; uygulama
    internetsiz çalışır; yedekler Ayarlar'dan alınır.
-8. Arka plan fotoğraflarının üstüne karartma ya da bulanıklık konmaz. "Dikdörtgen + buğulu cam"
-   görünümünden uzaklaşılıyor (bkz. 6. bölüm, tasarım yönleri).
-9. Arayüz dili Türkçe (İngilizcesi de var). Kod yorumları Türkçe.
+9. Arka plan fotoğrafının tamamına karartma ya da bulanıklık konmaz (Melih'in istediği tek istisna:
+   "sakin" sahnede yalnızca yazının tam arkasındaki yumuşak kenarlı hale). "Dikdörtgen + buğulu
+   cam" görünümünden uzaklaşılıyor (bkz. 6. bölüm).
+10. Arayüz dili Türkçe (İngilizcesi de var). Kod yorumları Türkçe.
 
 ## 2. Proje
 
@@ -92,6 +96,8 @@ Kurallar:
 - Maaş ↔ banka bağlantısı: gelir hangi hesaba yatıyorsa seçilir; zilde "Maaşın yattı mı?" →
   "Yattı" o hesaba ekler. Abonelikler her ay "Ödedin mi?" diye sorulur. Net/brüt ve değişken gelir.
 - Kod motorlara ayrıldı (davranış değişmedi) ve uyum denetimi eklendi.
+- Sekmeler dört sahneyle çiziliyor (6. bölüm): Özet'te yazıların arkasında hale, Bankalar'da
+  kemer pencereler, Harcamalar ve Plan'da alttan açılan yaprak, diğerlerinde dergi sayfası.
 
 ## 5. Kalan işler
 
@@ -100,15 +106,18 @@ Kurallar:
    harcamalarla üst üste binmez (eşleşenler atlanır ya da "Bu o mu?" diye sorulur); eklenmeden
    önce bir analiz ekranı gösterilir. Açık sorular: hangi bankalar, yalnızca kredi kartı mı,
    eşleştirme kuralı (aynı tutar, ±2 gün, benzer ad), örnek PDF'ler (yalnızca yerelde, depoya asla).
-2. **Tasarım yönleri** (6. bölüm): dört yön de beğenildi, sayfalara dağıtım onay bekliyor.
+2. **Tasarım sahneleri** (6. bölüm): uygulandı; Melih'in yorumu bekleniyor. Kurulum, karşılama
+   ve açılır pencereler henüz eski cam görünümünde.
 3. Yatırımlar bölümü (henüz başlanmadı; sorular sorulacak).
 4. İçinde insan olan diğer fotoğrafların taranması (75 fotoğrafın hepsine bakılamadı).
 5. Resmî sürüm (Melih'in onayı) ve imzalı APK (gizli anahtarlar).
 
-## 6. Tasarım yönleri
+## 6. Tasarım: sahneler
 
-Okunabilirlik için dikdörtgen + buğulu cam yerine dört yön hazırlandı (Claude'daki tasarım
-sayfasında, bilgisayar ve telefon hâlleriyle):
+Okunabilirlik için dikdörtgen + buğulu cam yerine dört yön ("sahne") var. Uygulamada
+`app/lib/src/sahne.dart`; her sekmenin sahnesi `kSekmeSahnesi`'nde. Paneller (`GlassPanel`, `Kpi`)
+bulundukları sahneye göre çizilir; sekmeler dışındaki ekranlar (kurulum, karşılama, pencereler)
+şimdilik eski cam görünümünde.
 
 1. **Dergi sayfası**: solda düz koyu sayfa, fotoğraf sağda bütün.
 2. **Kemerler**: kutular yerine fotoğrafın önünde kemer biçimli koyu pencereler.
@@ -116,8 +125,8 @@ sayfasında, bilgisayar ve telefon hâlleriyle):
    kenarları yumuşakça kaybolan hafif bulanıklık.
 4. **Alttan açılan sayfa**: fotoğraf üstte, yazılar alttan açılan düz koyu sayfada.
 
-Önerilen dağıtım (onay bekliyor): Özet → 3, Bankalar → 2, Harcamalar ve Plan → 4,
-Borçlar, Alışveriş, Ayarlar → 1.
+Dağıtım (Claude belirledi, Melih beğenmezse değişecek): Özet → 3 (sakin), Bankalar → 2 (kemer),
+Harcamalar ve Plan → 4 (sayfa), Borçlar, Alışveriş, Ayarlar → 1 (dergi). Telefonda da aynı.
 
 Ortak: espresso zemin `#15110d`, altın `#e3bf7c`, başlıklar Cormorant Garamond, metin Inter,
 tutarlar Manrope.
@@ -127,3 +136,4 @@ tutarlar Manrope.
 | Tarih | Kim | Ne yapıldı |
 |---|---|---|
 | 2026-11-06 | Claude | HANDOFF.md oluşturuldu; kod 1 çekirdek + 5 motora ayrıldı; uyum denetimi ve testi eklendi; içinde insan olan 2 fotoğraf gizlendi |
+| 2026-11-06 | Claude | Tasarım sahneleri uygulandı (`sahne.dart`); HANDOFF'un her değişiklikte güncellenmesi kurala eklendi |

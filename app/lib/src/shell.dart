@@ -15,6 +15,7 @@ import 'pages/intro.dart';
 import 'pages/plan.dart' show UpcomingSheet;
 import 'pages/setup.dart';
 import 'pages/welcome.dart';
+import 'sahne.dart';
 import 'sheet.dart';
 import 'state.dart';
 import 'sync_ui.dart';
@@ -83,9 +84,12 @@ class Shell extends StatelessWidget {
           cover = _covers[st.tab] ?? 'lobby';
           // Sekme değişince yeni sayfa sıfırdan kurulur; paneller kendileri
           // buğulanarak belirir (sayfanın üstüne saydamlık konmaz).
-          body = KeyedSubtree(
-            key: ValueKey<String>('${st.profile?.id}/${st.tab.name}'),
-            child: pageFor(st.tab),
+          body = SahneDuzeni(
+            sahne: kSekmeSahnesi[st.tab]!,
+            child: KeyedSubtree(
+              key: ValueKey<String>('${st.profile?.id}/${st.tab.name}'),
+              child: pageFor(st.tab),
+            ),
           );
         }
     }
@@ -94,6 +98,7 @@ class Shell extends StatelessWidget {
     // Telefonda sekmeler alttaki menüde; "+" düğmesi harcama ekler.
     final phone = isPhoneLayout(context);
     final s = S.of(context);
+    final sahne = tabs ? kSekmeSahnesi[st.tab] : null;
     final scaffold = Scaffold(
       backgroundColor: MC.bg,
       extendBody: true,
@@ -113,6 +118,7 @@ class Shell extends StatelessWidget {
         fit: StackFit.expand,
         children: [
           Background(page: tabs ? st.tab.index : 0, cover: cover, rotate: tabs),
+          SahneZemini(sahne: sahne),
           SafeArea(
             child: Column(
               children: [
@@ -124,7 +130,8 @@ class Shell extends StatelessWidget {
           ),
           // Fotoğrafçının adı, favori ve "Gösterme": sağ altta; telefonda alt menünün üstünde, sağdaki
           // "+" düğmesiyle çakışmasın diye solda.
-          Positioned(
+          if (!fotoUstte(sahne, phone))
+            Positioned(
             left: phone ? 8 : null,
             right: phone ? null : 10,
             bottom: phone && tabs ? 76 : 6,

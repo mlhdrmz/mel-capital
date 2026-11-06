@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 
 import 'format.dart';
 import 'i18n.dart';
+import 'sahne.dart';
 import 'state.dart';
 import 'theme.dart';
 
@@ -131,6 +132,43 @@ class _GlassPanelState extends State<GlassPanel>
 
   @override
   Widget build(BuildContext context) {
+    final sahne = SahneScope.of(context);
+    if (sahne == Sahne.dergi || sahne == Sahne.sayfa || sahne == Sahne.kemer) {
+      final pad = widget.padding.resolve(Directionality.of(context));
+      final t = widget.tint;
+      final Widget yuz;
+      if (sahne == Sahne.kemer) {
+        // Kemer pencere: düz koyu zemin, ince altın çizgi; içerik kemerin altından başlar
+        const kemer = 40.0;
+        yuz = DecoratedBox(
+          decoration: ShapeDecoration(
+            color: kKemerZemin,
+            shape: KemerBorder(kemer: kemer, side: BorderSide(color: t?.withValues(alpha: 0.7) ?? kAltinCizgi)),
+          ),
+          child: Padding(padding: pad.copyWith(top: pad.top + kemer * 0.75), child: widget.child),
+        );
+      } else if (t != null) {
+        // Düz sayfada anlamlı rakam: solda renkli ince çizgi
+        yuz = DecoratedBox(
+          decoration: BoxDecoration(border: Border(left: BorderSide(color: t.withValues(alpha: 0.85), width: 2))),
+          child: Padding(padding: EdgeInsets.fromLTRB(14, math.max(0, pad.top - 4), 0, math.max(0, pad.bottom - 4)), child: widget.child),
+        );
+      } else {
+        // Düz sayfada bölüm: üstte ince altın çizgi, kutu yok
+        yuz = DecoratedBox(
+          decoration: const BoxDecoration(border: Border(top: BorderSide(color: kBolumCizgi))),
+          child: Padding(padding: EdgeInsets.fromLTRB(0, pad.top, 0, pad.bottom), child: widget.child),
+        );
+      }
+      return AnimatedBuilder(
+        animation: _appear,
+        child: yuz,
+        builder: (context, child) {
+          final v = _appear.value;
+          return Transform.translate(offset: Offset(0, (1 - v) * 14), child: Opacity(opacity: v, child: child));
+        },
+      );
+    }
     final shape = SignatureBorder(cut: widget.cut, radius: widget.radius);
     return AnimatedBuilder(
       animation: _appear,
