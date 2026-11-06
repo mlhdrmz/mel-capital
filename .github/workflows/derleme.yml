@@ -189,6 +189,14 @@ jobs:
             python ../tool/annotate.py error "Windows derlemesi" ../build.txt 120
             exit 1
           }
+          # Ekstre okumak için PDFium uygulamanın yanında olmalı (kurulum bu klasörü paketler)
+          $dll = Get-ChildItem -Recurse build/windows/x64/runner/Release -Filter pdfium.dll | Select-Object -First 1
+          if (-not $dll) {
+            Get-ChildItem -Recurse build/windows/x64/runner/Release | Select-Object FullName
+            Write-Output '::error::pdfium.dll Windows derlemesinde yok'
+            exit 1
+          }
+          Write-Output "PDFium: $($dll.FullName)"
       - name: Kurulum, güncelleme ve kaldırma dosyaları
         shell: pwsh
         working-directory: kurulum
@@ -329,6 +337,11 @@ jobs:
           if [ $status -ne 0 ]; then
             python3 ../tool/annotate.py error "APK derlemesi" ../apk.txt 120
             exit $status
+          fi
+          # Ekstre okumak için PDFium APK'nın içinde olmalı
+          if ! unzip -l build/app/outputs/flutter-apk/app-release.apk | grep -q 'libpdfium.so'; then
+            echo '::error::libpdfium.so APK içinde yok'
+            exit 1
           fi
           mkdir -p ../apk
           cp build/app/outputs/flutter-apk/app-release.apk ../apk/MelCapital.apk
