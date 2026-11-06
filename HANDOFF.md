@@ -172,3 +172,4 @@ tutarlar Manrope.
 | 2026-11-06 | Claude | Resmî sürüm yayınlandı: s56 (Mel Capital 06.11.2026-20.15), Melih'in onayıyla |
 | 2026-11-06 | Claude | Hesap dökümü okuma düzeltildi (okuma sırasıyla satırlar, yeniden eskiye sıra, özetteki bakiye, kendi hesapların arası, etiketten kategori, maaş/fatura/abonelik eşleştirme); uydurma Garanti benzeri test eklendi |
 | 2026-11-06 | Claude | Karar kaydedildi: Yanımda gibi alt hesaplar şimdilik sayılmaz (yalnızca vadesizin "Bakiye"si); kodda değişiklik yok |
+| 2026-11-06 | Claude | Resmî sürüm yayınlandı: s60 (Mel Capital 06.11.2026-22.37), Melih'in onayıyla; hesap dökümü okuma düzeltmesi içinde |
