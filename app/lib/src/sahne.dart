@@ -106,9 +106,15 @@ class SahneDuzeni extends StatelessWidget {
       ]);
     }
     if (sahne == Sahne.dergi) {
+      // Sayfa kendi genişliğini ekranın genişliği sanmasın (geniş ekran düzenine geçip taşmasın)
+      final mq = MediaQuery.of(context);
+      final w = dergiGenisligi(mq.size.width);
       return Align(
         alignment: Alignment.topLeft,
-        child: SizedBox(width: dergiGenisligi(MediaQuery.sizeOf(context).width), child: scoped),
+        child: SizedBox(
+          width: w,
+          child: MediaQuery(data: mq.copyWith(size: Size(w, mq.size.height)), child: scoped),
+        ),
       );
     }
     return scoped;

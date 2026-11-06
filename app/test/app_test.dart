@@ -80,7 +80,7 @@ void main() {
     for (final tab in AppTab.values) {
       await tapTab(tester, tab);
       expect(state.tab, tab);
-      expect(tester.takeException(), isNull);
+      expect(tester.takeException(), isNull, reason: tab.name);
     }
   });
 
