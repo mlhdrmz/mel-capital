@@ -297,7 +297,7 @@ class _FeaturesSlide extends StatelessWidget {
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
                 decoration: BoxDecoration(color: MC.gold, borderRadius: BorderRadius.circular(20)),
-                child: Text(s.pick('YAKINDA', 'COMING SOON'), style: sans(10.5, color: MC.ink, weight: FontWeight.w700, letterSpacing: 1.4)),
+                child: Text(s.pick('YAKINDA', 'COMING SOON'), style: sans(10.5, color: MC.ink, weight: FontWeight.w700, letterSpacing: 1.4, shadows: const [])),
               ),
               const SizedBox(width: 12),
               Expanded(

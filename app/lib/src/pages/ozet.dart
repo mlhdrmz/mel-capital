@@ -97,7 +97,7 @@ class OzetPage extends StatelessWidget {
                             const SizedBox(height: 26),
                             items[1],
                             // Telefonda fotoğrafçının adı en altta, rakamların üstüne binmez
-                            if (fotoBilgisiSayfada(Sahne.sakin, isPhoneLayout(context))) ...[const SizedBox(height: 26), const PhotoBar()],
+                            if (fotoBilgisiSayfada(Sahne.sakin, isPhoneLayout(context), ozet: true)) ...[const SizedBox(height: 26), const PhotoBar()],
                           ],
                         )
                       : Row(

@@ -213,7 +213,9 @@ class _StatementSheetState extends State<StatementSheet> {
             _Satir(
               e: _eslesmeler[i],
               money: money,
-              not: _eslesmeler[i].abonelikId != null
+              not: _eslesmeler[i].yeniAbonelik
+                  ? s.pick('Aboneliklere eklenir · bu ay ödendi', 'Added to subscriptions · paid this month')
+                  : _eslesmeler[i].abonelikId != null
                   ? s.pick('${_eslesmeler[i].kayitAdi} · bu ay ödendi olarak işaretlenir', '${_eslesmeler[i].kayitAdi} · marked as paid this month')
                   : _eslesmeler[i].gelirId != null
                       ? s.pick('${_eslesmeler[i].kayitAdi} · bu ay yattı olarak işaretlenir', '${_eslesmeler[i].kayitAdi} · marked as received this month')
@@ -325,7 +327,10 @@ class _Satir extends StatelessWidget {
         if (leading != null) SizedBox(width: 36, child: leading) else const SizedBox(width: 6),
         Expanded(
           child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-            Text(i.aciklama, maxLines: 1, overflow: TextOverflow.ellipsis, style: sans(13.5, weight: FontWeight.w600, color: renk)),
+            Tooltip(
+              message: i.aciklama,
+              child: Text(i.ad, maxLines: 1, overflow: TextOverflow.ellipsis, style: sans(13.5, weight: FontWeight.w600, color: renk)),
+            ),
             Text('${fmtDayShort(i.tarih, s.lang)}$taksit', style: sans(11.5, color: MC.dim)),
             if (not != null) Text(not!, maxLines: 1, overflow: TextOverflow.ellipsis, style: sans(11.5, color: MC.gold)),
           ]),

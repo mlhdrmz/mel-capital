@@ -119,7 +119,7 @@ class BankPlate extends StatelessWidget {
       // Genişlik yazı kadar (geniş bir alanın ortasında da plaka gibi kalır)
       child: Center(
         widthFactor: 1,
-        child: Text(bankMono(key, name), maxLines: 1, style: sans(fs, weight: FontWeight.w700, color: MC.ink, letterSpacing: fs * 0.05, height: 1)),
+        child: Text(bankMono(key, name), maxLines: 1, style: sans(fs, weight: FontWeight.w700, color: MC.ink, letterSpacing: fs * 0.05, height: 1, shadows: const [])),
       ),
     );
   }

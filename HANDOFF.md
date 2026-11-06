@@ -96,21 +96,23 @@ Kurallar:
 - Maaş ↔ banka bağlantısı: gelir hangi hesaba yatıyorsa seçilir; zilde "Maaşın yattı mı?" →
   "Yattı" o hesaba ekler. Abonelikler her ay "Ödedin mi?" diye sorulur. Net/brüt ve değişken gelir.
 - Kod motorlara ayrıldı (davranış değişmedi) ve uyum denetimi eklendi.
-- Sekmeler dört sahneyle çiziliyor (6. bölüm): Özet'te yazıların arkasında hale, Bankalar'da
-  kemer pencereler, Harcamalar ve Plan'da alttan açılan yaprak, diğerlerinde dergi sayfası.
-  Tanıtım, karşılama, kurulum, veri onarımı ve açılır pencereler de yeni görünümde.
-- Telefonda Özet'te fotoğrafçının adı sayfanın en altında (rakamların üstüne binmiyor).
+- Bütün sekmeler ve giriş ekranları Özet gibi "sakin" sahnede (6. bölüm): siyah sayfalar yok,
+  fotoğraf görünür; bölümlerin ve başlıkların arkasında yalnızca yumuşak kenarlı hafif
+  bulanıklık. Açılır pencereler düz koyu ("pencere").
+- Telefonda Özet'te fotoğrafçının adı sayfanın en altında (rakamların üstüne binmiyor); diğer
+  sayfalarda alt menünün üstünde.
 - Ekstre ekleme (Borçlar ve Bankalar'da "Ekstre ekle"): PDF seçilir (şifreliyse şifre sorulur,
   kaydedilmez), PDFium (`pdfrx`) ile cihazda okunur, panelde hedef kart/hesap, özet, yeni
   işlemler, "zaten var" ve "bu o mu?" gösterilir. Kart borcu ve limit kesim tarihindeki hâliyle,
-  hesap bakiyesi dökümün son bakiyesiyle yazılır. Kart ödemeleri ve iadeler ekstre borcunda
+  hesap bakiyesi dökümün kullanılabilir bakiyesiyle yazılır. Kart ödemeleri ve iadeler ekstre borcunda
   zaten var, ayrıca eklenmez. Testler uydurma ekstrelerle (`test/ekstre_test.dart`).
 - Hesap dökümü okuma gerçek bir döküm düzeniyle denenip düzeltildi. Belge repoya konmadı;
   testteki döküm uydurma ("Hesap Hareketleri" düzeni). Düzeltilenler:
   - Satırlar PDF'in okuma sırasından kurulur (`satirlariKur`): virgül, nokta ve Ş ayrı satıra
     düşmez, kelimelerin içine boşluk girmez.
-  - Döküm yeniden eskiye sıralı olabilir. Son bakiye özetteki "Bakiye"den, yoksa en yeni işlemden
-    alınır. Dönemin son günü "gg/aa/yyyy - gg/aa/yyyy"den okunur.
+  - Döküm yeniden eskiye sıralı olabilir. Hesabın parası özetteki "Kullanılabilir Bakiye"den
+    (Melih'in kararı: alt hesaplar, ör. Yanımda, dahil), yoksa "Bakiye"den, o da yoksa en yeni
+    işlemden alınır. Dönemin son günü "gg/aa/yyyy - gg/aa/yyyy"den okunur.
   - Yön "+/-" işaretinden, yoksa yürüyen bakiyeden (iki sıralamada da) bulunur.
   - Tutar yalnızca tutar sütunundan alınır; açıklamadaki "10.00USD" ya da "Toplam: …" tutar
     sayılmaz.
@@ -123,6 +125,12 @@ Kurallar:
     Fatura ve abonelik ödemeleri o ayki "ödendi" işareti olur; eşleştirme adla, markayla
     (`brandIndex`) ya da fatura şirketiyle yapılır (ör. Elektrik ↔ AESAŞ/BEDAŞ, Su ↔ İSKİ,
     Doğalgaz ↔ İGDAŞ).
+- Ekstredeki işlemler kısa adlarıyla eklenir ve gösterilir (`ekstreAdi`): kart numarası parçası,
+  "SATIŞ", döviz tutarı, ödeme aracısı (iyzico, YemekPay…), havale/FAST kuyruğu ve referans
+  numaraları atılır. Bilinen işyerleri (`_bilinenler`: Anthropic, Google One, Amazon Prime,
+  Netflix, Yemeksepeti, Uber Eats, Migros…) kendi adı ve kategorisiyle. Bilinen bir abonelik
+  uygulamada kayıtlı değilse aboneliklere eklenir (adı, grubu, tutarı, günü ve kaynağı
+  ekstreden) ve o ay ödendi olur; panelde "Aboneliklere eklenir" yazar.
 
 ## 5. Kalan işler
 
@@ -131,11 +139,11 @@ Kurallar:
    satırlar aynı `ekstreOku`'ya verilir. Bir bankada okuma yanlışsa Melih söyleyecek, o bankanın
    işaretleri/başlıkları `ekstre.dart`'ta düzeltilecek. Gerçek ekstreler ve kişisel bilgiler
    (ad, IBAN, hesap no, tutarlar) asla repoya, testlere ya da bu dosyaya konmaz.
-2. **Alt hesaplar (ör. Yanımda)**: dökümdeki "Bakiye" vadesiz hesabındır; "Kullanılabilir
-   Bakiye" alt hesaptaki parayı da içerir. Melih'in kararı (şimdilik): alt hesap ayrı hesap
-   olarak açılmaz, bakiyeye de eklenmez; yalnızca vadesizin "Bakiye"si yazılır. Alt hesaba
-   giriş-çıkışlar harcama sayılmaz. Melih isterse sonra yeniden ele alınacak.
-3. **Tasarım sahneleri** (6. bölüm): bütün ekranlara uygulandı; Melih'in yorumu bekleniyor.
+2. **Alt hesaplar (ör. Yanımda)**: Melih'in son kararı: ayrı hesap açılmaz; hesabın parası her
+   zaman dökümdeki "Kullanılabilir Bakiye" (alt hesaptaki para dahil). Alt hesaba giriş-çıkışlar
+   harcama sayılmaz. Not: bazı bankalarda kullanılabilir bakiyeye artı hesap (KMH) limiti de
+   girer; Melih'in hesabında yok, böyle bir durum çıkarsa sorulacak.
+3. **Tasarım** (6. bölüm): bütün sekmeler sakin sahneye geçti; Melih'in yorumu bekleniyor.
 4. Yatırımlar bölümü (henüz başlanmadı; sorular sorulacak).
 5. İçinde insan olan diğer fotoğrafların taranması (75 fotoğrafın hepsine bakılamadı).
 6. İmzalı APK (gizli anahtarlar eklenmedi; resmî sürümde yalnızca Windows dosyaları var).
@@ -144,9 +152,9 @@ Kurallar:
 
 Okunabilirlik için dikdörtgen + buğulu cam yerine dört yön ("sahne") var. Uygulamada
 `app/lib/src/sahne.dart`; her sekmenin sahnesi `kSekmeSahnesi`'nde. Paneller (`GlassPanel`, `Kpi`)
-bulundukları sahneye göre çizilir. Sekmeler dışındaki ekranlar: tanıtım ve karşılama kemer,
-kurulum ve veri onarımı dergi. Açılır pencereler, düzenleme panelleri ve ipucu kartları "pencere"
-görünümünde (düz koyu zemin, ince altın kenar, buğu yok). Artık hiçbir yerde buğulu cam yok.
+bulundukları sahneye göre çizilir. Sekmeler dışındaki ekranlar (tanıtım, karşılama, kurulum, veri
+onarımı) da sakin. Açılır pencereler, düzenleme panelleri ve ipucu kartları "pencere" görünümünde
+(düz koyu zemin, ince altın kenar, buğu yok). Eski buğulu cam kutular hiçbir yerde yok.
 
 1. **Dergi sayfası**: solda düz koyu sayfa, fotoğraf sağda bütün.
 2. **Kemerler**: kutular yerine fotoğrafın önünde kemer biçimli koyu pencereler.
@@ -154,8 +162,13 @@ görünümünde (düz koyu zemin, ince altın kenar, buğu yok). Artık hiçbir 
    kenarları yumuşakça kaybolan hafif bulanıklık.
 4. **Alttan açılan sayfa**: fotoğraf üstte, yazılar alttan açılan düz koyu sayfada.
 
-Dağıtım (Claude belirledi, Melih beğenmezse değişecek): Özet → 3 (sakin), Bankalar → 2 (kemer),
-Harcamalar ve Plan → 4 (sayfa), Borçlar, Alışveriş, Ayarlar → 1 (dergi). Telefonda da aynı.
+Dağıtım (Melih'in kararı, 06.11.2026): siyah sayfalar gereksiz bulundu ve ekranda çok yer
+kaplıyordu. Bütün sekmeler ve giriş ekranları (tanıtım, karşılama, kurulum, veri onarımı) 3
+(sakin). Sakin sahnede paneller `HaleZemini` ile çizilir: kutu ve kenar yok; arkalarında yumuşak
+kenarlı hafif bulanıklık ve hafif koyu ton, yazılarda hafif gölge (`kHaleYaziGolgesi`). Sayfa
+başlıkları da `Hale` ile sarılır. Açılır pencereler "pencere" kalır. Dergi, kemer ve sayfa
+kodda duruyor ama kullanılmıyor. Gece modu yalnızca fotoğrafları değiştirir (19.00–07.00 gece
+fotoğrafları); renkler aynıdır.
 
 Ortak: espresso zemin `#15110d`, altın `#e3bf7c`, başlıklar Cormorant Garamond, metin Inter,
 tutarlar Manrope.
@@ -173,3 +186,4 @@ tutarlar Manrope.
 | 2026-11-06 | Claude | Hesap dökümü okuma düzeltildi (okuma sırasıyla satırlar, yeniden eskiye sıra, özetteki bakiye, kendi hesapların arası, etiketten kategori, maaş/fatura/abonelik eşleştirme); uydurma Garanti benzeri test eklendi |
 | 2026-11-06 | Claude | Karar kaydedildi: Yanımda gibi alt hesaplar şimdilik sayılmaz (yalnızca vadesizin "Bakiye"si); kodda değişiklik yok |
 | 2026-11-06 | Claude | Resmî sürüm yayınlandı: s60 (Mel Capital 06.11.2026-22.37), Melih'in onayıyla; hesap dökümü okuma düzeltmesi içinde |
+| 2026-11-06 | Claude | Melih'in istekleri: hesap dökümünde para "Kullanılabilir Bakiye"den; işlemler kısa adla (`ekstreAdi`); kayıtsız bilinen abonelikler aboneliklere eklenir; bütün sekmeler ve giriş ekranları sakin sahne (siyah sayfalar kalktı, `HaleZemini`) |

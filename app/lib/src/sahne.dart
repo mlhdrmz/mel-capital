@@ -8,7 +8,12 @@
 //   pencere Açılır pencereler, düzenleme panelleri ve ipuçları: düz koyu zemin, ince altın kenar.
 //
 // Her sekme bir sahnede açılır ([kSekmeSahnesi]). Paneller (GlassPanel, Kpi) bulundukları sahneye
-// göre çizilir: dergi ve sayfada düz bölüm (ince altın çizgi), kemerde kemer pencere.
+// göre çizilir: dergi ve sayfada düz bölüm (ince altın çizgi), kemerde kemer pencere, sakinde kutu
+// yok, yalnızca arkasında yumuşak kenarlı hafif bulanıklık ([HaleZemini]).
+//
+// Melih'in kararı (06.11.2026): siyah sayfalar kalktı; bütün sekmeler ve giriş ekranları "sakin"
+// (Özet gibi, fotoğraf görünür). Açılır pencereler "pencere" kalır. Dergi, kemer ve sayfa
+// kodda duruyor; istenirse yeniden kullanılabilir.
 
 import 'dart:ui' as ui;
 
@@ -23,12 +28,12 @@ enum Sahne { dergi, kemer, sakin, sayfa, pencere }
 /// Hangi sekme hangi sahnede.
 const Map<AppTab, Sahne> kSekmeSahnesi = {
   AppTab.ozet: Sahne.sakin,
-  AppTab.bankalar: Sahne.kemer,
-  AppTab.harcamalar: Sahne.sayfa,
-  AppTab.plan: Sahne.sayfa,
-  AppTab.borclar: Sahne.dergi,
-  AppTab.alisveris: Sahne.dergi,
-  AppTab.ayarlar: Sahne.dergi,
+  AppTab.bankalar: Sahne.sakin,
+  AppTab.harcamalar: Sahne.sakin,
+  AppTab.plan: Sahne.sakin,
+  AppTab.borclar: Sahne.sakin,
+  AppTab.alisveris: Sahne.sakin,
+  AppTab.ayarlar: Sahne.sakin,
 };
 
 /// Düz sayfanın rengi (espresso).
@@ -57,13 +62,14 @@ class SahneScope extends InheritedWidget {
 }
 
 /// Sekmeler dışındaki ekranların sahnesi.
-const Sahne kTanitimSahnesi = Sahne.kemer;
-const Sahne kKarsilamaSahnesi = Sahne.kemer;
-const Sahne kKurulumSahnesi = Sahne.dergi;
-const Sahne kOnarimSahnesi = Sahne.dergi;
+const Sahne kTanitimSahnesi = Sahne.sakin;
+const Sahne kKarsilamaSahnesi = Sahne.sakin;
+const Sahne kKurulumSahnesi = Sahne.sakin;
+const Sahne kOnarimSahnesi = Sahne.sakin;
 
-/// Telefonda fotoğrafçının adı sayfanın en altında, içerikle birlikte akar (rakamların üstüne binmesin).
-bool fotoBilgisiSayfada(Sahne? sahne, bool phone) => phone && sahne == Sahne.sakin;
+/// Telefonda Özet'te fotoğrafçının adı sayfanın en altında, içerikle birlikte akar (büyük rakamların
+/// üstüne binmesin). Diğer sayfalarda alt menünün üstünde durur.
+bool fotoBilgisiSayfada(Sahne? sahne, bool phone, {bool ozet = false}) => phone && ozet && sahne == Sahne.sakin;
 
 /// Dergi sahnesinde (bilgisayar) soldaki sayfanın genişliği.
 double dergiGenisligi(double ekran) => (ekran * 0.5).clamp(600.0, 820.0).toDouble();
@@ -245,6 +251,10 @@ class KemerBorder extends ShapeBorder {
 class Hale extends StatelessWidget {
   const Hale({super.key, required this.child, this.yatay = 14, this.dikey = 6});
 
+  /// Sakin sahnedeyse [Hale] ile sarar, değilse olduğu gibi bırakır.
+  static Widget sakinde(BuildContext context, Widget child, {double yatay = 14, double dikey = 6}) =>
+      SahneScope.of(context) == Sahne.sakin ? Hale(yatay: yatay, dikey: dikey, child: child) : child;
+
   final Widget child;
   final double yatay;
   final double dikey;
@@ -265,31 +275,65 @@ class Hale extends StatelessWidget {
 }
 
 class _HaleArka extends StatelessWidget {
-  const _HaleArka();
+  const _HaleArka({this.ton = const Color(0x2E081A2C), this.genis = false});
+
+  /// Yumuşak kenarlı koyu tonun rengi.
+  final Color ton;
+
+  /// Bölüm (panel) için: kenar yumuşaması daha geniş.
+  final bool genis;
 
   @override
   Widget build(BuildContext context) {
     Widget katman(double iceri, double sigma) => Padding(
           padding: EdgeInsets.symmetric(horizontal: iceri, vertical: iceri / 2),
           child: ClipRRect(
-            borderRadius: BorderRadius.circular(18),
+            borderRadius: BorderRadius.circular(genis ? 26 : 18),
             child: BackdropFilter(filter: ui.ImageFilter.blur(sigmaX: sigma, sigmaY: sigma), child: const SizedBox.expand()),
           ),
         );
     return Stack(fit: StackFit.expand, children: [
       // Yumuşak kenarlı koyu ton (kutunun kendisi saydam; yalnızca bulanık gölgesi görünür)
       Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+        padding: genis ? const EdgeInsets.symmetric(horizontal: 18, vertical: 12) : const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
         child: DecoratedBox(
           decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(18),
-            boxShadow: const [BoxShadow(color: Color(0x2E081A2C), blurRadius: 20, spreadRadius: 4)],
+            borderRadius: BorderRadius.circular(genis ? 26 : 18),
+            boxShadow: [BoxShadow(color: ton, blurRadius: genis ? 30 : 20, spreadRadius: genis ? 8 : 4)],
           ),
         ),
       ),
       // Bulanıklık kenarlardan içeri doğru artar
-      katman(4, 4),
-      katman(10, 7),
+      if (genis) ...[katman(6, 4), katman(16, 8)] else ...[katman(4, 4), katman(10, 7)],
+    ]);
+  }
+}
+
+/// Sakin sahnede bölümdeki yazıların hafif gölgesi (açık renkli fotoğrafta da okunsun). Koyu zeminli
+/// rozet yazıları gibi gölge istemeyenler kendi stillerinde `shadows: const []` verir.
+const List<Shadow> kHaleYaziGolgesi = [
+  Shadow(color: Color(0xCC000000), blurRadius: 3),
+  Shadow(color: Color(0x8C000000), blurRadius: 10),
+];
+
+/// Sakin sahnede bölüm (panel) zemini: kutu, kenar ya da düz renk yok; içeriğin arkasında kenarları
+/// yumuşakça kaybolan hafif bulanıklık ve hafif koyu ton. Fotoğraf görünür kalır, yazılar okunur.
+class HaleZemini extends StatelessWidget {
+  const HaleZemini({super.key, required this.child});
+
+  final Widget child;
+
+  @override
+  Widget build(BuildContext context) {
+    return Stack(clipBehavior: Clip.none, children: [
+      const Positioned(
+        left: -10,
+        right: -10,
+        top: -6,
+        bottom: -6,
+        child: IgnorePointer(child: _HaleArka(ton: Color(0x4D0C0A08), genis: true)),
+      ),
+      DefaultTextStyle.merge(style: const TextStyle(shadows: kHaleYaziGolgesi), child: child),
     ]);
   }
 }

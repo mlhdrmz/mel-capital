@@ -9,8 +9,11 @@
 //      kart adı, limit); yoksa yeni kart/hesap önerir.
 //   3. [ekstreEslestir]: işlemleri uygulamadakilerle karşılaştırır: yeni, zaten var, "bu o mu?".
 //   4. [ekstreUygula]: seçilenleri Gider Motoru ve Çekirdek üzerinden ekler; ekstreyi son güncel
-//      durum sayar (kart borcu ve limit kesim tarihindeki hâliyle; hesap bakiyesi dökümün son
-//      bakiyesiyle ve sonrasında uygulamaya girilen hareketlerle).
+//      durum sayar (kart borcu ve limit kesim tarihindeki hâliyle; hesap bakiyesi dökümün
+//      kullanılabilir bakiyesiyle ve sonrasında uygulamaya girilen hareketlerle). Kayıtlı olmayan
+//      abonelikler (bilinen markalar: [ekstreAdi]) aboneliklere eklenir.
+// İşlemler kısa adlarıyla eklenir ([ekstreAdi]: "SATIŞ-517040*1234-IYZICO *AMAZONPRİME" → "Amazon
+// Prime").
 // Hiçbir şey tahminle eklenmez: okunamayanlar [EkstreOkuma.eksikler]'de kullanıcıya söylenir.
 // Kart numarasının yalnızca son 4 hanesi (kart kaydında "last4"), IBAN'ın son 4 hanesi (hesapta
 // "iban4") saklanır; tam numara hiçbir yerde tutulmaz.
@@ -73,6 +76,184 @@ class EkstreIslem {
 
   /// Uygulamaya eklenebilir mi (kart ödemeleri, iadeler ve kendi hesapların arası eklenmez).
   bool get eklenebilir => tur == 'harcama' || tur == 'ucret' || tur == 'cikis' || tur == 'giris';
+
+  /// Kısa adı (ör. "Google One"); panelde ve eklenen kayıtlarda bu görünür.
+  String get ad => ekstreAdi(aciklama).ad;
+
+  /// Bilinen bir abonelikse grubu ([kSubGroups] anahtarı), değilse null.
+  String? get abonelikGrubu => ekstreAdi(aciklama).abonelik;
+}
+
+/// Bir işlemin kısa adı ve ne olduğu.
+class EkstreAdi {
+  const EkstreAdi(this.ad, {this.abonelik, this.kategori});
+  final String ad;
+
+  /// Abonelikse grubu ([kSubGroups] anahtarı).
+  final String? abonelik;
+
+  /// Bilinen işyerinin kategorisi ([kCategories] anahtarı).
+  final String? kategori;
+}
+
+class _Bilinen {
+  const _Bilinen(this.desen, this.ad, {this.abonelik, this.kategori});
+
+  /// Boşluksuz, küçük harfli, Türkçe harfsiz açıklamada aranır.
+  final String desen;
+  final String ad;
+  final String? abonelik;
+  final String? kategori;
+}
+
+/// Ekstrelerde sık görülen işyerleri: kısa ad, abonelikse grubu ve kategori. Özel olanlar genelden
+/// önce (ör. "ubereats" "uber"den, "amazonprime" "amazon"dan önce).
+const List<_Bilinen> _bilinenler = [
+  // Yapay zekâ
+  _Bilinen(r'anthropic|claude', 'Anthropic', abonelik: 'yz', kategori: 'abonelik'),
+  _Bilinen(r'openai|chatgpt', 'ChatGPT', abonelik: 'yz', kategori: 'abonelik'),
+  _Bilinen(r'midjourney', 'Midjourney', abonelik: 'yz', kategori: 'abonelik'),
+  _Bilinen(r'perplexity', 'Perplexity', abonelik: 'yz', kategori: 'abonelik'),
+  _Bilinen(r'cursor\.?(sh|com|ai)|anysphere', 'Cursor', abonelik: 'yz', kategori: 'abonelik'),
+  // Bulut, video, müzik
+  _Bilinen(r'googleone', 'Google One', abonelik: 'bulut', kategori: 'abonelik'),
+  _Bilinen(r'icloud', 'iCloud+', abonelik: 'bulut', kategori: 'abonelik'),
+  _Bilinen(r'dropbox', 'Dropbox', abonelik: 'bulut', kategori: 'abonelik'),
+  _Bilinen(r'youtube', 'YouTube Premium', abonelik: 'video', kategori: 'abonelik'),
+  _Bilinen(r'amazonprime|primevideo|amznprime', 'Amazon Prime', abonelik: 'video', kategori: 'abonelik'),
+  _Bilinen(r'netflix', 'Netflix', abonelik: 'video', kategori: 'abonelik'),
+  _Bilinen(r'disney', 'Disney+', abonelik: 'video', kategori: 'abonelik'),
+  _Bilinen(r'exxen', 'Exxen', abonelik: 'video', kategori: 'abonelik'),
+  _Bilinen(r'blutv', 'BluTV', abonelik: 'video', kategori: 'abonelik'),
+  _Bilinen(r'hbomax', 'HBO Max', abonelik: 'video', kategori: 'abonelik'),
+  _Bilinen(r'mubi', 'MUBI', abonelik: 'video', kategori: 'abonelik'),
+  _Bilinen(r'beinconnect|todtv', 'TOD', abonelik: 'video', kategori: 'abonelik'),
+  _Bilinen(r'spotify', 'Spotify', abonelik: 'muzik', kategori: 'abonelik'),
+  _Bilinen(r'applemusic', 'Apple Music', abonelik: 'muzik', kategori: 'abonelik'),
+  _Bilinen(r'storytel', 'Storytel', abonelik: 'muzik', kategori: 'abonelik'),
+  _Bilinen(r'audible', 'Audible', abonelik: 'muzik', kategori: 'abonelik'),
+  // İş, güvenlik, oyun, yayıncı
+  _Bilinen(r'microsoft365|office365', 'Microsoft 365', abonelik: 'is', kategori: 'abonelik'),
+  _Bilinen(r'adobe', 'Adobe', abonelik: 'is', kategori: 'abonelik'),
+  _Bilinen(r'canva', 'Canva', abonelik: 'is', kategori: 'abonelik'),
+  _Bilinen(r'notion', 'Notion', abonelik: 'is', kategori: 'abonelik'),
+  _Bilinen(r'github', 'GitHub', abonelik: 'is', kategori: 'abonelik'),
+  _Bilinen(r'linkedin', 'LinkedIn Premium', abonelik: 'is', kategori: 'abonelik'),
+  _Bilinen(r'duolingo', 'Duolingo', abonelik: 'diger', kategori: 'abonelik'),
+  _Bilinen(r'nordvpn', 'NordVPN', abonelik: 'guvenlik', kategori: 'abonelik'),
+  _Bilinen(r'surfshark', 'Surfshark', abonelik: 'guvenlik', kategori: 'abonelik'),
+  _Bilinen(r'expressvpn', 'ExpressVPN', abonelik: 'guvenlik', kategori: 'abonelik'),
+  _Bilinen(r'xbox|gamepass', 'Xbox Game Pass', abonelik: 'oyun', kategori: 'abonelik'),
+  _Bilinen(r'patreon', 'Patreon', abonelik: 'yayin', kategori: 'abonelik'),
+  _Bilinen(r'twitch', 'Twitch', abonelik: 'yayin', kategori: 'abonelik'),
+  // Abonelik olmayanlar
+  _Bilinen(r'googleplay', 'Google Play', kategori: 'eglence'),
+  _Bilinen(r'steam', 'Steam', kategori: 'eglence'),
+  _Bilinen(r'playstation|sonyinteractive', 'PlayStation', kategori: 'eglence'),
+  _Bilinen(r'yemeksepeti|yemekpay', 'Yemeksepeti', kategori: 'yemek'),
+  _Bilinen(r'ubereats', 'Uber Eats', kategori: 'yemek'),
+  _Bilinen(r'trendyolyemek|trendyolgo', 'Trendyol Go', kategori: 'yemek'),
+  _Bilinen(r'getir', 'Getir'),
+  _Bilinen(r'trendyol', 'Trendyol', kategori: 'alisveris'),
+  _Bilinen(r'hepsiburada', 'Hepsiburada', kategori: 'alisveris'),
+  _Bilinen(r'amazon|amzn', 'Amazon', kategori: 'alisveris'),
+  _Bilinen(r'temu', 'Temu', kategori: 'alisveris'),
+  _Bilinen(r'aliexpress', 'AliExpress', kategori: 'alisveris'),
+  _Bilinen(r'migros', 'Migros', kategori: 'market'),
+  _Bilinen(r'carrefour', 'CarrefourSA', kategori: 'market'),
+  _Bilinen(r'^a101', 'A101', kategori: 'market'),
+  _Bilinen(r'starbucks', 'Starbucks', kategori: 'kafe'),
+  _Bilinen(r'^uber|bitaksi', 'Uber', kategori: 'ulasim'),
+  // Faturalar (kayıtlı faturayla eşleşir; eşleşmezse harcama olarak eklenir)
+  _Bilinen(r'^vodafo', 'Vodafone', kategori: 'fatura'),
+  _Bilinen(r'^turkcell', 'Turkcell', kategori: 'fatura'),
+  _Bilinen(r'turktelekom|^ttnet', 'Türk Telekom', kategori: 'fatura'),
+  _Bilinen(r'superonline', 'Superonline', kategori: 'fatura'),
+  _Bilinen(r'^aesas', 'AESAŞ', kategori: 'fatura'),
+  _Bilinen(r'^bedas', 'BEDAŞ', kategori: 'fatura'),
+  _Bilinen(r'^ayedas', 'AYEDAŞ', kategori: 'fatura'),
+  _Bilinen(r'^enerjisa', 'Enerjisa', kategori: 'fatura'),
+  _Bilinen(r'^iski', 'İSKİ', kategori: 'fatura'),
+  _Bilinen(r'^igdas', 'İGDAŞ', kategori: 'fatura'),
+];
+
+/// Bankanın kendi kalemleri (boşluklu düz metinde aranır).
+const List<_Bilinen> _bankaKalemleri = [
+  _Bilinen(r'^kesinti', 'Banka kesintisi', kategori: 'banka'),
+  _Bilinen(r'yanimda hesaptan', "Yanımda'dan"),
+  _Bilinen(r'yanimda hesaba', "Yanımda'ya"),
+  _Bilinen(r'ucret iadesi', 'Ücret iadesi'),
+  _Bilinen(r'(^| )(vergi|bsmv|kkdf)( |$)', 'Vergi', kategori: 'banka'),
+  _Bilinen(r'(^| )faiz( |$)', 'Faiz', kategori: 'banka'),
+  _Bilinen(r'hesap isletim', 'Hesap işletim ücreti', kategori: 'banka'),
+  _Bilinen(r'kart aidat|yillik uyelik', 'Kart aidatı', kategori: 'banka'),
+  _Bilinen(r'nakit cekim|para cekme|(^| )atm( |$)', 'Nakit çekim', kategori: 'nakit'),
+];
+
+/// Kısa adda atılan sözcükler (ödeme aracıları, işlem türü, şirket ekleri).
+const Set<String> _atilanSozcukler = {
+  'satis', 'pos', 'islem', 'islemi', 'iyzico', 'yemekpay', 'paytr', 'param', 'sipay', 'paypal', 'stripe', 'paddle.net', 'paddle',
+  'a.s', 'a.s.', 'as', 'ltd', 'ltd.', 'sti', 'sti.', 'tic', 'tic.', 'san', 'san.', 'mobil', 'cep', 'sube', 'internet sube',
+};
+
+final Map<String, EkstreAdi> _adOnbellek = {};
+
+/// İşlemin kısa adı: bilinen işyeriyse kendi adı (abonelik grubu ve kategorisiyle), değilse kart
+/// numarası, "SATIŞ", döviz tutarı, ödeme aracısı, havale/FAST kuyruğu ve referans numaraları atılmış,
+/// baş harfleri büyük açıklama.
+EkstreAdi ekstreAdi(String aciklama) {
+  final hazir = _adOnbellek[aciklama];
+  if (hazir != null) return hazir;
+  if (_adOnbellek.length > 2000) _adOnbellek.clear();
+  return _adOnbellek[aciklama] = _adiBul(aciklama);
+}
+
+EkstreAdi _adiBul(String aciklama) {
+  final kelimeler = _adSozcukleri(aciklama);
+  // Bilinen işyerleri: kart numarası, "SATIŞ", aracı ve referanslar atıldıktan sonra, boşluksuz
+  final bitisik = normTxt(kelimeler.join('')).replaceAll(' ', '');
+  for (final b in _bilinenler) {
+    if (RegExp(b.desen).hasMatch(bitisik)) return EkstreAdi(b.ad, abonelik: b.abonelik, kategori: b.kategori);
+  }
+  final duz = normTxt(aciklama.replaceAll('\t', ' '));
+  for (final b in _bankaKalemleri) {
+    if (RegExp(b.desen).hasMatch(duz)) return EkstreAdi(b.ad, kategori: b.kategori);
+  }
+  final kisa = kelimeler.where((k) => k.length > 1).take(4).join(' ');
+  return EkstreAdi(_basHarfler(kisa.isEmpty ? _temizAciklama(aciklama) : kisa));
+}
+
+/// Açıklamanın ad sözcükleri: kart numarası parçaları, döviz tutarı, havale/FAST kuyruğu, ödeme
+/// aracıları, işlem sözcükleri ve referans numaraları atılır.
+List<String> _adSozcukleri(String aciklama) {
+  var t = aciklama.replaceAll('\t', ' ');
+  // Kart numarası parçaları ("517040*1234") ve baştaki kartın son 4 hanesi ("1234- ")
+  t = t.replaceAll(RegExp(r'\d{4,6}\*+\d{0,4}'), ' ');
+  t = t.replaceAll(RegExp(r'^\s*\d{4}\s*-'), ' ');
+  // Döviz ya da TL tutarı ("24.00USD", "179.99TL")
+  t = t.replaceAll(RegExp(r'\d+[.,]\d{2}\s?(USD|EUR|GBP|TL|TRY|usd|eur|gbp|tl|try)'), ' ');
+  // Havale / FAST / EFT kuyruğu: yalnızca karşı tarafın adı kalır
+  t = t.replaceAll(RegExp(r'-+\s*(FAST|HVL|EFT|HAVALE|fast|hvl|eft|havale)(?![A-Za-z]).*$'), ' ');
+  final out = <String>[];
+  for (final w in t.split(RegExp(r'[\s\-–*/_|,;:]+'))) {
+    final k = w.trim();
+    if (k.isEmpty) continue;
+    if (_atilanSozcukler.contains(normTxt(k))) continue;
+    // Referans numaraları: 4 ya da daha çok rakam içeren sözcükler
+    if (RegExp(r'\d').allMatches(k).length >= 4) continue;
+    if (!RegExp(r'[0-9A-Za-zÇĞİÖŞÜçğıöşü]').hasMatch(k)) continue;
+    out.add(k);
+  }
+  return out;
+}
+
+/// Hepsi büyük ya da hepsi küçük harfli yazının sözcüklerinin baş harfi büyük ("MİGROS KADIKÖY" →
+/// "Migros Kadıköy"); karışık yazı olduğu gibi kalır.
+String _basHarfler(String t) {
+  final s = t.trim();
+  if (s.isEmpty) return 'Harcama';
+  if (s != trUpper(s) && s != trLower(s)) return s;
+  return s.split(' ').map((w) => w.isEmpty ? w : '${trUpper(w.substring(0, 1))}${trLower(w.substring(1))}').join(' ');
 }
 
 class EkstreOkuma {
@@ -450,9 +631,11 @@ EkstreOkuma ekstreOku(List<List<String>> sayfalar) {
     o.acilisBakiye = _deger(satirlar, const ['devreden bakiye', 'onceki bakiye', 'acilis bakiyesi', 'donem basi bakiye'], _ilkBakiye);
     final (islemler, sonBakiye, sonTarih) = _hesapIslemleri(satirlar, o.acilisBakiye, _sahipAdi(satirlar));
     o.islemler = islemler;
-    // Özetteki bakiye ("Bakiye : ..."; "Kullanılabilir Bakiye" değil), yoksa en yeni işlemin bakiyesi
-    o.kapanisBakiye =
-        _deger(satirlar, const ['kapanis bakiyesi', 'donem sonu bakiye', 'guncel bakiye', 'son bakiye', '=bakiye', '=hesap bakiyesi'], _ilkBakiye) ?? sonBakiye;
+    // Hesabın parası: önce özetteki "Kullanılabilir Bakiye" (Melih'in kararı: alt hesaplardaki para,
+    // ör. Yanımda, de içinde), yoksa özetteki bakiye, o da yoksa en yeni işlemin bakiyesi
+    o.kapanisBakiye = _deger(satirlar, const ['kullanilabilir bakiye'], _ilkBakiye) ??
+        _deger(satirlar, const ['kapanis bakiyesi', 'donem sonu bakiye', 'guncel bakiye', 'son bakiye', '=bakiye', '=hesap bakiyesi'], _ilkBakiye) ??
+        sonBakiye;
     o.donemSonu = _donemSonu(satirlar) ?? sonTarih;
     if (o.kapanisBakiye == null) o.eksikler.add('Dökümün son bakiyesi okunamadı.');
   } else {
@@ -541,7 +724,7 @@ List<EkstreIslem> _kartIslemleri(List<String> satirlar) {
       taksitNo: no,
       taksitSayisi: sayi,
       etiket: etiket,
-      kategori: tur == 'ucret' ? 'banka' : null,
+      kategori: tur == 'ucret' ? 'banka' : ekstreAdi(aciklama).kategori,
       arti: tur == 'odeme' || tur == 'iade',
       ham: s,
     ));
@@ -609,7 +792,7 @@ class _HesapSatiri {
       k: r.miktar.k,
       tur: _icAktarma(da, sahip) ? 'aktarma' : (giris ? 'giris' : 'cikis'),
       etiket: r.etiket,
-      kategori: giris ? null : _etiketKategorisi(r.etiket, r.aciklama),
+      kategori: giris ? null : (_etiketKategorisi(r.etiket, r.aciklama) ?? ekstreAdi(r.aciklama).kategori),
       arti: giris,
       ham: r.ham,
     ));
@@ -706,9 +889,13 @@ List<EkstreHedefi> ekstreHedefleri(Data d, EkstreOkuma o) {
 enum EslesmeDurumu { yeni, var_, supheli, eklenmez }
 
 class EkstreEslesme {
-  const EkstreEslesme(this.islem, this.durum, {this.kayitId, this.kayitAdi, this.kayitTarihi, this.abonelikId, this.gelirId});
+  const EkstreEslesme(this.islem, this.durum,
+      {this.kayitId, this.kayitAdi, this.kayitTarihi, this.abonelikId, this.gelirId, this.yeniAbonelik = false});
   final EkstreIslem islem;
   final EslesmeDurumu durum;
+
+  /// Uygulamada kayıtlı olmayan bilinen bir abonelik: aboneliklere eklenir ve o ay ödendi olur.
+  final bool yeniAbonelik;
 
   /// Abonelik ya da fatura ödemesi: harcama yerine o ayki "ödendi" işareti konur.
   final String? abonelikId;
@@ -785,7 +972,7 @@ List<EkstreEslesme> ekstreEslestir(Data d, EkstreOkuma o, EkstreHedefi h) {
       }
     }
     final e = en;
-    if (e != null && enGun <= 3 && (_benzerAd(e.$2, i.aciklama) || enGun <= 1)) {
+    if (e != null && enGun <= 3 && (_benzerAd(e.$2, i.aciklama) || _benzerAd(e.$2, i.ad) || enGun <= 1)) {
       kullanilan.add(e.$1);
       out.add(EkstreEslesme(i, EslesmeDurumu.var_, kayitId: e.$1, kayitAdi: e.$2, kayitTarihi: e.$3));
     } else if (e != null && enGun <= 7) {
@@ -814,6 +1001,8 @@ List<EkstreEslesme> ekstreEslestir(Data d, EkstreOkuma o, EkstreHedefi h) {
         final k = kalanKaynaksiz.first;
         kullanilan.add(k.$1);
         out.add(EkstreEslesme(i, EslesmeDurumu.supheli, kayitId: k.$1, kayitAdi: k.$2, kayitTarihi: k.$3));
+      } else if (i.abonelikGrubu != null && !i.taksitli && (i.tur == 'cikis' || i.tur == 'harcama')) {
+        out.add(EkstreEslesme(i, EslesmeDurumu.yeni, yeniAbonelik: true, kayitAdi: i.ad));
       } else {
         out.add(EkstreEslesme(i, EslesmeDurumu.yeni));
       }
@@ -837,13 +1026,15 @@ const Map<String, List<String>> _faturaSirketleri = {
 Subscription? _abonelikBul(Data d, EkstreIslem i) {
   final a = _duz(i.aciklama);
   final bitisik = a.replaceAll(' ', '');
-  final marka = brandIndex(i.aciklama);
+  final marka = brandIndex(i.aciklama) ?? brandIndex(i.ad);
+  final kisa = normTxt(i.ad);
   for (final s in d.subscriptions) {
     if (!s.active) continue;
     final ad = normTxt(s.name);
     if (ad.isEmpty) continue;
     final ilk = ad.split(' ').first;
     if (ilk.length >= 4 && bitisik.contains(ilk)) return s;
+    if (kisa.length >= 4 && ad.length >= 4 && (ad.contains(kisa) || kisa.contains(ad))) return s;
     if (marka != null && brandIndex(s.name) == marka) return s;
     for (final e in _faturaSirketleri.entries) {
       if (RegExp('(^| )${e.key}( |\$)').hasMatch(ad) && e.value.any(a.contains)) return s;
@@ -881,13 +1072,26 @@ String ekstreUygula(Data d, EkstreOkuma o, EkstreHedefi h, List<EkstreEslesme> e
   return _hesapUygula(d, o, h, ekle);
 }
 
-String _ad(String aciklama) {
-  final t = aciklama.trim();
-  if (t.isEmpty) return 'Harcama';
-  // Büyük harfli banka yazısını okunur yap: "MIGROS KADIKOY" → "Migros Kadıköy" değil, "Migros Kadikoy"
-  final buyuk = t == t.toUpperCase();
-  if (!buyuk) return t;
-  return t.split(' ').map((w) => w.isEmpty ? w : '${w[0]}${trLower(w.substring(1))}').join(' ');
+/// Kayıtsız bir aboneliği açar (adı, tutarı ve günü ekstreden) ya da bu uygulamada az önce açılanı
+/// verir; o ay zaten ödendiyse null (ikinci çekim harcama olarak eklenir).
+String? _yeniAbonelik(Data d, EkstreIslem i, String src, Map<String, String> acilanlar) {
+  var id = acilanlar[i.ad];
+  if (id == null) {
+    id = saveSubscription(d, <String, dynamic>{
+      'name': i.ad,
+      'group': i.abonelikGrubu ?? 'diger',
+      'amount': fromK(i.k),
+      'period': 'ay',
+      'day': dayOf(i.tarih),
+      'source': src,
+      'active': true,
+      'note': 'Ekstreden',
+    });
+    acilanlar[i.ad] = id;
+  }
+  final ay = monthOf(i.tarih);
+  final odendi = d.payments.any((p) => p.kind == 'sub' && p.refId == id && p.month == ay && p.viaRefId == null);
+  return odendi ? null : id;
 }
 
 String _kartUygula(Data d, EkstreOkuma o, EkstreHedefi h, List<EkstreEslesme> ekle) {
@@ -914,9 +1118,10 @@ String _kartUygula(Data d, EkstreOkuma o, EkstreHedefi h, List<EkstreEslesme> ek
   final debt = d.debt(id)!;
   if (o.son4 != null && debt.j['last4'] == null) debt.j['last4'] = o.son4;
   final idx = learnIndex(d);
+  final acilanlar = <String, String>{};
   for (final e in ekle) {
     final i = e.islem;
-    final abonelik = e.abonelikId;
+    final abonelik = e.abonelikId ?? (e.yeniAbonelik ? _yeniAbonelik(d, i, 'card:$id', acilanlar) : null);
     if (abonelik != null) {
       // Karttan ödenen abonelik: o ayki ödendi işareti (borç ekstrede zaten var)
       savePayment(d, kind: 'sub', refId: abonelik, month: monthOf(i.tarih), k: i.k, date: i.tarih);
@@ -925,7 +1130,7 @@ String _kartUygula(Data d, EkstreOkuma o, EkstreHedefi h, List<EkstreEslesme> ek
     final n = i.taksitSayisi ?? 1;
     final no = i.taksitNo ?? 1;
     final ilkAy = ay == null ? null : addM(ay, -(no - 1));
-    final ad = _ad(i.aciklama);
+    final ad = i.ad;
     saveSpend(d, <String, dynamic>{
       'date': i.tarih,
       'name': ad,
@@ -977,10 +1182,12 @@ String _hesapUygula(Data d, EkstreOkuma o, EkstreHedefi h, List<EkstreEslesme> e
   if (o.iban4 != null && a.j['iban4'] == null) a.j['iban4'] = o.iban4;
   final src = 'acc:$id';
   final idx = learnIndex(d);
+  final acilanlar = <String, String>{};
   for (final e in ekle) {
     final i = e.islem;
-    final ad = _ad(i.aciklama);
-    final gelir = e.gelirId, abonelik = e.abonelikId;
+    final ad = i.ad;
+    final gelir = e.gelirId;
+    final abonelik = e.abonelikId ?? (e.yeniAbonelik ? _yeniAbonelik(d, i, src, acilanlar) : null);
     if (gelir != null) {
       // Maaş: gelir "yattı" olur, hesaba girişi Gelir Motoru yazar
       setIncomeActual(d, gelir, monthOf(i.tarih), k: i.k, date: i.tarih, to: src);

@@ -135,7 +135,7 @@ class Shell extends StatelessWidget {
           ),
           // Fotoğrafçının adı, favori ve "Gösterme": sağ altta; telefonda alt menünün üstünde, sağdaki
           // "+" düğmesiyle çakışmasın diye solda.
-          if (!fotoUstte(sahne, phone) && !fotoBilgisiSayfada(sahne, phone))
+          if (!fotoUstte(sahne, phone) && !fotoBilgisiSayfada(sahne, phone, ozet: tabs && st.tab == AppTab.ozet))
             Positioned(
             left: phone ? 8 : null,
             right: phone ? null : 10,
@@ -522,7 +522,7 @@ class _Bell extends StatelessWidget {
               padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 1),
               constraints: const BoxConstraints(minWidth: 18),
               decoration: BoxDecoration(color: MC.gold, borderRadius: BorderRadius.circular(9)),
-              child: Text('$count', textAlign: TextAlign.center, style: sans(11, weight: FontWeight.w700, color: MC.ink)),
+              child: Text('$count', textAlign: TextAlign.center, style: sans(11, weight: FontWeight.w700, color: MC.ink, shadows: const [])),
             ),
           ),
         ),

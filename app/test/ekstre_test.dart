@@ -61,12 +61,15 @@ const List<List<String>> _hesapHareketleri = [
     'Sayın AYŞE YILMAZ, 08 Kasım 2026 tarihi saat 10:00 itibarıyla 01/11/2026 - 08/11/2026 tarihleri arasındaki Hesap Hareketleri bilgileriniz aşağıdaki gibidir.',
     'Ad Soyad / Unvan\t: AYŞE YILMAZ',
     'IBAN\t: TR12 0006 2000 1110 0001 2345 67',
-    'Bakiye\t:\t8.000,00 TL',
-    'Kullanılabilir Bakiye\t:\t36.600,00 TL',
-    '01/11/2026 - 08/11/2026 aralığında 9 kayıt bulunmuştur.',
+    'Bakiye\t:\t7.050,81 TL',
+    'Kullanılabilir Bakiye\t:\t35.650,81 TL',
+    '01/11/2026 - 08/11/2026 aralığında 12 kayıt bulunmuştur.',
     'Tarih\tAçıklama\tEtiket\tTutar\tBakiye',
-    '07.11.2026\tYanımda Hesaptan Transfer, Yanımda Toplam: 28.600,00 TL\tYatırım\t+1.400,00 TL\t8.000,00 TL',
-    '07.11.2026\t1234- 10.00USD-SPOTIFY P1-SATIŞ\tAlışveriş\t-341,63 TL\t6.600,00 TL',
+    '07.11.2026\tYanımda Hesaptan Transfer, Yanımda Toplam: 28.600,00 TL\tYatırım\t+1.400,00 TL\t7.050,81 TL',
+    '07.11.2026\t1234- 10.00USD-SPOTIFY P1-SATIŞ\tAlışveriş\t-341,63 TL\t5.650,81 TL',
+    '07.11.2026\t1234- 12.00USD-ANTHROPIC* C-SATIŞ\tAlışveriş\t-412,80 TL\t5.992,44 TL',
+    '06.11.2026\t1234- 179.99TL -Google One -SATIŞ\tAlışveriş\t-179,99 TL\t6.405,24 TL',
+    '06.11.2026\tSATIŞ-517040*1234-YEMEKPAY *YEMEKSEPETİ\tAlışveriş\t-356,40 TL\t6.585,23 TL',
     '06.11.2026\tSATIŞ-517040*1234-MİGROS KADIKÖY\tAlışveriş\t-263,45 TL\t6.941,63 TL',
     '05.11.2026\tMehmet Kaya-FAST-CEP ŞUBE-1000000002\tPara Transferi\t-1.000,00 TL\t7.205,08 TL',
     '05.11.2026\tAYŞE YILMAZ-FAST-CEP ŞUBE-1000000001\tPara Transferi\t-2.000,00 TL\t8.205,08 TL',
@@ -263,41 +266,67 @@ void main() {
     expect(odeme.durum, EslesmeDurumu.eklenmez);
   });
 
-  test('hesap hareketleri (en yeni üstte): bakiye özetten, yön işaretten ya da bakiyeden, kendi hesapların arası', () {
+  test('hesap hareketleri (en yeni üstte): para kullanılabilir bakiyeden, yön işaretten ya da bakiyeden, kendi hesapların arası', () {
     final o = ekstreOku(_hesapHareketleri);
     expect(o.tur, EkstreTuru.hesap);
     expect(o.banka, 'garanti');
     expect(o.iban4, '4567');
-    expect(o.kapanisBakiye, 800000, reason: 'özetteki "Bakiye" (en yeni işlemin bakiyesi), en eskininki ya da "Kullanılabilir" değil');
+    expect(o.kapanisBakiye, 3565081, reason: 'özetteki "Kullanılabilir Bakiye" (Yanımda dahil)');
     expect(o.donemSonu, '2026-11-08');
-    expect(o.islemler.map((i) => '${i.tur} ${i.k}'), [
-      'aktarma 140000', // Yanımda'dan
-      'cikis 34163', // açıklamadaki "10.00USD" tutar sayılmaz
-      'cikis 26345',
-      'cikis 100000', // başkasına FAST
-      'aktarma 200000', // kendi adına FAST
-      'cikis 837',
-      'aktarma 3000000', // Yanımda'ya
-      'cikis 78655', // işaretsiz: bakiye düştü
-      'giris 4000000', // maaş
+    expect(o.islemler.map((i) => '${i.tur} ${i.k} ${i.ad}'), [
+      "aktarma 140000 Yanımda'dan",
+      'cikis 34163 Spotify', // açıklamadaki "10.00USD" tutar sayılmaz
+      'cikis 41280 Anthropic',
+      'cikis 17999 Google One',
+      'cikis 35640 Yemeksepeti',
+      'cikis 26345 Migros',
+      'cikis 100000 Mehmet Kaya', // başkasına FAST
+      'aktarma 200000 Ayşe Yılmaz', // kendi adına FAST
+      'cikis 837 Banka kesintisi',
+      "aktarma 3000000 Yanımda'ya",
+      'cikis 78655 AESAŞ', // işaretsiz: bakiye düştü
+      'giris 4000000 Ekim Maaş Ödemesi',
     ]);
-    String? kategori(String parca) => o.islemler.firstWhere((i) => i.aciklama.contains(parca)).kategori;
+    String? kategori(String ad) => o.islemler.firstWhere((i) => i.ad == ad).kategori;
     expect(kategori('Mehmet Kaya'), 'transfer');
-    expect(kategori('KESİNTİ'), 'banka');
+    expect(kategori('Banka kesintisi'), 'banka');
     expect(kategori('AESAŞ'), 'fatura');
-    expect(o.islemler.firstWhere((i) => i.aciklama.contains('MİGROS')).etiket, 'Alışveriş');
+    expect(kategori('Yemeksepeti'), 'yemek');
+    expect(kategori('Google One'), 'abonelik');
+    expect(o.islemler.firstWhere((i) => i.ad == 'Migros').etiket, 'Alışveriş');
   });
 
-  test('hesap hareketleri uygulanır: maaş geliri yattı, fatura ve abonelik ödendi, aktarmalar harcama değil; ikinci kez eklenmez', () {
+  test('kısa adlar: kart numarası, SATIŞ, döviz tutarı, aracı ve referanslar atılır; abonelikler tanınır', () {
+    EkstreAdi a(String s) => ekstreAdi(s);
+    expect(a('SATIŞ-517040*1234-IYZICO *AMAZONPRİME').ad, 'Amazon Prime');
+    expect(a('SATIŞ-517040*1234-IYZICO *AMAZONPRİME').abonelik, 'video');
+    expect(a('1234- 24.00USD-ANTHROPIC* C-SATIŞ').ad, 'Anthropic');
+    expect(a('1234- 24.00USD-ANTHROPIC* C-SATIŞ').abonelik, 'yz');
+    expect(a('1234- 179.99TL -Google One -SATIŞ').abonelik, 'bulut');
+    expect(a('SATIŞ-517040*1234-YEMEKPAY *YEMEKSEPETİ').ad, 'Yemeksepeti');
+    expect(a('SATIŞ-517040*1234-YEMEKPAY *YEMEKSEPETİ').abonelik, isNull);
+    expect(a('SATIŞ-517040*1234-UBER EATS YEMEK').ad, 'Uber Eats');
+    expect(a('ALİ VELİ--HVL-CEP ŞUBE').ad, 'Ali Veli');
+    expect(a('VODAFO 5000000001 AB12345CD6789').ad, 'Vodafone');
+    expect(a('İGDAŞ-TES500000000001-FAT40000000001A').ad, 'İGDAŞ');
+    expect(a('00123/4567890 VERGİ').ad, 'Vergi');
+    expect(a('FAİZ % 10,00000').ad, 'Faiz');
+    expect(a('BİLİNMEYEN DÜKKAN 1234567 KADIKÖY').ad, 'Bilinmeyen Dükkan Kadıköy');
+  });
+
+  test('hesap hareketleri uygulanır: maaş yattı, fatura ve abonelik ödendi, kayıtsız abonelikler eklenir, aktarmalar harcama değil; ikinci kez eklenmez', () {
     final d = _sample();
     final o = ekstreOku(_hesapHareketleri);
     final h = ekstreHedefleri(d, o);
     expect(h.first.yeni, isTrue, reason: 'örnek veride Garanti hesabı yok');
     final e = ekstreEslestir(d, o, h.first);
-    EkstreEslesme bul(String parca) => e.firstWhere((x) => x.islem.aciklama.contains(parca));
-    expect(bul('SPOTIFY').abonelikId, 'spotify');
+    EkstreEslesme bul(String ad) => e.firstWhere((x) => x.islem.ad == ad);
+    expect(bul('Spotify').abonelikId, 'spotify');
     expect(bul('AESAŞ').abonelikId, 'elektrik', reason: 'elektrik dağıtım şirketi ↔ "Elektrik" faturası');
-    expect(bul('MAAŞ').gelirId, 'maas');
+    expect(bul('Ekim Maaş Ödemesi').gelirId, 'maas');
+    expect(bul('Anthropic').yeniAbonelik, isTrue, reason: 'örnek veride kayıtlı değil');
+    expect(bul('Google One').yeniAbonelik, isTrue);
+    expect(bul('Yemeksepeti').yeniAbonelik, isFalse);
     expect(e.where((x) => x.islem.tur == 'aktarma').map((x) => x.durum).toSet(), {EslesmeDurumu.eklenmez});
 
     final once = _kopya(d);
@@ -307,18 +336,30 @@ void main() {
     final a = d.account(id)!;
     expect(a.bank, 'garanti');
     expect(a.j['iban4'], '4567');
-    expect(toK(a.balance), 800000);
+    expect(toK(a.balance), 3565081);
     expect(toK(d.incomes.firstWhere((i) => i.id == 'maas').monthAmounts['2026-11']), 4000000);
     expect(d.transfers.where((t) => t.to == src && t.incomeRef != null).map((t) => toK(t.amount)), [4000000]);
-    expect(d.payments.any((p) => p.kind == 'sub' && p.refId == 'elektrik' && p.month == '2026-11' && p.fromAccount == src), isTrue);
-    expect(d.payments.any((p) => p.kind == 'sub' && p.refId == 'spotify' && p.month == '2026-11' && p.fromAccount == src), isTrue);
-    expect(d.spends.where((s) => s.source == src).map((s) => toK(s.amount)), unorderedEquals([26345, 100000, 837]));
-    expect(d.spends.firstWhere((s) => s.source == src && toK(s.amount) == 837).category, 'banka');
+    bool odendi(String sub) => d.payments.any((p) => p.kind == 'sub' && p.refId == sub && p.month == '2026-11' && p.fromAccount == src);
+    expect(odendi('elektrik'), isTrue);
+    expect(odendi('spotify'), isTrue);
+    // Kayıtsız abonelikler: adı, grubu, tutarı, günü ve kaynağı ekstreden; bu ay ödendi
+    final anthropic = d.subscriptions.firstWhere((x) => x.name == 'Anthropic');
+    expect(anthropic.group, 'yz');
+    expect(toK(anthropic.amount), 41280);
+    expect(anthropic.j['day'], 7);
+    expect(anthropic.j['source'], src);
+    expect(odendi(anthropic.id), isTrue);
+    final googleOne = d.subscriptions.firstWhere((x) => x.name == 'Google One');
+    expect(googleOne.group, 'bulut');
+    expect(odendi(googleOne.id), isTrue);
+    expect(d.spends.where((s) => s.source == src).map((s) => '${s.name} ${toK(s.amount)} ${s.category}'),
+        unorderedEquals(['Yemeksepeti 35640 yemek', 'Migros 26345 market', 'Mehmet Kaya 100000 transfer', 'Banka kesintisi 837 banka']));
 
-    // Aynı döküm yeniden: hesap IBAN'ın son 4 hanesiyle bulunur, hiçbir işlem yeni değil
+    // Aynı döküm yeniden: hesap IBAN'ın son 4 hanesiyle bulunur, hiçbir işlem yeni değil, abonelik iki kez açılmaz
     final h2 = ekstreHedefleri(d, o);
     expect(h2.first.id, id);
     expect(_eklenecek(ekstreEslestir(d, o, h2.first)), isEmpty);
+    expect(d.subscriptions.where((x) => x.name == 'Anthropic').length, 1);
   });
 
   test('PDF harfleri okuma sırasıyla: satır sonu, kelime boşluğu, sütun aralığı; noktalama ayrı satır olmaz', () {

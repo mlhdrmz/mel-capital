@@ -8,6 +8,7 @@ import '../core/constants.dart';
 import '../core/util.dart';
 import 'glass.dart';
 import 'i18n.dart';
+import 'sahne.dart' show Hale;
 import 'state.dart';
 import 'theme.dart';
 
@@ -107,14 +108,18 @@ class PageFrame extends StatelessWidget {
                     if (leading != null) ...[leading!, const SizedBox(width: 14)],
                     // Dar sütunda (dergi sahnesi) uzun başlık alt satıra iner
                     Flexible(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          Text(eyebrow, style: sans(11.5, color: MC.eyebrow, weight: FontWeight.w700, letterSpacing: 2.6, shadows: kPhotoTextShadow)),
-                          const SizedBox(height: 6),
-                          Text(title, style: serif(phone ? 34 : 44, shadows: kPhotoTextShadow)),
-                        ],
+                      // Sakin sahnede başlığın arkasında hafif bulanıklık (Özet'teki gibi)
+                      child: Hale.sakinde(
+                        context,
+                        Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Text(eyebrow, style: sans(11.5, color: MC.eyebrow, weight: FontWeight.w700, letterSpacing: 2.6, shadows: kPhotoTextShadow)),
+                            const SizedBox(height: 6),
+                            Text(title, style: serif(phone ? 34 : 44, shadows: kPhotoTextShadow)),
+                          ],
+                        ),
                       ),
                     ),
                   ],
