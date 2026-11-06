@@ -4,8 +4,7 @@
 
 import 'package:flutter/material.dart';
 
-import '../../core/actions.dart';
-import '../../core/calc.dart';
+import '../../motor/motorlar.dart';
 import '../../core/constants.dart';
 import '../../core/model.dart';
 import '../../core/util.dart';
@@ -634,11 +633,6 @@ class _BankChips extends StatelessWidget {
 /// Satır alt yazısı parçalarını birleştirir.
 String _join(List<String?> parts) => parts.where((p) => p != null && p.isNotEmpty).join(' · ');
 
-bool _paidBeforeStart(Data d, String kind, String id) {
-  final m = currentMonth();
-  return d.payments.any((p) => p.kind == kind && p.refId == id && p.month == m && p.fromAccount == null && p.viaRefId == null);
-}
-
 // ---------------------------------------------------------------- 1. Ekstreler
 
 class _StatementStep extends StatelessWidget {
@@ -1001,7 +995,7 @@ class _CardsStepState extends State<_CardsStep> with _Flushable<_CardsStep> {
             subtitle: _join([
               x.limit != null ? s.pick('limit ', 'limit ') + money(toK(x.limit)) : null,
               x.dueDay != null ? s.pick('son ödeme ${dayOfMonthText(x.dueDay!, 'tr')}', 'due ${dayOfMonthText(x.dueDay!, 'en')}') : null,
-              _paidBeforeStart(d, 'debt', x.id) ? s.pick('bu ayki ödeme yapılmış sayıldı', 'this month\'s payment counted as made') : null,
+              paidBeforeStart(d, 'debt', x.id) ? s.pick('bu ayki ödeme yapılmış sayıldı', 'this month\'s payment counted as made') : null,
             ]),
             k: m.debts[x.id]?.current,
             onEdit: () => openDebtSheet(context, debt: x),
@@ -1512,7 +1506,7 @@ class _CostsStepState extends State<_CostsStep> with _Flushable<_CostsStep> {
           subtitle: _join([
             s.pick('her ay', 'monthly'),
             x.day != null ? dayOfMonthText(x.day!, s.lang) : null,
-            _paidBeforeStart(d, 'expense', x.id) ? s.pick('bu ayki ödenmiş sayıldı', 'this month counted as paid') : null,
+            paidBeforeStart(d, 'expense', x.id) ? s.pick('bu ayki ödenmiş sayıldı', 'this month counted as paid') : null,
           ]),
           k: toK(x.amount),
           onEdit: () => openExpenseSheet(context, expense: x),
@@ -1526,7 +1520,7 @@ class _CostsStepState extends State<_CostsStep> with _Flushable<_CostsStep> {
             x.period == 'yil' ? s.pick('her yıl', 'yearly') : s.pick('her ay', 'monthly'),
             x.day != null ? dayOfMonthText(x.day!, s.lang) : null,
             x.source != null ? sourceName(d, x.source, s.lang) : null,
-            _paidBeforeStart(d, 'sub', x.id) ? s.pick('bu ayki ödenmiş sayıldı', 'this month counted as paid') : null,
+            paidBeforeStart(d, 'sub', x.id) ? s.pick('bu ayki ödenmiş sayıldı', 'this month counted as paid') : null,
           ]),
           k: subAmountK(x, cur),
           onEdit: () => openSubSheet(context, sub: x),

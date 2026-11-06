@@ -3,7 +3,7 @@ import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import 'package:url_launcher/url_launcher.dart';
 
-import '../../core/calc.dart';
+import '../../motor/motorlar.dart';
 import '../../core/constants.dart';
 import '../../core/model.dart';
 import '../../core/util.dart';
@@ -632,7 +632,7 @@ class _AffordOut extends StatelessWidget {
                       ),
                     ),
                     const SizedBox(width: 8),
-                    SmallButton(label: s.pick('Seç', 'Pick'), icon: Icons.check, onTap: () => onBuy(_bestCard(ctx, k), r.n)),
+                    SmallButton(label: s.pick('Seç', 'Pick'), icon: Icons.check, onTap: () => onBuy(bestCardFor(ctx, k), r.n)),
                   ]),
                 ),
             ],
@@ -646,22 +646,6 @@ class _AffordOut extends StatelessWidget {
       ),
     ]);
   }
-}
-
-/// Taksit için en çok boş limiti olan kart.
-String? _bestCard(Ctx ctx, int k) {
-  String? best;
-  var bestAvail = -1;
-  for (final c in ctx.data.debts) {
-    final info = ctx.model.debts[c.id];
-    if (!c.isCard || info?.limit == null) continue;
-    final a = info!.available ?? 0;
-    if (a >= k && a > bestAvail) {
-      best = c.id;
-      bestAvail = a;
-    }
-  }
-  return best;
 }
 
 // ---------------------------------------------------------------- İstek listesi

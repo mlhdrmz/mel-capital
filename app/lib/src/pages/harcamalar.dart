@@ -2,8 +2,7 @@ import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
 
-import '../../core/actions.dart';
-import '../../core/calc.dart';
+import '../../motor/motorlar.dart';
 import '../../core/constants.dart';
 import '../../core/model.dart';
 import '../../core/util.dart';
@@ -14,78 +13,6 @@ import '../state.dart';
 import '../theme.dart';
 import '../ui.dart';
 import 'common.dart';
-
-/// Harcama listesindeki bir satır: harcama ya da o ayki abonelik/fatura.
-class SpendLine {
-  const SpendLine({
-    required this.id,
-    required this.name,
-    required this.date,
-    required this.k,
-    required this.category,
-    this.source,
-    this.place = '',
-    this.createdAt = '',
-    this.installments = 1,
-    this.note = '',
-    this.isSub = false,
-  });
-
-  factory SpendLine.of(Spend x) => SpendLine(
-        id: x.id,
-        name: x.name,
-        date: x.date,
-        k: toK(x.amount),
-        category: x.category,
-        source: x.source,
-        place: x.place,
-        createdAt: x.createdAt ?? '',
-        installments: x.installments,
-        note: x.note,
-      );
-
-  final String id;
-  final String name;
-  final String date;
-  final int k;
-  final String category;
-  final String? source;
-  final String place;
-  final String createdAt;
-  final int installments;
-  final String note;
-  final bool isSub;
-}
-
-int _byDateDesc(SpendLine a, SpendLine b) {
-  final c = b.date.compareTo(a.date);
-  return c != 0 ? c : b.createdAt.compareTo(a.createdAt);
-}
-
-/// Ödenen abonelik ve faturalar ödendikleri gün gider olarak görünür (ödenen tutarla). Ödendiği
-/// onaylanmamış olanlar günü geçse de harcamaya sayılmaz: zilde ve Plan'da "Ödedin mi?" diye sorulur.
-List<SpendLine> subSpendsIn(Ctx ctx, String m) {
-  final d = ctx.data;
-  final out = <SpendLine>[];
-  if (m.compareTo(ctx.cur) > 0) return out;
-  final nD = daysInMonth(m);
-  for (final s in d.subscriptions) {
-    final pay = ctx.model.pay('sub', s.id, m);
-    if (pay == null) continue;
-    final dayISO = '$m-${two(math.min(s.day ?? 1, nD))}';
-    final pd = pay.paidDate;
-    final date = pd != null && isDate(pd) && monthOf(pd) == m ? pd : dayISO;
-    var src = s.source;
-    for (final p in pay.list) {
-      if (p.fromAccount != null) {
-        src = p.fromAccount;
-        break;
-      }
-    }
-    out.add(SpendLine(id: s.id, name: s.name, date: date, k: pay.k, source: src, category: s.isBill ? 'fatura' : 'abonelik', isSub: true));
-  }
-  return out;
-}
 
 /// Listede en çok geçen kaynak (yarısından fazlası) satırlarda ayrıca yazılmaz.
 String? usualSource(List<SpendLine> list) {
@@ -103,25 +30,6 @@ String? usualSource(List<SpendLine> list) {
     }
   });
   return best != null && list.length >= 3 && n / list.length >= 0.5 ? best : null;
-}
-
-/// Arama: ad, yer, not, kategori, kaynak; tutar yazılırsa o tutardaki harcamalar. Tüm aylarda.
-List<SpendLine> spendSearch(Data d, String q, String lang) {
-  final nq = normTxt(q);
-  if (nq.isEmpty) return const [];
-  final k = RegExp(r'^[\d.,\s]+(tl)?$', caseSensitive: false).hasMatch(q.trim()) ? parseAmount(q) : null;
-  final words = nq.split(' ');
-  final out = <SpendLine>[];
-  for (final x in d.spends) {
-    if (k != null && toK(x.amount) == k) {
-      out.add(SpendLine.of(x));
-      continue;
-    }
-    final hay = normTxt([x.name, x.place, x.note, catLabel(x.category, lang), sourceName(d, x.source, lang)].join(' '));
-    if (words.every(hay.contains)) out.add(SpendLine.of(x));
-  }
-  out.sort(_byDateDesc);
-  return out.take(300).toList();
 }
 
 /// Harcamalar: aylık liste, kategoriler, kaynaklar; ikinci sekmede abonelikler ve faturalar.
@@ -410,7 +318,7 @@ class _HarcamalarPageState extends State<HarcamalarPage> {
         ]),
       );
     }
-    final list = all.where((x) => _matches(x)).toList()..sort(_byDateDesc);
+    final list = all.where((x) => _matches(x)).toList()..sort(spendLinesNewestFirst);
     if (list.isEmpty) {
       return EmptyCard(
         icon: Icons.receipt_long_outlined,

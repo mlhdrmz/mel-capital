@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 
-import '../../core/calc.dart';
+import '../../motor/motorlar.dart';
 import '../../core/constants.dart';
 import '../../core/model.dart';
 import '../../core/util.dart';
@@ -12,74 +12,6 @@ import '../ui.dart';
 import 'common.dart';
 
 const String kCashKey = '__cash';
-
-/// Kullanılan bankalar: hesap, kart ya da kredi kartı borcu olanlar (en "dolu" olan önce).
-List<String> bankKeysInUse(Ctx ctx) {
-  final d = ctx.data;
-  final keys = <String>{};
-  for (final a in d.accounts) {
-    if (a.bank.isNotEmpty) keys.add(a.bank);
-  }
-  for (final c in d.cards) {
-    if (c.bank.isNotEmpty) keys.add(c.bank);
-  }
-  for (final x in d.debts) {
-    final k = bankKeyOf(x);
-    if (k != null && x.isCard) keys.add(k);
-  }
-  int score(String k) {
-    final ds = d.debts.where((x) => bankKeyOf(x) == k).toList();
-    final debt = sumK(ds, (Debt x) => ctx.model.debts[x.id]?.current ?? 0);
-    final bal = sumK(d.accounts.where((a) => a.bank == k), (Account a) => toK(a.balance));
-    return (bal != 0 ? 4 : 0) + (ds.any((x) => x.isCard) ? 2 : 0) + (debt > 0 ? 1 : 0);
-  }
-
-  final list = keys.where((k) => !(kBanks[k]?.notBank ?? false)).toList();
-  list.sort((a, b) {
-    final c = score(b) - score(a);
-    return c != 0 ? c : bankName(a, 'tr').compareTo(bankName(b, 'tr'));
-  });
-  return list;
-}
-
-List<Account> looseAccounts(Data d, List<String> keys) =>
-    d.accounts.where((a) => a.bank.isEmpty || !keys.contains(a.bank)).toList();
-
-class BankStats {
-  BankStats(this.accts, this.cards, this.debts, this.bal, this.debtK, this.lim, this.avail);
-  final List<Account> accts;
-  final List<BankCard> cards;
-  final List<Debt> debts;
-  final int bal;
-  final int debtK;
-  final int lim;
-  final int avail;
-}
-
-BankStats bankStats(Ctx ctx, String key) {
-  final d = ctx.data;
-  final accts = d.accounts.where((a) => a.bank == key).toList();
-  final cards = d.cards.where((c) => c.bank == key).toList();
-  final debts = d.debts.where((x) => bankKeyOf(x) == key).toList();
-  final cardDebts = debts.where((x) => x.isCard);
-  var lim = 0, avail = 0;
-  for (final x in cardDebts) {
-    final info = ctx.model.debts[x.id];
-    if (info?.limit != null) {
-      lim += info!.limit!;
-      avail += info.available ?? 0;
-    }
-  }
-  return BankStats(
-    accts,
-    cards,
-    debts,
-    sumK(accts, (Account a) => toK(a.balance)),
-    sumK(debts, (Debt x) => ctx.model.debts[x.id]?.current ?? 0),
-    lim,
-    avail,
-  );
-}
 
 class BankalarPage extends StatefulWidget {
   const BankalarPage({super.key});

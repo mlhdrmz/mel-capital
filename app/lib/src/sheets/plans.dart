@@ -3,8 +3,7 @@
 
 import 'package:flutter/material.dart';
 
-import '../../core/actions.dart';
-import '../../core/calc.dart';
+import '../../motor/motorlar.dart';
 import '../../core/constants.dart';
 import '../../core/model.dart';
 import '../../core/util.dart';

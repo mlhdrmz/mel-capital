@@ -2,8 +2,7 @@ import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
 
-import '../../core/actions.dart';
-import '../../core/calc.dart';
+import '../../motor/motorlar.dart';
 import '../../core/constants.dart';
 import '../../core/model.dart';
 import '../../core/util.dart';
@@ -684,7 +683,7 @@ class IncomeRow extends StatelessWidget {
                           if (o.id == inc.id) return openOneOffIncomeSheet(context, o);
                         }
                       }
-                    : () => openIncomeSheet(context, income: _incomeById(ctx.data, inc.id)),
+                    : () => openIncomeSheet(context, income: incomeById(ctx.data, inc.id)),
             child: Padding(
               padding: const EdgeInsets.symmetric(vertical: 4),
               child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
@@ -700,7 +699,7 @@ class IncomeRow extends StatelessWidget {
         const SizedBox(width: 8),
         if (inc != null && !inc.oneOff && m.compareTo(addM(currentMonth(), 1)) <= 0)
           Builder(builder: (context) {
-            final full = _incomeById(ctx.data, inc.id);
+            final full = incomeById(ctx.data, inc.id);
             if (isPhoneLayout(context)) {
               return _SmallIcon(
                 icon: inc.actual ? Icons.task_alt : Icons.download_done,
@@ -727,13 +726,6 @@ class IncomeRow extends StatelessWidget {
       ]),
     );
   }
-}
-
-Income? _incomeById(Data d, String id) {
-  for (final x in d.incomes) {
-    if (x.id == id) return x;
-  }
-  return null;
 }
 
 // ---------------------------------------------------------------- Takvim
@@ -1659,7 +1651,7 @@ class IncomeAskRow extends StatelessWidget {
     final s = S.of(context);
     final ctx = st.ctx;
     final m = ctx.cur;
-    final full = _incomeById(ctx.data, item.id);
+    final full = incomeById(ctx.data, item.id);
     final acc = ctx.data.account(srcAcc(item.account));
     final day = item.payDay == null ? 1 : math.min(item.payDay!, daysInMonth(m));
     final date = '$m-${two(day)}';

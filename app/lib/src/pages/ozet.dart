@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 
-import '../../core/calc.dart';
+import '../../motor/motorlar.dart';
 import '../../core/constants.dart';
 import '../../core/util.dart';
 import '../glass.dart';

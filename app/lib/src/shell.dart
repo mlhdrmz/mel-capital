@@ -3,6 +3,7 @@ import 'dart:ui' show ImageFilter;
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
+import '../motor/motorlar.dart' show GelirSorulari;
 import 'background.dart';
 import 'glass.dart';
 import 'i18n.dart';

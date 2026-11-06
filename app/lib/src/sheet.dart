@@ -4,8 +4,7 @@ import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
 
-import '../core/actions.dart';
-import '../core/calc.dart';
+import '../motor/motorlar.dart';
 import '../core/constants.dart';
 import '../core/model.dart';
 import '../core/util.dart';
@@ -351,20 +350,6 @@ class MonthInput extends StatelessWidget {
       ),
     ]);
   }
-}
-
-/// Hesaplar (bakiye sırasıyla), istenirse kredi kartları.
-List<Account> accountsSorted(Data d) {
-  const order = {'nakit': 0, 'vadesiz': 1, 'cuzdan': 2, 'on_odemeli': 3, 'birikim': 4, 'diger': 5};
-  final list = d.accounts.toList();
-  list.sort((a, b) {
-    final pa = toK(a.balance) > 0 ? 0 : 1, pb = toK(b.balance) > 0 ? 0 : 1;
-    if (pa != pb) return pa - pb;
-    final t = (order[a.type] ?? 5) - (order[b.type] ?? 5);
-    if (t != 0) return t;
-    return accLabel(a, 'tr').compareTo(accLabel(b, 'tr'));
-  });
-  return list;
 }
 
 /// Ödeme kaynağı seçici ("acc:<id>" ya da "card:<id>"; boş = kaynak yok).

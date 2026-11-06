@@ -8,7 +8,7 @@
 //   tarafta elle girildiyse (setAt) o değer geçerli olur.
 // - Silme, değiştirmeye üstün gelir. İki cihazda aynı ay için aynı ödeme işaretlenmişse biri sayılır.
 
-import '../calc.dart' show accAdjust;
+import '../../motor/cekirdek.dart' show accAdjust;
 import '../model.dart';
 import '../normalize.dart';
 import '../util.dart';

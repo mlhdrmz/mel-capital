@@ -4,7 +4,7 @@ import 'dart:ui' as ui;
 import 'package:flutter/foundation.dart' show defaultTargetPlatform, kIsWeb, TargetPlatform;
 import 'package:flutter/widgets.dart';
 
-import '../core/calc.dart';
+import '../motor/motorlar.dart';
 import '../core/model.dart';
 import '../core/normalize.dart';
 import '../core/photos.dart';
@@ -252,9 +252,21 @@ class AppState extends ChangeNotifier {
     return next;
   }
 
-  /// Veriyi değiştirir, hesapları yeniler ve dosyaya yazar.
+  /// Verinin tek değişiklik kapısı: [change] motorların işlevleriyle veriyi değiştirir; ardından
+  /// bütün hesaplar yeniden kurulur, bütün sayfalar yenilenir ve veri dosyaya yazılır. Hata
+  /// ayıklama modunda (testler dahil) her değişiklikten sonra uyum denetimi çalışır.
   void update(void Function(Data d) change) {
+    Json? once;
+    assert(() {
+      once = deepCopy(data.j) as Json;
+      return true;
+    }());
     change(data);
+    assert(() {
+      final sorunlar = uyumDenetimi(Data(once!), data);
+      if (sorunlar.isNotEmpty) throw StateError('Uyum bozuldu: ${sorunlar.join(' · ')}');
+      return true;
+    }());
     _ctx = null;
     _queueSave();
     notifyListeners();

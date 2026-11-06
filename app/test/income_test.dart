@@ -6,8 +6,7 @@ import 'dart:convert';
 import 'dart:io';
 
 import 'package:flutter_test/flutter_test.dart';
-import 'package:mel_capital/core/actions.dart';
-import 'package:mel_capital/core/calc.dart';
+import 'package:mel_capital/motor/motorlar.dart';
 import 'package:mel_capital/core/model.dart';
 import 'package:mel_capital/core/normalize.dart';
 import 'package:mel_capital/core/util.dart';
