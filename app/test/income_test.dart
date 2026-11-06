@@ -10,7 +10,6 @@ import 'package:mel_capital/motor/motorlar.dart';
 import 'package:mel_capital/core/model.dart';
 import 'package:mel_capital/core/normalize.dart';
 import 'package:mel_capital/core/util.dart';
-import 'package:mel_capital/src/pages/harcamalar.dart' show subSpendsIn;
 
 Data _sample() {
   final n = normalizeData(jsonDecode(File('assets/sample/ornek.json').readAsStringSync()));

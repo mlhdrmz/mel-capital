@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:mel_capital/motor/motorlar.dart';
 import 'package:mel_capital/core/sample.dart';
 import 'package:mel_capital/main.dart';
 import 'package:mel_capital/src/format.dart';
@@ -288,7 +289,10 @@ void main() {
     final store = MemoryStore();
     final state = AppState(store: store, initialLocale: const Locale('tr'));
     await state.createProfile('Deniz', data: await loadSampleJson());
-    state.update((d) => d.accounts.first.balance = 1234.5);
+    state.update((d) {
+      final a = d.accounts.first;
+      saveAccount(d, id: a.id, bank: a.bank, name: a.name, type: a.type, balanceK: 123450);
+    });
     await state.flush();
     final again = AppState(store: store, initialLocale: const Locale('tr'));
     await again.init();
