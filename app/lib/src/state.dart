@@ -728,7 +728,7 @@ class AppState extends ChangeNotifier {
     final pool = photoPool(
       avail: av.keys.toSet(),
       lum: {for (final e in av.entries) e.key: e.value.lum},
-      hide: index.photoHide.toSet(),
+      hide: {...index.photoHide, ...kPeoplePhotos},
       fav: index.photoFav.toSet(),
       night: index.photoNight,
       now: now,

@@ -180,6 +180,22 @@ void main() {
     st.dispose();
   });
 
+  test('içinde insan olan fotoğraflar hiçbir sekmede, hiçbir saatte gelmez', () async {
+    final st = AppState(store: MemoryStore(), photoStore: fakeStore(all));
+    await st.init();
+    await st.startPhotos(const PhotoSize.desktop(1920));
+    expect(kPeoplePhotos.every(all.contains), isTrue);
+    final start = DateTime.utc(2026, 11, 1);
+    for (var h = 0; h < 7 * 24; h += 4) {
+      for (var page = 0; page < kPhotoPages; page++) {
+        final id = st.bgPickFor(page, start.add(Duration(hours: h))).photo?.id;
+        expect(kPeoplePhotos.contains(id), isFalse);
+      }
+    }
+    expect(st.index.photoHide, isEmpty, reason: 'kullanıcının gizledikleri listesine yazılmaz');
+    st.dispose();
+  });
+
   test('fotoğraf yeri yoksa kapaklar', () async {
     final st = AppState(store: MemoryStore());
     await st.init();

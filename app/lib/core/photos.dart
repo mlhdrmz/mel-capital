@@ -93,6 +93,12 @@ const List<Photo> kPhotos = [
 const List<String> kCovers = ['lobby', 'courtyard', 'mountain', 'villa', 'highrise', 'palm', 'santorini', 'lock'];
 
 /// Sekme sayısı: her sekmede farklı fotoğraf olabilmesi için havuzda en az bu kadar fotoğraf gerekir.
+/// İçinde insan görünen fotoğraflar: arka planda hiç gösterilmez (kullanıcının isteği).
+const Set<String> kPeoplePhotos = {
+  '1625244724120-1fd1d34d00f6', // lobi, resepsiyonda çalışanlar
+  '1735770517146-e95c872226fc', // sonsuzluk havuzunda yüzen biri
+};
+
 const int kPhotoPages = 7;
 const int kPhotoSlotMs = 4 * 3600 * 1000;
 const Set<String> kNightThemes = {'gece', 'lobi'};
