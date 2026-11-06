@@ -16,6 +16,7 @@ import 'pages/plan.dart' show UpcomingSheet;
 import 'pages/setup.dart';
 import 'pages/welcome.dart';
 import 'sahne.dart';
+import 'sheets/ekstre.dart' show StatementSheet, ornekEkstre;
 import 'sheet.dart';
 import 'state.dart';
 import 'sync_ui.dart';
@@ -189,6 +190,7 @@ class Shell extends StatelessWidget {
         if (panel == 'borc') openDebtSheet(context, debt: st.data.debts.isEmpty ? null : st.data.debts.last);
         if (panel == 'kod') showPairCodeSheet(context);
         if (panel == 'esle') openPhonePairing(context);
+        if (panel == 'ekstre') showEditSheet<void>(context, width: 680, builder: (_) => StatementSheet(okuma: ornekEkstre()));
       });
     }
     return Focus(autofocus: true, onKeyEvent: (node, event) => _shortcut(context, st, event), child: SyncToasts(child: scaffold));

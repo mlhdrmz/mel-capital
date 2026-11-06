@@ -14,6 +14,7 @@ import '../state.dart';
 import '../theme.dart';
 import '../ui.dart';
 import 'common.dart';
+import '../sheets/ekstre.dart' show openStatementImport;
 
 /// Borçlar: kredi kartları, krediler ve yapılandırmalar, Findeks notu, "Fazla ödersem?".
 class BorclarPage extends StatelessWidget {
@@ -40,6 +41,11 @@ class BorclarPage extends StatelessWidget {
         if (cards.isNotEmpty)
           GoldButton(label: s.pick('Kart borcu öde', 'Pay a card'), icon: Icons.payments_outlined, onTap: () => openCardPaySheet(context)),
         GlassButton(label: s.pick('Borç / kart', 'Debt / card'), icon: Icons.add, onTap: () => openDebtSheet(context)),
+        GlassButton(
+            key: const ValueKey<String>('ekstre-borclar'),
+            label: s.pick('Ekstre ekle', 'Add statement'),
+            icon: Icons.upload_file_outlined,
+            onTap: () => openStatementImport(context)),
       ],
       children: [
         KpiRow(children: [

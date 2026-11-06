@@ -18,6 +18,8 @@ dependencies:
   # Abonelik logoları: Simple Icons SVG yollarını çizmek için
   path_parsing: ^1.1.0
   path_provider: ^2.1.5
+  # Ekstre: PDF'in yazısını cihazın içinde okumak için (PDFium)
+  pdfrx: ^2.11.0
   pointycastle: ^3.9.1
   qr: ^3.0.2
   url_launcher: ^6.3.1

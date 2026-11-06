@@ -1,3 +1,5 @@
+import 'dart:typed_data';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mel_capital/motor/motorlar.dart';
@@ -8,8 +10,11 @@ import 'package:mel_capital/src/pages/common.dart';
 import 'package:mel_capital/src/pages/intro.dart';
 import 'package:mel_capital/src/pages/setup.dart';
 import 'package:mel_capital/src/sheet.dart';
+import 'package:mel_capital/src/sheets/ekstre.dart' show kOrnekEkstreSatirlari;
 import 'package:mel_capital/src/state.dart';
 import 'package:mel_capital/src/tips.dart';
+import 'package:mel_capital/storage/pdf_metin.dart';
+import 'package:mel_capital/storage/pick_file.dart';
 import 'package:mel_capital/storage/store_memory.dart';
 
 void main() {
@@ -89,6 +94,26 @@ void main() {
       expect(state.tab, tab);
       expect(tester.takeException(), isNull, reason: tab.name);
     }
+  });
+
+  testWidgets('ekstre: PDF seçilir, okunur, karta eklenir', (tester) async {
+    final state = await openSample(tester, 'tr');
+    final eskiSec = pickBytesFile;
+    final eskiOku = pdfSatirlariOku;
+    pickBytesFile = ({required String label, required List<String> extensions}) async => PickedBytes('ekstre.pdf', Uint8List(0));
+    pdfSatirlariOku = (bytes, {sifreSor}) async => kOrnekEkstreSatirlari;
+    addTearDown(() {
+      pickBytesFile = eskiSec;
+      pdfSatirlariOku = eskiOku;
+    });
+    await tapTab(tester, AppTab.borclar);
+    final once = state.data.spends.length;
+    await tapKey(tester, 'ekstre-borclar');
+    expect(find.text('Hangi kart?'), findsOneWidget);
+    await tapKey(tester, 'ekstre-ekle');
+    expect(state.data.spends.length, greaterThan(once));
+    expect(state.data.debt('akbank-axess')!.j['last4'], '4821');
+    expect(tester.takeException(), isNull);
   });
 
   testWidgets('Bankalar: banka sayfası açılır', (tester) async {

@@ -71,7 +71,7 @@ içe aktarılır). Her dosyanın başında neyi yazdığı, neyi okuduğu ve kim
 | Gider Motoru | `gider.dart` | Harcamalar (tek tek, hızlı giriş, taksit), abonelik ve faturalar, sabit giderler, günlük harcama tahmini, kategori öğrenme |
 | Borç Motoru | `borc.dart` | Kredi kartları (güncel borç, boş limit, ekstre, asgari), krediler, kart ödemesi, fiziksel kartlar, Findeks |
 | Plan Motoru | `plan.dart` | `buildModel` ve `Ctx`: ay kalemleri, aylık özet, harcanabilir para, devir, yaklaşan ödemeler, ödeme işaretleme, ay kapatma, istek listesi |
-| Ekstre Motoru | (sırada) | PDF ekstreyi okur, bankayı tanır, elle girilenlerle eşleştirir, yenileri önerir; Gider ve Borç motorları üzerinden ekler |
+| Ekstre Motoru | `ekstre.dart` | PDF ekstreyi okur (kart ekstresi ya da hesap dökümü), bankayı işaretlerinden tanır (`kBankaIzleri`), kartı son 4 haneden / hesabı IBAN son 4'ten bulur, elle girilenlerle eşleştirir, seçilenleri Gider Motoru ve Çekirdek üzerinden ekler, ekstreyi son güncel durum sayar |
 | Uyum denetimi | `uyum.dart` | Motorların birbirini tuttuğunu denetler |
 
 Kurallar:
@@ -100,14 +100,19 @@ Kurallar:
   kemer pencereler, Harcamalar ve Plan'da alttan açılan yaprak, diğerlerinde dergi sayfası.
   Tanıtım, karşılama, kurulum, veri onarımı ve açılır pencereler de yeni görünümde.
 - Telefonda Özet'te fotoğrafçının adı sayfanın en altında (rakamların üstüne binmiyor).
+- Ekstre ekleme (Borçlar ve Bankalar'da "Ekstre ekle"): PDF seçilir (şifreliyse şifre sorulur,
+  kaydedilmez), PDFium (`pdfrx`) ile cihazda okunur, panelde hedef kart/hesap, özet, yeni
+  işlemler, "zaten var" ve "bu o mu?" gösterilir. Kart borcu ve limit kesim tarihindeki hâliyle,
+  hesap bakiyesi dökümün son bakiyesiyle yazılır. Kart ödemeleri ve iadeler ekstre borcunda
+  zaten var, ayrıca eklenmez. Testler uydurma ekstrelerle (`test/ekstre_test.dart`).
 
 ## 5. Kalan işler
 
-1. **Ekstre Motoru** (onaylandı, sırada): Melih bankalardan aldığı PDF ekstreleri ekleyecek.
-   Eklenen ekstre kartın son güncel durumu sayılır; banka otomatik tanınır; elle girilmiş
-   harcamalarla üst üste binmez (eşleşenler atlanır ya da "Bu o mu?" diye sorulur); eklenmeden
-   önce bir analiz ekranı gösterilir. Açık sorular: hangi bankalar, yalnızca kredi kartı mı,
-   eşleştirme kuralı (aynı tutar, ±2 gün, benzer ad), örnek PDF'ler (yalnızca yerelde, depoya asla).
+1. **Ekstre: resimli PDF** (2. aşama): yazısı olmayan (taranmış/fotoğraf) PDF'ler için cihazın
+   kendi yazı tanıması: Windows'ta Windows.Media.Ocr, Android'de cihaz içi yazı tanıma; çıkan
+   satırlar aynı `ekstreOku`'ya verilir. Melih'in gerçek ekstreleri görülmedi: bir bankada okuma
+   yanlışsa Melih söyleyecek, o bankanın işaretleri/başlıkları `ekstre.dart`'ta düzeltilecek.
+   Melih ekstreleri sohbetten göndermek istemiyor; her şey uygulamanın içinden.
 2. **Tasarım sahneleri** (6. bölüm): bütün ekranlara uygulandı; Melih'in yorumu bekleniyor.
 3. Yatırımlar bölümü (henüz başlanmadı; sorular sorulacak).
 4. İçinde insan olan diğer fotoğrafların taranması (75 fotoğrafın hepsine bakılamadı).
@@ -141,3 +146,4 @@ tutarlar Manrope.
 | 2026-11-06 | Claude | Tasarım sahneleri uygulandı (`sahne.dart`); HANDOFF'un her değişiklikte güncellenmesi kurala eklendi |
 | 2026-11-06 | Claude | Sayfa başlığı dar sütunda alt satıra iner; Özet'teki hale tasarım sayfasındaki kadar belirgin yapıldı; sekme testi taşmanın yerini yazar |
 | 2026-11-06 | Claude | Tanıtım ve karşılama kemer, kurulum ve onarım dergi, açılır pencereler "pencere" görünümü; telefonda Özet'te fotoğrafçının adı en altta |
+| 2026-11-06 | Claude | Ekstre Motoru (`motor/ekstre.dart`), PDF okuma (`storage/pdf_metin*.dart`, pdfrx), ekstre paneli (`src/sheets/ekstre.dart`), testleri |

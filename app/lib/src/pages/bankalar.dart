@@ -10,6 +10,7 @@ import '../state.dart';
 import '../theme.dart';
 import '../ui.dart';
 import 'common.dart';
+import '../sheets/ekstre.dart' show openStatementImport;
 
 const String kCashKey = '__cash';
 
@@ -46,6 +47,11 @@ class _BankalarPageState extends State<BankalarPage> {
       GoldButton(label: s.pick('Para aktar', 'Transfer'), icon: Icons.swap_horiz, onTap: () => openTransferSheet(context)),
       GlassButton(label: s.pick('Hesap', 'Account'), icon: Icons.add, onTap: () => openAccountSheet(context)),
       GlassButton(label: s.pick('Kart', 'Card'), icon: Icons.add, onTap: () => openCardSheet(context)),
+      GlassButton(
+          key: const ValueKey<String>('ekstre-bankalar'),
+          label: s.pick('Ekstre ekle', 'Add statement'),
+          icon: Icons.upload_file_outlined,
+          onTap: () => openStatementImport(context)),
     ];
     if (keys.isEmpty && loose.isEmpty) {
       return PageFrame(

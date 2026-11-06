@@ -61,6 +61,12 @@ void accAdjust(Data data, String? src, int deltaK) {
   a.balance = fromK(toK(a.balance) + deltaK);
 }
 
+/// Bakiyeyi elle (ya da bankanın dökümüyle) düzeltir: bu bir hareket değil, yeni başlangıç
+/// noktasıdır ("setAt" yazılır; uyum denetimi bunu hareketlerle karşılaştırmaz).
+void bakiyeyiDuzelt(Data data, String accountId, int k) {
+  data.account(accountId)?.j.addAll(<String, dynamic>{'balance': fromK(k), 'asOf': todayISO(), 'setAt': nowISO()});
+}
+
 /// Hesaplardaki toplam para (kuruş).
 int liquidK(Data d) => sumK(d.accounts, (Account a) => toK(a.balance));
 
