@@ -52,6 +52,7 @@ class Shell extends StatelessWidget {
     final st = AppScope.of(context);
     var tabs = false;
     var cover = 'lobby';
+    Sahne? sahne;
     Widget body = const _Loading();
     final introCover = kIntroCovers[introIndex(st.introSlide)];
     switch (st.status) {
@@ -60,36 +61,40 @@ class Shell extends StatelessWidget {
       case AppStatus.welcome:
         if (st.showIntro) {
           cover = introCover;
+          sahne = kTanitimSahnesi;
           body = const IntroPage();
         } else {
           cover = 'lobby';
+          sahne = kKarsilamaSahnesi;
           body = const StartPage();
         }
       case AppStatus.corrupt:
         cover = 'lock';
+        sahne = kOnarimSahnesi;
         body = const CorruptPage();
       case AppStatus.ready:
         final step = st.setupStep;
         if (st.showIntro) {
           cover = introCover;
+          sahne = kTanitimSahnesi;
           body = const IntroPage();
         } else if (st.addingProfile) {
           cover = 'lobby';
+          sahne = kKarsilamaSahnesi;
           body = StartPage(addingProfile: true, onCancel: () => st.setAddingProfile(false));
         } else if (step != null) {
           cover = kSetupCovers[step] ?? 'lobby';
+          sahne = kKurulumSahnesi;
           body = const SetupPage();
         } else {
           tabs = true;
+          sahne = kSekmeSahnesi[st.tab]!;
           cover = _covers[st.tab] ?? 'lobby';
           // Sekme değişince yeni sayfa sıfırdan kurulur; paneller kendileri
           // buğulanarak belirir (sayfanın üstüne saydamlık konmaz).
-          body = SahneDuzeni(
-            sahne: kSekmeSahnesi[st.tab]!,
-            child: KeyedSubtree(
-              key: ValueKey<String>('${st.profile?.id}/${st.tab.name}'),
-              child: pageFor(st.tab),
-            ),
+          body = KeyedSubtree(
+            key: ValueKey<String>('${st.profile?.id}/${st.tab.name}'),
+            child: pageFor(st.tab),
           );
         }
     }
@@ -98,7 +103,6 @@ class Shell extends StatelessWidget {
     // Telefonda sekmeler alttaki menüde; "+" düğmesi harcama ekler.
     final phone = isPhoneLayout(context);
     final s = S.of(context);
-    final sahne = tabs ? kSekmeSahnesi[st.tab] : null;
     final scaffold = Scaffold(
       backgroundColor: MC.bg,
       extendBody: true,
@@ -124,13 +128,13 @@ class Shell extends StatelessWidget {
               children: [
                 TopBar(tabs: tabs),
                 if (st.saveError != null) _SaveError(message: st.saveError!),
-                Expanded(child: body),
+                Expanded(child: sahne == null ? body : SahneDuzeni(sahne: sahne, child: body)),
               ],
             ),
           ),
           // Fotoğrafçının adı, favori ve "Gösterme": sağ altta; telefonda alt menünün üstünde, sağdaki
           // "+" düğmesiyle çakışmasın diye solda.
-          if (!fotoUstte(sahne, phone))
+          if (!fotoUstte(sahne, phone) && !fotoBilgisiSayfada(sahne, phone))
             Positioned(
             left: phone ? 8 : null,
             right: phone ? null : 10,
@@ -147,13 +151,13 @@ class Shell extends StatelessWidget {
                     left: 12,
                     right: 12,
                     bottom: 96,
-                    child: SafeArea(top: false, child: TipCard(key: ValueKey<String>('tip-$tip'), tab: st.tab)),
+                    child: SafeArea(top: false, child: SahneScope(sahne: Sahne.pencere, child: TipCard(key: ValueKey<String>('tip-$tip'), tab: st.tab))),
                   )
                 : Positioned(
                     right: 24,
                     top: st.tab == AppTab.ozet ? 84 : null,
                     bottom: st.tab == AppTab.ozet ? null : 24,
-                    child: SafeArea(child: TipCard(key: ValueKey<String>('tip-$tip'), tab: st.tab)),
+                    child: SafeArea(child: SahneScope(sahne: Sahne.pencere, child: TipCard(key: ValueKey<String>('tip-$tip'), tab: st.tab))),
                   ),
         ],
       ),

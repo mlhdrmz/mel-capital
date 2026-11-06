@@ -5,6 +5,7 @@
 //   sakin  Kutu yok; yazılar fotoğrafın üstünde, yalnızca tam arkalarında yumuşak kenarlı hafif
 //          bulanıklık ([Hale]).
 //   sayfa  Fotoğraf üstte; sayfa alttan açılan düz koyu bir yaprakta.
+//   pencere Açılır pencereler, düzenleme panelleri ve ipuçları: düz koyu zemin, ince altın kenar.
 //
 // Her sekme bir sahnede açılır ([kSekmeSahnesi]). Paneller (GlassPanel, Kpi) bulundukları sahneye
 // göre çizilir: dergi ve sayfada düz bölüm (ince altın çizgi), kemerde kemer pencere.
@@ -17,7 +18,7 @@ import 'background.dart' show PhotoBar;
 import 'state.dart';
 import 'ui.dart' show isPhoneLayout;
 
-enum Sahne { dergi, kemer, sakin, sayfa }
+enum Sahne { dergi, kemer, sakin, sayfa, pencere }
 
 /// Hangi sekme hangi sahnede.
 const Map<AppTab, Sahne> kSekmeSahnesi = {
@@ -32,6 +33,9 @@ const Map<AppTab, Sahne> kSekmeSahnesi = {
 
 /// Düz sayfanın rengi (espresso).
 const Color kSahneZemin = Color(0xFF15110D);
+
+/// Açılır pencerenin rengi (sayfadan bir ton açık, karartılmış ekranın üstünde ayrılsın).
+const Color kPencereZemin = Color(0xFF1B1612);
 
 /// Kemer pencerenin rengi ve çizgisi.
 const Color kKemerZemin = Color(0xEB16110D);
@@ -51,6 +55,15 @@ class SahneScope extends InheritedWidget {
   @override
   bool updateShouldNotify(SahneScope oldWidget) => oldWidget.sahne != sahne;
 }
+
+/// Sekmeler dışındaki ekranların sahnesi.
+const Sahne kTanitimSahnesi = Sahne.kemer;
+const Sahne kKarsilamaSahnesi = Sahne.kemer;
+const Sahne kKurulumSahnesi = Sahne.dergi;
+const Sahne kOnarimSahnesi = Sahne.dergi;
+
+/// Telefonda fotoğrafçının adı sayfanın en altında, içerikle birlikte akar (rakamların üstüne binmesin).
+bool fotoBilgisiSayfada(Sahne? sahne, bool phone) => phone && sahne == Sahne.sakin;
 
 /// Dergi sahnesinde (bilgisayar) soldaki sayfanın genişliği.
 double dergiGenisligi(double ekran) => (ekran * 0.5).clamp(600.0, 820.0).toDouble();

@@ -98,6 +98,8 @@ Kurallar:
 - Kod motorlara ayrıldı (davranış değişmedi) ve uyum denetimi eklendi.
 - Sekmeler dört sahneyle çiziliyor (6. bölüm): Özet'te yazıların arkasında hale, Bankalar'da
   kemer pencereler, Harcamalar ve Plan'da alttan açılan yaprak, diğerlerinde dergi sayfası.
+  Tanıtım, karşılama, kurulum, veri onarımı ve açılır pencereler de yeni görünümde.
+- Telefonda Özet'te fotoğrafçının adı sayfanın en altında (rakamların üstüne binmiyor).
 
 ## 5. Kalan işler
 
@@ -106,8 +108,7 @@ Kurallar:
    harcamalarla üst üste binmez (eşleşenler atlanır ya da "Bu o mu?" diye sorulur); eklenmeden
    önce bir analiz ekranı gösterilir. Açık sorular: hangi bankalar, yalnızca kredi kartı mı,
    eşleştirme kuralı (aynı tutar, ±2 gün, benzer ad), örnek PDF'ler (yalnızca yerelde, depoya asla).
-2. **Tasarım sahneleri** (6. bölüm): uygulandı; Melih'in yorumu bekleniyor. Kurulum, karşılama
-   ve açılır pencereler henüz eski cam görünümünde.
+2. **Tasarım sahneleri** (6. bölüm): bütün ekranlara uygulandı; Melih'in yorumu bekleniyor.
 3. Yatırımlar bölümü (henüz başlanmadı; sorular sorulacak).
 4. İçinde insan olan diğer fotoğrafların taranması (75 fotoğrafın hepsine bakılamadı).
 5. Resmî sürüm (Melih'in onayı) ve imzalı APK (gizli anahtarlar).
@@ -116,8 +117,9 @@ Kurallar:
 
 Okunabilirlik için dikdörtgen + buğulu cam yerine dört yön ("sahne") var. Uygulamada
 `app/lib/src/sahne.dart`; her sekmenin sahnesi `kSekmeSahnesi`'nde. Paneller (`GlassPanel`, `Kpi`)
-bulundukları sahneye göre çizilir; sekmeler dışındaki ekranlar (kurulum, karşılama, pencereler)
-şimdilik eski cam görünümünde.
+bulundukları sahneye göre çizilir. Sekmeler dışındaki ekranlar: tanıtım ve karşılama kemer,
+kurulum ve veri onarımı dergi. Açılır pencereler, düzenleme panelleri ve ipucu kartları "pencere"
+görünümünde (düz koyu zemin, ince altın kenar, buğu yok). Artık hiçbir yerde buğulu cam yok.
 
 1. **Dergi sayfası**: solda düz koyu sayfa, fotoğraf sağda bütün.
 2. **Kemerler**: kutular yerine fotoğrafın önünde kemer biçimli koyu pencereler.
@@ -138,3 +140,4 @@ tutarlar Manrope.
 | 2026-11-06 | Claude | HANDOFF.md oluşturuldu; kod 1 çekirdek + 5 motora ayrıldı; uyum denetimi ve testi eklendi; içinde insan olan 2 fotoğraf gizlendi |
 | 2026-11-06 | Claude | Tasarım sahneleri uygulandı (`sahne.dart`); HANDOFF'un her değişiklikte güncellenmesi kurala eklendi |
 | 2026-11-06 | Claude | Sayfa başlığı dar sütunda alt satıra iner; Özet'teki hale tasarım sayfasındaki kadar belirgin yapıldı; sekme testi taşmanın yerini yazar |
+| 2026-11-06 | Claude | Tanıtım ve karşılama kemer, kurulum ve onarım dergi, açılır pencereler "pencere" görünümü; telefonda Özet'te fotoğrafçının adı en altta |

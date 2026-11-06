@@ -4,6 +4,7 @@ import '../../motor/motorlar.dart';
 import '../../core/constants.dart';
 import '../../core/util.dart';
 import '../glass.dart';
+import '../background.dart' show PhotoBar;
 import '../i18n.dart';
 import '../sahne.dart';
 import '../state.dart';
@@ -89,7 +90,15 @@ class OzetPage extends StatelessWidget {
                   child: narrow
                       ? Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [big, const SizedBox(height: 34), items[0], const SizedBox(height: 26), items[1]],
+                          children: [
+                            big,
+                            const SizedBox(height: 34),
+                            items[0],
+                            const SizedBox(height: 26),
+                            items[1],
+                            // Telefonda fotoğrafçının adı en altta, rakamların üstüne binmez
+                            if (fotoBilgisiSayfada(Sahne.sakin, isPhoneLayout(context))) ...[const SizedBox(height: 26), const PhotoBar()],
+                          ],
                         )
                       : Row(
                           crossAxisAlignment: CrossAxisAlignment.end,

@@ -12,6 +12,7 @@ import 'celebrate.dart';
 import 'dialogs.dart';
 import 'glass.dart';
 import 'i18n.dart';
+import 'sahne.dart';
 import 'state.dart';
 import 'theme.dart';
 import 'ui.dart';
@@ -38,7 +39,7 @@ Future<T?> showEditSheet<T>(BuildContext context, {required WidgetBuilder builde
             padding: phone ? const EdgeInsets.fromLTRB(6, 6, 6, 6) : const EdgeInsets.fromLTRB(16, 12, 14, 12),
             child: SizedBox(
               width: phone ? screen - 12 : math.min(width, screen - 32),
-              child: Material(type: MaterialType.transparency, child: builder(context)),
+              child: Material(type: MaterialType.transparency, child: SahneScope(sahne: Sahne.pencere, child: Builder(builder: builder))),
             ),
           ),
         ),

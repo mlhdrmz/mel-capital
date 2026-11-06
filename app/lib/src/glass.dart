@@ -133,11 +133,23 @@ class _GlassPanelState extends State<GlassPanel>
   @override
   Widget build(BuildContext context) {
     final sahne = SahneScope.of(context);
-    if (sahne == Sahne.dergi || sahne == Sahne.sayfa || sahne == Sahne.kemer) {
+    if (sahne == Sahne.dergi || sahne == Sahne.sayfa || sahne == Sahne.kemer || sahne == Sahne.pencere) {
       final pad = widget.padding.resolve(Directionality.of(context));
       final t = widget.tint;
       final Widget yuz;
-      if (sahne == Sahne.kemer) {
+      if (sahne == Sahne.pencere) {
+        // Açılır pencere: düz koyu zemin, ince altın kenar, buğu yok
+        yuz = DecoratedBox(
+          decoration: ShapeDecoration(
+            color: kPencereZemin,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(widget.radius),
+              side: BorderSide(color: t?.withValues(alpha: 0.6) ?? kAltinCizgi),
+            ),
+          ),
+          child: Padding(padding: pad, child: widget.child),
+        );
+      } else if (sahne == Sahne.kemer) {
         // Kemer pencere: düz koyu zemin, ince altın çizgi; içerik kemerin altından başlar
         const kemer = 40.0;
         yuz = DecoratedBox(

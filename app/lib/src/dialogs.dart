@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 
 import 'glass.dart';
 import 'i18n.dart';
+import 'sahne.dart';
 import 'theme.dart';
 import 'ui.dart';
 
@@ -21,7 +22,7 @@ Future<T?> showGlassDialog<T>(BuildContext context, {required WidgetBuilder buil
           padding: const EdgeInsets.all(20),
           child: ConstrainedBox(
             constraints: BoxConstraints(maxWidth: maxWidth),
-            child: Material(type: MaterialType.transparency, child: builder(context)),
+            child: Material(type: MaterialType.transparency, child: SahneScope(sahne: Sahne.pencere, child: Builder(builder: builder))),
           ),
         ),
       ),
