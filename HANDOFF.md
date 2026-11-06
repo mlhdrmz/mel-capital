@@ -190,3 +190,4 @@ tutarlar Manrope.
 | 2026-11-06 | Claude | Melih'in istekleri: hesap dökümünde para "Kullanılabilir Bakiye"den; işlemler kısa adla (`ekstreAdi`); kayıtsız bilinen abonelikler aboneliklere eklenir; bütün sekmeler ve giriş ekranları sakin sahne (siyah sayfalar kalktı, `HaleZemini`) |
 | 2026-11-06 | Claude | Kısa adlarda Türkçe harf yoksa Latin büyük/küçük harf ("TEKNOSA ONLINE" → "Teknosa Online") |
 | 2026-11-07 | Claude | Gömülü "lobby" kapağı (içinde 3 kişi) silindi, Melih'in onayıyla yerine "highrise"; tanıtımın 2. sayfası "lock"; kapak sırası testi yeniden hesaplandı |
+| 2026-11-07 | Claude | Resmî sürüm yayınlandı: s65 (Mel Capital 07.11.2026-01.51), Melih'in onayıyla; kullanılabilir bakiye, kısa adlar, yeni abonelikler, sakin tasarım, lobby kapağının kaldırılması içinde |
