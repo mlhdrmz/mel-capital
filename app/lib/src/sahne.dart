@@ -275,8 +275,8 @@ class _HaleArka extends StatelessWidget {
         ),
       ),
       // Bulanıklık kenarlardan içeri doğru artar
-      katman(4, 2),
-      katman(10, 3),
+      katman(4, 4),
+      katman(10, 7),
     ]);
   }
 }
