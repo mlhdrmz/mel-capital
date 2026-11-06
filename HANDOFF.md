@@ -132,8 +132,9 @@ Kurallar:
    işaretleri/başlıkları `ekstre.dart`'ta düzeltilecek. Gerçek ekstreler ve kişisel bilgiler
    (ad, IBAN, hesap no, tutarlar) asla repoya, testlere ya da bu dosyaya konmaz.
 2. **Alt hesaplar (ör. Yanımda)**: dökümdeki "Bakiye" vadesiz hesabındır; "Kullanılabilir
-   Bakiye" alt hesaptaki parayı da içerir. Alt hesabın ayrı bir hesap olarak izlenip
-   izlenmeyeceği soruldu; cevaba göre yapılacak.
+   Bakiye" alt hesaptaki parayı da içerir. Melih'in kararı (şimdilik): alt hesap ayrı hesap
+   olarak açılmaz, bakiyeye de eklenmez; yalnızca vadesizin "Bakiye"si yazılır. Alt hesaba
+   giriş-çıkışlar harcama sayılmaz. Melih isterse sonra yeniden ele alınacak.
 3. **Tasarım sahneleri** (6. bölüm): bütün ekranlara uygulandı; Melih'in yorumu bekleniyor.
 4. Yatırımlar bölümü (henüz başlanmadı; sorular sorulacak).
 5. İçinde insan olan diğer fotoğrafların taranması (75 fotoğrafın hepsine bakılamadı).
@@ -170,3 +171,4 @@ tutarlar Manrope.
 | 2026-11-06 | Claude | Ekstre Motoru (`motor/ekstre.dart`), PDF okuma (`storage/pdf_metin*.dart`, pdfrx), ekstre paneli (`src/sheets/ekstre.dart`), testleri |
 | 2026-11-06 | Claude | Resmî sürüm yayınlandı: s56 (Mel Capital 06.11.2026-20.15), Melih'in onayıyla |
 | 2026-11-06 | Claude | Hesap dökümü okuma düzeltildi (okuma sırasıyla satırlar, yeniden eskiye sıra, özetteki bakiye, kendi hesapların arası, etiketten kategori, maaş/fatura/abonelik eşleştirme); uydurma Garanti benzeri test eklendi |
+| 2026-11-06 | Claude | Karar kaydedildi: Yanımda gibi alt hesaplar şimdilik sayılmaz (yalnızca vadesizin "Bakiye"si); kodda değişiklik yok |
