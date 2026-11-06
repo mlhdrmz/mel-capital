@@ -77,6 +77,13 @@ void main() {
     expect(state.status, AppStatus.ready);
     expect(find.text('Mel Capital'), findsOneWidget);
     expect(find.text('HARCANABİLİR'), findsOneWidget);
+    // Taşma olursa hangi widget'ta olduğu da yazılsın
+    final onError = FlutterError.onError;
+    FlutterError.onError = (details) {
+      debugPrint(details.toString());
+      onError?.call(details);
+    };
+    addTearDown(() => FlutterError.onError = onError);
     for (final tab in AppTab.values) {
       await tapTab(tester, tab);
       expect(state.tab, tab);
