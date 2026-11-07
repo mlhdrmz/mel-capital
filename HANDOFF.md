@@ -228,3 +228,4 @@ tutarlar Manrope.
 | 2026-11-07 | Claude | Performans 2: görüntü önbelleği, sekme fotoğrafları ve bulanık kopyalar önceden; motor ölçüm testi ve Plan ödeme ↔ hesaplardaki para denetim testi |
 | 2026-11-07 | Claude | Ölçüm: motorlar hızlı (Ctx 12 ms); Performans 3: uzun listeler kare kare (`AzarAzar`), marka araması önbellekte, `Ctx.spendsOf` |
 | 2026-11-07 | Claude | Karttan ödenen abonelik kart borcuna eklenir; hesabı bilinmeyen kalemde "Ödendi" hesap sorar; Ayarlar'a performans ölçümü (Melih'in onayıyla) |
+| 2026-11-07 | Claude | Resmî sürüm yayınlandı: s71 (Mel Capital 07.11.2026-04.21), Melih'in onayıyla; performans 1–3, kart aboneliği → kart borcu, hesap sorma, performans ölçümü içinde |
