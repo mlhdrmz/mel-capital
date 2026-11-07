@@ -85,7 +85,7 @@ class _HarcamalarPageState extends State<HarcamalarPage> {
     final cur = ctx.cur;
     final m = _month ?? cur;
     String money(int k) => fmtMoney(k, lang: s.lang, hidden: st.hidden);
-    final all = [for (final x in spendsIn(d, m)) SpendLine.of(x), ...subSpendsIn(ctx, m)];
+    final all = [for (final x in ctx.spendsOf(m)) SpendLine.of(x), ...subSpendsIn(ctx, m)];
     final tot = sumK(all, (SpendLine x) => x.k);
     final onCard = sumK(all.where((x) => srcCard(x.source) != null), (SpendLine x) => x.k);
     final nDays = m == cur ? dayOf(todayISO()) : daysInMonth(m);
@@ -314,7 +314,7 @@ class _HarcamalarPageState extends State<HarcamalarPage> {
             ],
           ]),
           const SizedBox(height: 8),
-          ..._dayGroups(context, res, hide, anyYear: true),
+          AzarAzar(children: _dayGroups(context, res, hide, anyYear: true)),
         ]),
       );
     }
@@ -348,7 +348,7 @@ class _HarcamalarPageState extends State<HarcamalarPage> {
               SourceChip(source: hide, compact: true),
             ]),
           ),
-        ..._dayGroups(context, list, hide, anyYear: false),
+        AzarAzar(children: _dayGroups(context, list, hide, anyYear: false)),
       ]),
     );
   }

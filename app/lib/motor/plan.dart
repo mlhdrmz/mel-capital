@@ -363,6 +363,21 @@ class Ctx {
   List<PlanItem> items(String m) => _items[m] ??= _monthItems(m);
   MonthSummary sum(String m) => _sums[m] ??= _monthSummary(m);
 
+  Map<String, List<Spend>>? _ayHarcamalari;
+
+  /// Ayın harcamaları ([spendsIn] ile aynı sırada). Bütün harcamalar bir kez aylara ayrılır; her ay
+  /// için bütün harcamalar yeniden taranmaz.
+  List<Spend> spendsOf(String m) {
+    final idx = _ayHarcamalari ??= () {
+      final out = <String, List<Spend>>{};
+      for (final s in data.spends) {
+        if (isDate(s.date)) out.putIfAbsent(monthOf(s.date), () => []).add(s);
+      }
+      return out;
+    }();
+    return [...?idx[m]];
+  }
+
   bool _carriedFrom(MonthClose? cl, String kind, String id, String m) {
     if (cl == null) return false;
     return cl.carry.any((c) => c.kind == kind && c.refId == id && c.from == m);
@@ -505,7 +520,7 @@ class Ctx {
     s.income = sumK(s.incomeItems, (IncomeItem x) => x.k);
     s.savingsActual = sumK(data.goalContributions.where((c) => c.month == m), (GoalContribution c) => toK(c.amount));
     s.savingsPlanned = m.compareTo(cur) > 0 ? (model.projByMonth[m] ?? 0) : 0;
-    final sp = spendsIn(data, m);
+    final sp = spendsOf(m);
     s.spendList = sp;
     s.spent = sumK(sp.where((x) => srcCard(x.source) == null), (Spend x) => toK(x.amount));
     s.spentCard = sumK(sp.where((x) => srcCard(x.source) != null), (Spend x) => toK(x.amount));

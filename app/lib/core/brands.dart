@@ -65,6 +65,16 @@ int? brandIndex(String? name) {
 /// Bilinen bir markaysa logosu (simge ya da kısaltma), değilse null. Harcama satırları bunu kullanır:
 /// markası bilinmeyen harcamada kategori simgesi kalır.
 BrandLook? brandOf(String? name) {
+  // Her satırda 100'den çok kural denenir: sonuç ada göre saklanır (sayfa kurulurken hızlı olsun)
+  final n = name ?? '';
+  if (_markaOnbellek.containsKey(n)) return _markaOnbellek[n];
+  if (_markaOnbellek.length > 4000) _markaOnbellek.clear();
+  return _markaOnbellek[n] = _brandOf(n);
+}
+
+final Map<String, BrandLook?> _markaOnbellek = {};
+
+BrandLook? _brandOf(String? name) {
   final s = brandKey(name);
   for (var i = 0; i < kBrandRules.length; i++) {
     if (!_brandRes[i].hasMatch(s)) continue;

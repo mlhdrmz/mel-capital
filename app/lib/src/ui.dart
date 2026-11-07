@@ -78,6 +78,39 @@ class MoneyText extends StatelessWidget {
   }
 }
 
+/// Uzun listeyi kare kare kurar: ilk [ilk] satır hemen, kalanı sonraki karelerde [adim]'ar
+/// satır. Sayfa değişirken tek karede yüzlerce satır kurulup uygulama takılmasın; ekranın altında
+/// kalan satırlar birkaç kare sonra gelir (görünmez).
+class AzarAzar extends StatefulWidget {
+  const AzarAzar({super.key, required this.children, this.ilk = 24, this.adim = 24});
+
+  final List<Widget> children;
+  final int ilk;
+  final int adim;
+
+  @override
+  State<AzarAzar> createState() => _AzarAzarState();
+}
+
+class _AzarAzarState extends State<AzarAzar> {
+  late int _n = widget.ilk;
+  bool _istendi = false;
+
+  @override
+  Widget build(BuildContext context) {
+    final hepsi = widget.children;
+    final n = math.min(_n, hepsi.length);
+    if (n < hepsi.length && !_istendi) {
+      _istendi = true;
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        _istendi = false;
+        if (mounted) setState(() => _n += widget.adim);
+      });
+    }
+    return Column(crossAxisAlignment: CrossAxisAlignment.start, mainAxisSize: MainAxisSize.min, children: n == hepsi.length ? hepsi : hepsi.sublist(0, n));
+  }
+}
+
 /// Altındaki rakamlar ([MoneyText] count, [AnimatedMoney]) sayarak yükselir. Yalnızca Özet'te
 /// kullanılır; başka sayfalarda rakamlar hemen görünür (sayfa değişirken takılmasın).
 class SayarakYukselir extends InheritedWidget {

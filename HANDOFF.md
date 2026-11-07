@@ -115,6 +115,11 @@ Kurallar:
   Ölçüm testi: `test/performans_test.dart` (büyük veriyle motorlar ve sekme geçişleri; CI
   çıktısında "PERF" satırları). Ödeme ↔ para bağlantısı testi: `test/odeme_nakit_test.dart`
   (CI çıktısında "ODEME" satırları).
+- Ölçüm sonucu (CI, hata ayıklama modu, 5.051 harcama): motorların hepsi (Ctx) 12 ms, 13 ayın
+  planı 55 ms; yani takılma motorlardan değil. Sekme kurulumu ağırdı (Harcamalar ~1 sn,
+  Alışveriş ~0,8 sn hata ayıklama modunda). Performans 3: uzun listeler kare kare kurulur
+  (`AzarAzar`: önce 24 satır, sonra her karede 24), marka logosu araması ada göre saklanır
+  (`brandOf`), harcamalar bir kez aylara ayrılır (`Ctx.spendsOf`).
 - Telefonda Özet'te fotoğrafçının adı sayfanın en altında (rakamların üstüne binmiyor); diğer
   sayfalarda alt menünün üstünde.
 - Ekstre ekleme (Borçlar ve Bankalar'da "Ekstre ekle"): PDF seçilir (şifreliyse şifre sorulur,
@@ -209,3 +214,4 @@ tutarlar Manrope.
 | 2026-11-07 | Claude | Resmî sürüm yayınlandı: s65 (Mel Capital 07.11.2026-01.51), Melih'in onayıyla; kullanılabilir bakiye, kısa adlar, yeni abonelikler, sakin tasarım, lobby kapağının kaldırılması içinde |
 | 2026-11-07 | Claude | Performans: canlı bulanıklık yerine bir kez hazırlanan bulanık kopya (`bulanik.dart`); fotoğraf geçişi 0,4 sn, bölümler kayarak gelmez, rakamlar yalnızca Özet'te sayar; arka plan ve sayan rakam ayrı katmanda (Melih'in onayıyla) |
 | 2026-11-07 | Claude | Performans 2: görüntü önbelleği, sekme fotoğrafları ve bulanık kopyalar önceden; motor ölçüm testi ve Plan ödeme ↔ hesaplardaki para denetim testi |
+| 2026-11-07 | Claude | Ölçüm: motorlar hızlı (Ctx 12 ms); Performans 3: uzun listeler kare kare (`AzarAzar`), marka araması önbellekte, `Ctx.spendsOf` |
