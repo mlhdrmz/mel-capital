@@ -194,6 +194,15 @@ BorcDurumu borclariHesapla(
     final k = subMonthlyK(s);
     if (cid != null && s.active && k > 0) cardSubs[cid] = (cardSubs[cid] ?? 0) + k;
   }
+  // Karttan ödenen aboneliklerin "ödendi" işaretleri kart harcaması gibi sayılır (Melih'in kararı):
+  // kartın son kesiminden (bakiye tarihinden) sonraysa borca eklenir, boş limitten düşer. Ekstre
+  // girilince kesimden önceki ödemeler ekstrenin içinde sayılır, iki kez sayılmaz.
+  final cardSubPays = <String, List<Payment>>{};
+  for (final p in d.payments) {
+    if (p.kind != 'sub' || p.viaRefId != null || p.fromAccount != null) continue;
+    final cid = srcCard(d.subscription(p.refId)?.source);
+    if (cid != null) cardSubPays.putIfAbsent(cid, () => []).add(p);
+  }
 
   final debts = <String, DebtInfo>{};
   var totalRemaining = 0, cardDebt = 0, cardLimit = 0, cardAvail = 0, cardCount = 0, loanDebt = 0;
@@ -233,6 +242,11 @@ BorcDurumu borclariHesapla(
       months[m] = DebtMonth(planned, direct, viaK, st);
     }
     var purchAdd = 0, unbilled = 0;
+    if (card) {
+      for (final p in cardSubPays[debt.id] ?? const <Payment>[]) {
+        if (afterSnap(debt, p.paidDate, p.createdAt)) purchAdd += toK(p.paidAmount);
+      }
+    }
     final purchases = byCard[debt.id] ?? const <Spend>[];
     for (final p in purchases) {
       if (afterSnap(debt, p.date, p.createdAt)) purchAdd += toK(p.amount);

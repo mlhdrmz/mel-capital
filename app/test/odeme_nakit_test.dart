@@ -49,6 +49,14 @@ void main() {
         expect(nakit, 0, reason: '$satir: hesap seçilmediyse para değişmez');
       }
       String borc = '';
+      if (it.viaCard) {
+        // Karttan ödenen abonelik: kartın borcuna eklenir, boş limit azalır (Melih'in kararı)
+        final cid = srcCard(d.subscription(it.refId)!.source)!;
+        final a = once.model.debts[cid]!.current, b = sonra.model.debts[cid]!.current;
+        expect(b - a, it.planned, reason: '$satir: kart borcuna eklenmeli');
+        expect(sonra.model.cardAvail, once.model.cardAvail - it.planned, reason: '$satir: boş limit azalmalı');
+        borc = ', kart borcu ${fromK(b - a)} TL arttı';
+      }
       if (it.kind == 'debt') {
         final a = once.model.debts[it.refId]!.current, b = sonra.model.debts[it.refId]!.current;
         expect(b, lessThan(a), reason: '$satir: borç azalmalı');
@@ -64,8 +72,9 @@ void main() {
       expect(uyumDenetimi(eski2, d), isEmpty, reason: '$satir: işaret kaldırma');
       final geri = Ctx(d);
       expect(geri.model.liquid, once.model.liquid, reason: '$satir: işaret kalkınca para geri gelmeli');
+      expect(geri.model.cardDebt, once.model.cardDebt, reason: '$satir: işaret kalkınca kart borcu geri gelmeli');
       if (it.kind == 'debt') expect(geri.model.debts[it.refId]!.current, once.model.debts[it.refId]!.current, reason: satir);
-      rapor.add('ODEME $satir ${fromK(it.planned)} TL: ${from == null ? 'HESAP YOK, para değişmedi' : '${sourceName(d, from, 'tr')} −${fromK(it.planned)} TL'}$borc');
+      rapor.add('ODEME $satir ${fromK(it.planned)} TL: ${from == null ? 'hesaptan düşülmedi' : '${sourceName(d, from, 'tr')} −${fromK(it.planned)} TL'}$borc');
     }
     debugPrint(rapor.join('\n'));
     expect(denenen, greaterThan(3));
@@ -83,5 +92,42 @@ void main() {
     expect(Ctx(d).model.liquid, once - 40000);
     removePaymentFor(d, it.kind, it.refId, c.cur);
     expect(Ctx(d).model.liquid, once);
+  });
+
+  test('hesabı bilinmeyen kalem: seçilen hesaptan düşülür, sonraki ay o hesap kullanılır; "hesaptan düşme" seçilirse para değişmez', () {
+    final d = _sample();
+    // Hiç ödenmemiş, hesabı seçilmemiş yeni bir sabit gider
+    saveExpense(d, <String, dynamic>{
+      'name': 'Aidat', 'category': 'kira', 'amount': 1500, 'startMonth': '2026-11', 'endMonth': null, 'day': 25,
+      'linkedDebtIds': <String>[], 'note': '',
+    });
+    final c = Ctx(d);
+    final it = c.items(c.cur).firstWhere((x) => x.name == 'Aidat');
+    expect(defaultPayFrom(d, it), isNull, reason: 'hesabı bilinmiyor: Plan sorar');
+    final eski = _kopya(d);
+    expect(markPaid(d, c.model, it, c.cur, from: 'acc:enpara-vadesiz'), 'acc:enpara-vadesiz');
+    expect(uyumDenetimi(eski, d), isEmpty);
+    expect(toK(d.account('enpara-vadesiz')!.balance), toK(eski.account('enpara-vadesiz')!.balance) - 150000);
+    // Sonraki ay: aynı hesap varsayılan
+    final c2 = Ctx(d);
+    final sonraki = c2.items(addM(c2.cur, 1)).firstWhere((x) => x.name == 'Aidat');
+    expect(defaultPayFrom(d, sonraki), 'acc:enpara-vadesiz');
+    // "Hesaptan düşme": para değişmez
+    final d2 = _kopya(eski);
+    final c3 = Ctx(d2);
+    expect(markPaid(d2, c3.model, c3.items(c3.cur).firstWhere((x) => x.name == 'Aidat'), c3.cur, hesapsiz: true), isNull);
+    expect(Ctx(d2).model.liquid, c3.model.liquid);
+  });
+
+  test('karttan ödenen abonelik: kesimden sonraki ödeme kart borcuna eklenir, kesimden önceki (ekstrede olan) eklenmez', () {
+    final d = _sample();
+    final kart = d.debt('akbank-axess')!;
+    final once = Ctx(d).model.debts['akbank-axess']!.current;
+    // Kesimden önce (bakiye tarihinden önce) işaretlenmiş ödeme: kartın girilen borcunda zaten var
+    savePayment(d, kind: 'sub', refId: 'netflix', month: '2026-10', k: 22999, date: '2026-10-02');
+    expect(Ctx(d).model.debts['akbank-axess']!.current, once, reason: 'bakiye tarihi ${kart.balanceDate}');
+    // Kesimden sonra: borca eklenir
+    savePayment(d, kind: 'sub', refId: 'netflix', month: '2026-11', k: 22999, date: '2026-11-15');
+    expect(Ctx(d).model.debts['akbank-axess']!.current, once + 22999);
   });
 }

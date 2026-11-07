@@ -7,6 +7,7 @@ import '../../core/constants.dart';
 import '../../core/model.dart';
 import '../../core/util.dart';
 import '../celebrate.dart';
+import '../dialogs.dart';
 import '../glass.dart';
 import '../i18n.dart';
 import '../sheet.dart';
@@ -104,14 +105,16 @@ String itemSub(Ctx ctx, PlanItem it, String m, String lang, bool hidden) {
   return it.carry ? pick('${monthName(it.fromMonth, lang)} ayından taşındı · $b', 'moved from ${monthName(it.fromMonth, lang)} · $b') : b;
 }
 
-/// Ödendi işaretini koyar ya da kaldırır (geri alınabilir).
-void togglePay(BuildContext context, PlanItem it, String m) {
+/// Ödendi işaretini koyar ya da kaldırır (geri alınabilir). Kalemin hesabı bilinmiyorsa (ilk kez
+/// ödeniyor, hesabı seçilmemiş) hangi hesaptan ödendiği sorulur. Karttan ödenen abonelik kartın
+/// borcuna eklenir.
+Future<void> togglePay(BuildContext context, PlanItem it, String m) async {
   final st = AppScope.of(context);
   final s = S.of(context);
   if (it.carriedOut) return;
   final pm = it.fromMonth ?? m; // taşınan kalemin ödemesi asıl ayına yazılır
-  final snap = st.snapshot();
   if (it.pay != null) {
+    final snap = st.snapshot();
     st.update((d) => removePaymentFor(d, it.kind, it.refId, pm));
     toast(context, s.pick('"Ödendi" işareti kaldırıldı.', '"Paid" mark removed.'), undo: () => st.restore(snap));
     return;
@@ -120,18 +123,92 @@ void togglePay(BuildContext context, PlanItem it, String m) {
     openPaySheet(context, it, m);
     return;
   }
+  String? secilen;
+  var hesapsiz = false;
+  if (!it.viaCard && st.data.accounts.isNotEmpty && defaultPayFrom(st.data, it) == null) {
+    final c = await _hesapSor(context, it);
+    if (c == null || !context.mounted) return;
+    if (c.isEmpty) {
+      hesapsiz = true;
+    } else {
+      secilen = c;
+    }
+  }
+  final snap = st.snapshot();
   final before = st.ctx.model;
   String? from;
-  st.update((d) => from = markPaid(d, before, it, pm));
+  st.update((d) => from = markPaid(d, before, it, pm, from: secilen, hesapsiz: hesapsiz));
   final closed = closedDebts(st.data, before, st.ctx.model);
+  final kart = it.viaCard ? st.data.debt(srcCard(st.data.subscription(it.refId)?.source)) : null;
   final fromTxt = from != null
       ? s.pick(' ${sourceName(st.data, from, s.lang)} hesabından düşüldü.', ' Taken from ${sourceName(st.data, from, s.lang)}.')
-      : s.pick(' Hesap seçmek için satıra dokun.', ' Tap the row to pick an account.');
+      : kart != null
+          ? s.pick(' ${kart.creditor} kartının borcuna eklendi.', ' Added to the ${kart.creditor} card balance.')
+          : hesapsiz
+              ? s.pick(' Hiçbir hesaptan düşülmedi.', ' Not taken from any account.')
+              : s.pick(' Hesap seçmek için satıra dokun.', ' Tap the row to pick an account.');
   final closedTxt = closed.isEmpty
       ? ''
       : s.pick(' ${closed.map((x) => x.creditor).join(', ')} borcu kapandı!', ' ${closed.map((x) => x.creditor).join(', ')} is paid off!');
+  if (!context.mounted) return;
   toast(context, s.pick('Ödendi.', 'Paid.') + fromTxt + closedTxt, undo: () => st.restore(snap), seconds: 6);
   if (closed.isNotEmpty) celebrate(context);
+}
+
+/// "Ödendi" için hesap sorar: hesaplar bakiyeleriyle ve "Hesaptan düşme". Vazgeçilirse null,
+/// "Hesaptan düşme" seçilirse boş metin, yoksa seçilen hesabın kaynağı ("acc:…").
+Future<String?> _hesapSor(BuildContext context, PlanItem it) {
+  final st = AppScope.of(context);
+  final s = S.of(context);
+  final d = st.data;
+  String money(int k) => fmtMoney(k, lang: s.lang, hidden: st.hidden);
+  return showGlassDialog<String>(
+    context,
+    builder: (context) => GlassPanel(
+      animate: false,
+      radius: 26,
+      cut: 26,
+      padding: const EdgeInsets.fromLTRB(24, 20, 24, 18),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(s.pick('Hangi hesaptan ödendi?', 'Paid from which account?'), style: serif(26)),
+          const SizedBox(height: 8),
+          Text(
+            s.pick('${it.name} · ${money(it.planned)}. Seçtiğin hesaptan düşülür; sonraki aylarda da bu hesap kullanılır.',
+                '${it.name} · ${money(it.planned)}. It comes out of the account you pick; the same account is used in later months.'),
+            style: sans(13.5, color: MC.muted, height: 1.45),
+          ),
+          const SizedBox(height: 12),
+          for (final a in accountsSorted(d))
+            InkWell(
+              key: ValueKey<String>('hesap-sec-${a.id}'),
+              borderRadius: BorderRadius.circular(12),
+              onTap: () => Navigator.of(context).pop('acc:${a.id}'),
+              child: Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 9),
+                child: Row(children: [
+                  Expanded(child: Align(alignment: Alignment.centerLeft, child: SourceChip(source: 'acc:${a.id}'))),
+                  const SizedBox(width: 10),
+                  Text(money(toK(a.balance)), style: sans(13.5, weight: FontWeight.w600)),
+                ]),
+              ),
+            ),
+          const SizedBox(height: 12),
+          Wrap(
+            alignment: WrapAlignment.end,
+            spacing: 8,
+            runSpacing: 8,
+            children: [
+              GlassButton(label: s.pick('Vazgeç', 'Cancel'), onTap: () => Navigator.of(context).pop()),
+              GlassButton(key: const ValueKey<String>('hesap-sec-yok'), label: s.pick('Hesaptan düşme', 'Don\'t take from an account'), onTap: () => Navigator.of(context).pop('')),
+            ],
+          ),
+        ],
+      ),
+    ),
+  );
 }
 
 // ---------------------------------------------------------------- Sayfa

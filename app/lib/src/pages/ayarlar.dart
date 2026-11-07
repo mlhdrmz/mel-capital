@@ -13,6 +13,7 @@ import '../../storage/store.dart';
 import '../dialogs.dart';
 import '../glass.dart';
 import '../i18n.dart';
+import '../olcum.dart';
 import '../state.dart';
 import '../sync_ui.dart';
 import '../theme.dart';
@@ -43,8 +44,8 @@ class AyarlarPage extends StatelessWidget {
           ]),
           // Yeni sürüm varsa "Mel Capital" bölümü en üstte durur.
           right: st.newVersion != null
-              ? const Column(children: [_AboutPanel(), SizedBox(height: 14), _ViewPanel(), SizedBox(height: 14), _PhotosPanel(), SizedBox(height: 14), _DataPanel()])
-              : const Column(children: [_ViewPanel(), SizedBox(height: 14), _PhotosPanel(), SizedBox(height: 14), _DataPanel(), SizedBox(height: 14), _AboutPanel()]),
+              ? const Column(children: [_AboutPanel(), SizedBox(height: 14), _ViewPanel(), SizedBox(height: 14), _PhotosPanel(), SizedBox(height: 14), _DataPanel(), SizedBox(height: 14), _OlcumPanel()])
+              : const Column(children: [_ViewPanel(), SizedBox(height: 14), _PhotosPanel(), SizedBox(height: 14), _DataPanel(), SizedBox(height: 14), _AboutPanel(), SizedBox(height: 14), _OlcumPanel()]),
         ),
       ],
     );
@@ -99,6 +100,73 @@ class GoldSwitch extends StatelessWidget {
         inactiveThumbColor: MC.muted,
         inactiveTrackColor: const Color(0x33000000),
       );
+}
+
+// ---------------------------------------------------------------- Performans ölçümü
+
+/// Uygulama takılıyorsa: ölçüm açılır, sekmeler arasında gezilir, burada en uzun karelerin hesap
+/// (uygulamanın kodu) ve çizim (ekran kartı) süreleri görülür.
+class _OlcumPanel extends StatelessWidget {
+  const _OlcumPanel();
+
+  @override
+  Widget build(BuildContext context) {
+    final s = S.of(context);
+    final o = KareOlcumu.i;
+    return AnimatedBuilder(
+      animation: o,
+      builder: (context, _) {
+        String ms(double v) => '${v.toStringAsFixed(v < 10 ? 1 : 0)} ms';
+        final enUzun = o.enUzunlar(5);
+        return GlassPanel(
+          radius: 30,
+          cut: 30,
+          child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+            PanelHead(
+              s.pick('Performans ölçümü', 'Performance check'),
+              subtitle: s.pick('Uygulama takılıyorsa: ölçümü başlat, sekmeler arasında gez, sonra buraya dönüp rakamları söyle.',
+                  'If the app stutters: start the check, move between tabs, then come back here and share the numbers.'),
+            ),
+            if (o.kare > 0) ...[
+              Text(
+                s.pick('${o.kare} kare · ${o.takilan(33)} tanesi 33 ms\'den uzun (takılma), ${o.takilan(16)} tanesi 16 ms\'den uzun',
+                    '${o.kare} frames · ${o.takilan(33)} over 33 ms (stutter), ${o.takilan(16)} over 16 ms'),
+                style: sans(13.5, weight: FontWeight.w600),
+              ),
+              const SizedBox(height: 6),
+              Text(
+                s.pick('En uzun: hesap ${ms(o.enUzunHesap)} · çizim ${ms(o.enUzunCizim)}\nOrtalama: hesap ${ms(o.ortHesap)} · çizim ${ms(o.ortCizim)}',
+                    'Longest: build ${ms(o.enUzunHesap)} · raster ${ms(o.enUzunCizim)}\nAverage: build ${ms(o.ortHesap)} · raster ${ms(o.ortCizim)}'),
+                style: sans(13, color: MC.muted, height: 1.5),
+              ),
+              if (enUzun.isNotEmpty) ...[
+                const SizedBox(height: 6),
+                Text(
+                  s.pick('En uzun 5 kare (hesap / çizim): ', 'Longest 5 frames (build / raster): ') +
+                      enUzun.map((k) => '${k.$1.toStringAsFixed(0)} / ${k.$2.toStringAsFixed(0)}').join(' · '),
+                  style: sans(12.5, color: MC.muted),
+                ),
+              ],
+              const SizedBox(height: 4),
+              Text(
+                s.pick('Hesap: uygulamanın kendi işi. Çizim: ekran kartının işi. Hangisi büyükse takılma oradan.',
+                    'Build: the app\'s own work. Raster: the graphics card\'s work. Whichever is larger causes the stutter.'),
+                style: sans(12, color: MC.dim, height: 1.4),
+              ),
+              const SizedBox(height: 10),
+            ],
+            Wrap(spacing: 8, runSpacing: 8, children: [
+              if (!o.acik)
+                GoldButton(key: const ValueKey<String>('olcum-baslat'), label: s.pick('Ölçümü başlat', 'Start'), icon: Icons.speed, onTap: o.baslat)
+              else
+                GlassButton(label: s.pick('Durdur', 'Stop'), icon: Icons.stop, onTap: o.durdur),
+              if (o.kare > 0) GlassButton(label: s.pick('Sıfırla', 'Reset'), icon: Icons.refresh, onTap: o.sifirla),
+            ]),
+          ]),
+        );
+      },
+    );
+  }
 }
 
 // ---------------------------------------------------------------- Profiller

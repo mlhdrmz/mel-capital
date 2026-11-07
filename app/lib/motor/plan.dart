@@ -618,10 +618,17 @@ String? defaultPayFrom(Data data, PlanItem it) {
   return lastFromFor(data, it.kind, it.refId);
 }
 
-/// Kalemi planlanan tutarla bugün ödendi olarak işaretler. Kullanılan hesabı döndürür.
-String? markPaid(Data data, Model model, PlanItem it, String m) {
+/// Kalemi planlanan tutarla bugün ödendi olarak işaretler. Kullanılan hesabı döndürür. [from]
+/// verilirse o hesaptan düşülür; [hesapsiz] ise hiçbir hesaptan düşülmez; ikisi de yoksa kalemin
+/// varsayılan hesabı ([defaultPayFrom]). Karttan ödenen abonelik hesaptan düşülmez, kartın
+/// borcuna eklenir (Borç Motoru).
+String? markPaid(Data data, Model model, PlanItem it, String m, {String? from, bool hesapsiz = false}) {
   final paidDate = todayISO();
-  final from = defaultPayFrom(data, it);
+  final kaynak = it.viaCard ? null : (from ?? (hesapsiz ? null : defaultPayFrom(data, it)));
+  return _markPaid(data, model, it, m, paidDate, kaynak);
+}
+
+String? _markPaid(Data data, Model model, PlanItem it, String m, String paidDate, String? from) {
   final createdAt = nowISO();
   final p = <String, dynamic>{
     'id': rid('od'),

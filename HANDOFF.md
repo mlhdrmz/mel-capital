@@ -120,6 +120,18 @@ Kurallar:
   Alışveriş ~0,8 sn hata ayıklama modunda). Performans 3: uzun listeler kare kare kurulur
   (`AzarAzar`: önce 24 satır, sonra her karede 24), marka logosu araması ada göre saklanır
   (`brandOf`), harcamalar bir kez aylara ayrılır (`Ctx.spendsOf`).
+- Plan ödemeleri (Melih'in kararları, 07.11.2026):
+  - Karttan ödenen aboneliğin "ödendi" işareti kart harcaması gibi sayılır: kartın son kesiminden
+    (bakiye tarihinden) sonraysa kart borcuna eklenir, boş limitten düşer (`borclariHesapla`,
+    `cardSubPays`). Kesimden önceki (ekstrede olan) ödeme eklenmez; iki kez sayılmaz.
+  - Hesabı bilinmeyen kalemde (ilk kez ödeniyor, hesabı seçilmemiş) "Ödendi"ye basınca hangi
+    hesaptan ödendiği sorulur (`_hesapSor`); "Hesaptan düşme" seçeneği de var. Seçilen hesap
+    sonraki aylarda varsayılan olur (`lastFromFor`). `markPaid(..., from:, hesapsiz:)`.
+  - Denetim testi `test/odeme_nakit_test.dart`: her kalem işaretlenir/kaldırılır; hesap, Özet'teki
+    para, borç, kart borcu ve ay özeti birlikte değişir.
+- Ayarlar → "Performans ölçümü" (`olcum.dart`, `KareOlcumu`): açıkken her karenin hesap (UI) ve
+  çizim (raster) süresi toplanır; takılan kare sayısı, en uzun ve ortalama süreler gösterilir.
+  Melih takılma olursa bu rakamları söyleyecek.
 - Telefonda Özet'te fotoğrafçının adı sayfanın en altında (rakamların üstüne binmiyor); diğer
   sayfalarda alt menünün üstünde.
 - Ekstre ekleme (Borçlar ve Bankalar'da "Ekstre ekle"): PDF seçilir (şifreliyse şifre sorulur,
@@ -215,3 +227,4 @@ tutarlar Manrope.
 | 2026-11-07 | Claude | Performans: canlı bulanıklık yerine bir kez hazırlanan bulanık kopya (`bulanik.dart`); fotoğraf geçişi 0,4 sn, bölümler kayarak gelmez, rakamlar yalnızca Özet'te sayar; arka plan ve sayan rakam ayrı katmanda (Melih'in onayıyla) |
 | 2026-11-07 | Claude | Performans 2: görüntü önbelleği, sekme fotoğrafları ve bulanık kopyalar önceden; motor ölçüm testi ve Plan ödeme ↔ hesaplardaki para denetim testi |
 | 2026-11-07 | Claude | Ölçüm: motorlar hızlı (Ctx 12 ms); Performans 3: uzun listeler kare kare (`AzarAzar`), marka araması önbellekte, `Ctx.spendsOf` |
+| 2026-11-07 | Claude | Karttan ödenen abonelik kart borcuna eklenir; hesabı bilinmeyen kalemde "Ödendi" hesap sorar; Ayarlar'a performans ölçümü (Melih'in onayıyla) |
