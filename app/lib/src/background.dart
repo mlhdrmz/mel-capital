@@ -43,6 +43,10 @@ class _BackgroundState extends State<Background> {
   ImageProvider? _shown;
   String? _loadingKey;
 
+  /// Önceden hazırlanmış sekme fotoğraflarının listesi (değişince yeniden hazırlanır).
+  String? _hazirImza;
+  bool _hazirlaniyor = false;
+
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
@@ -98,6 +102,45 @@ class _BackgroundState extends State<Background> {
     });
   }
 
+  /// Sekmelerin fotoğraf ya da kapağı (sekme sırasıyla).
+  List<(String, ImageProvider)> _sekmeResimleri(AppState st, DateTime now) {
+    final out = <(String, ImageProvider)>[];
+    for (var i = 0; i < kPhotoPages; i++) {
+      final pick = st.bgPickFor(i, now);
+      final photo = pick.photo;
+      final src = photo == null ? null : st.photoSrc(photo.id);
+      final image = src == null ? null : photoImage(src);
+      if (photo != null && image != null) {
+        out.add((photo.id, image));
+      } else if (pick.cover != null) {
+        out.add(('kapak-${pick.cover}', AssetImage('assets/images/cover_${pick.cover}.webp')));
+      }
+    }
+    return out;
+  }
+
+  /// Sekmelerin fotoğraflarını ve bulanık kopyalarını sırayla, araya biraz zaman koyarak önceden
+  /// hazırlar. Liste değişmedikçe (yeni inen fotoğraf, 4 saatlik dilim, akşam) yeniden yapılmaz.
+  Future<void> _sekmeleriHazirla(AppState st) async {
+    if (_hazirlaniyor) return;
+    final liste = _sekmeResimleri(st, DateTime.now());
+    final imza = liste.map((x) => x.$1).join('|');
+    if (imza == _hazirImza) return;
+    _hazirlaniyor = true;
+    try {
+      for (final (anahtar, resim) in liste) {
+        await Future<void>.delayed(const Duration(milliseconds: 120));
+        if (!mounted) return;
+        await precacheImage(resim, context, onError: (_, __) {});
+        if (!mounted) return;
+        await bulanikKopyaOnceden(anahtar, resim, createLocalImageConfiguration(context));
+      }
+      _hazirImza = imza;
+    } finally {
+      _hazirlaniyor = false;
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final st = AppScope.of(context);
@@ -126,6 +169,8 @@ class _BackgroundState extends State<Background> {
         final shown = _shown ?? AssetImage('assets/images/cover_${widget.cover}.webp');
         // Yazıların arkasındaki bulanıklık için bu fotoğrafın bulanık kopyası (bir kez hazırlanır)
         unawaited(bulanikKopyaHazirla(_shownKey ?? 'kapak-${widget.cover}', shown, createLocalImageConfiguration(context)));
+        // Diğer sekmelerin fotoğrafları da önceden: sekme değişince çözülmeyi beklemesin
+        if (widget.rotate && st.photoStore != null) unawaited(_sekmeleriHazirla(st));
         return AnimatedSwitcher(
           // Kısa geçiş: sayfa değişirken uygulama takılmasın
           duration: const Duration(milliseconds: 400),

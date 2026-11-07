@@ -108,6 +108,13 @@ Kurallar:
   plan ve sayan rakamlar ayrı katmanda (`RepaintBoundary`). Testte sekmelerde BackdropFilter
   olmadığı denetlenir. Dikkat: `BulanikZemin` ile kaydırılan içerik arasına `RepaintBoundary` ya
   da `ListView` konmamalı (kaydırınca kopya yerinden kayar).
+- Performans 2: bilgisayarda görüntü önbelleği 512 MB (varsayılan 100 MB'ta 7 sekmenin ekran
+  çözünürlüğündeki fotoğrafları sığmıyor, her sekme geçişinde fotoğraf yeniden çözülüyordu).
+  Sekmelerin fotoğrafları ve bulanık kopyaları açılışta sırayla önceden hazırlanır
+  (`_sekmeleriHazirla`, `bulanikKopyaOnceden`); bulanık kopyalar fotoğraf başına saklanır.
+  Ölçüm testi: `test/performans_test.dart` (büyük veriyle motorlar ve sekme geçişleri; CI
+  çıktısında "PERF" satırları). Ödeme ↔ para bağlantısı testi: `test/odeme_nakit_test.dart`
+  (CI çıktısında "ODEME" satırları).
 - Telefonda Özet'te fotoğrafçının adı sayfanın en altında (rakamların üstüne binmiyor); diğer
   sayfalarda alt menünün üstünde.
 - Ekstre ekleme (Borçlar ve Bankalar'da "Ekstre ekle"): PDF seçilir (şifreliyse şifre sorulur,
@@ -201,3 +208,4 @@ tutarlar Manrope.
 | 2026-11-07 | Claude | Gömülü "lobby" kapağı (içinde 3 kişi) silindi, Melih'in onayıyla yerine "highrise"; tanıtımın 2. sayfası "lock"; kapak sırası testi yeniden hesaplandı |
 | 2026-11-07 | Claude | Resmî sürüm yayınlandı: s65 (Mel Capital 07.11.2026-01.51), Melih'in onayıyla; kullanılabilir bakiye, kısa adlar, yeni abonelikler, sakin tasarım, lobby kapağının kaldırılması içinde |
 | 2026-11-07 | Claude | Performans: canlı bulanıklık yerine bir kez hazırlanan bulanık kopya (`bulanik.dart`); fotoğraf geçişi 0,4 sn, bölümler kayarak gelmez, rakamlar yalnızca Özet'te sayar; arka plan ve sayan rakam ayrı katmanda (Melih'in onayıyla) |
+| 2026-11-07 | Claude | Performans 2: görüntü önbelleği, sekme fotoğrafları ve bulanık kopyalar önceden; motor ölçüm testi ve Plan ödeme ↔ hesaplardaki para denetim testi |

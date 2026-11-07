@@ -33,33 +33,62 @@ final ValueNotifier<BulanikArka?> kBulanikArka = ValueNotifier<BulanikArka?>(nul
 
 String? _istenen;
 
+/// Hazırlanmış kopyalar (en son kullanılanlar; sekmelerin fotoğrafları): sekme değişince kopya
+/// yeniden hazırlanmaz.
+final Map<String, BulanikArka> _kopyalar = {};
+const int _enCokKopya = 12;
+final Map<String, Future<BulanikArka?>> _hazirlaniyor = {};
+
 /// Kopyanın genişliği (piksel) ve bu genişlikteki bulanıklık. Ekranda kabaca 8–12 noktalık
 /// bulanıklık eder (eski iki katlı bulanıklık kadar).
 const double _kopyaGenisligi = 400;
 const double _kopyaBulanikligi = 2.4;
 
-/// Arka planda [resim] gösterilmeye başlayınca çağrılır: kopyayı bir kez hazırlar. Aynı fotoğraf için
-/// yeniden hazırlamaz; bu arada başka bir fotoğrafa geçildiyse eskisinin kopyası kullanılmaz.
+/// Arka planda [resim] gösterilmeye başlayınca çağrılır: kopyayı (hazır değilse) bir kez hazırlar ve
+/// gösterir. Bu arada başka bir fotoğrafa geçildiyse eskisinin kopyası gösterilmez.
 Future<void> bulanikKopyaHazirla(String anahtar, ImageProvider resim, ImageConfiguration ayar) async {
   if (_istenen == anahtar) return;
   _istenen = anahtar;
+  // Çizim sırasında çağrılır: değişiklik bu kare bittikten sonra
+  final kopya = _kopyalar[anahtar] ?? await _kopya(anahtar, resim, ayar);
+  await Future<void>.value();
+  if (kopya == null || _istenen != anahtar) return;
+  _kullanildi(anahtar);
+  kBulanikArka.value = kopya;
+}
+
+/// Kopyayı önceden hazırlar (gösterilmeden): sekmelerin fotoğrafları için, geçiş anında iş kalmasın.
+Future<void> bulanikKopyaOnceden(String anahtar, ImageProvider resim, ImageConfiguration ayar) async {
+  if (_kopyalar.containsKey(anahtar)) return;
+  await _kopya(anahtar, resim, ayar);
+}
+
+Future<BulanikArka?> _kopya(String anahtar, ImageProvider resim, ImageConfiguration ayar) =>
+    _hazirlaniyor[anahtar] ??= _hazirla(anahtar, resim, ayar).whenComplete(() => _hazirlaniyor.remove(anahtar));
+
+Future<BulanikArka?> _hazirla(String anahtar, ImageProvider resim, ImageConfiguration ayar) async {
   final kaynak = await _coz(resim, ayar);
-  if (kaynak == null) return;
+  if (kaynak == null) return null;
   try {
-    if (_istenen != anahtar) return;
-    final kopya = await _bulaniklastir(kaynak);
-    if (_istenen != anahtar) {
-      kopya.dispose();
-      return;
-    }
-    final eski = kBulanikArka.value;
-    kBulanikArka.value = BulanikArka(anahtar, kopya, Size(kaynak.width.toDouble(), kaynak.height.toDouble()));
-    // Eski kopya bu karede hâlâ çiziliyor olabilir: bir sonraki kareden sonra bırakılır
-    if (eski != null) {
-      WidgetsBinding.instance.addPostFrameCallback((_) => eski.resim.dispose());
-    }
+    final kopya = BulanikArka(anahtar, await _bulaniklastir(kaynak), Size(kaynak.width.toDouble(), kaynak.height.toDouble()));
+    _kopyalar[anahtar] = kopya;
+    _kullanildi(anahtar);
+    return kopya;
   } finally {
     kaynak.dispose();
+  }
+}
+
+/// En son kullanılanı sona alır; fazlası (gösterilmeyenlerden en eskisi) bırakılır.
+void _kullanildi(String anahtar) {
+  final k = _kopyalar.remove(anahtar);
+  if (k != null) _kopyalar[anahtar] = k;
+  while (_kopyalar.length > _enCokKopya) {
+    final eski = _kopyalar.keys.firstWhere((x) => x != kBulanikArka.value?.anahtar && x != _istenen, orElse: () => '');
+    if (eski.isEmpty) break;
+    final atilan = _kopyalar.remove(eski)!;
+    // Bu karede hâlâ çiziliyor olabilir: bir sonraki kareden sonra bırakılır
+    WidgetsBinding.instance.addPostFrameCallback((_) => atilan.resim.dispose());
   }
 }
 

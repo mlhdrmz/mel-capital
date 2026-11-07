@@ -1,7 +1,7 @@
 import 'dart:async';
 import 'dart:ui' show AppExitResponse;
 
-import 'package:flutter/foundation.dart' show kIsWeb;
+import 'package:flutter/foundation.dart' show TargetPlatform, defaultTargetPlatform, kIsWeb;
 import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 
@@ -25,6 +25,12 @@ Future<void> main() async {
   if (kIsWeb) {
     runApp(MelCapitalApp(state: await previewState(Uri.base.queryParameters)));
     return;
+  }
+  // Bilgisayarda sekmelerin fotoğrafları (7 tane, ekran çözünürlüğünde; 4K ekranda biri ~33 MB)
+  // görüntü önbelleğinde kalsın: varsayılan 100 MB'ta her sekme geçişinde fotoğraf yeniden
+  // çözülüyor, geçiş takılıyordu.
+  if (defaultTargetPlatform == TargetPlatform.windows || defaultTargetPlatform == TargetPlatform.linux || defaultTargetPlatform == TargetPlatform.macOS) {
+    PaintingBinding.instance.imageCache.maximumSizeBytes = 512 << 20;
   }
   final state = AppState(store: createStore(), updater: createUpdater(), syncApi: createSyncApi(), photoStore: createPhotoStore());
   runApp(MelCapitalApp(state: state));
