@@ -138,11 +138,17 @@ Kurallar:
   - `BulanikZemin` bulanıklık hesaplamaz, ara katman açmaz: önceden hazırlanan bulanık kopyayı
     kenarda giderek saydamlaşan halkalarla (`drawDRRect` + `ImageShader`, kenar yumuşatma
     kapalı), koyu tonu kenarı yumuşak bir kafesle (`yumusakKafes` + `drawVertices`, yalnızca renk)
-    çizer. Kopya daha güçlü bulanık (320 px, sigma 4). Fotoğrafı da kafesle çizmek denendi, web
-    önizlemesinde hiçbir şey çizmedi; kullanılmıyor.
+    çizer. Kopya daha güçlü bulanık (320 px, sigma 4).
+  - **s71'deki "blur yetersiz" şikâyetinin asıl sebebi bir kilitlenmeydi:** `bulanik.dart`'ta
+    `_hazirla(...).whenComplete(() => _hazirlaniyor.remove(anahtar))` yazılmıştı; `remove`
+    haritadaki Future'ı (kendisini) döndürdüğü için `whenComplete` kendini bekliyor, kopya hiç
+    "hazır" olmuyordu. Bulanık kopya ancak sekmeye ikinci gelişte (önbellekten) görünüyordu; ilk
+    gelişte yazıların arkası yalnızca hafif koyu tondu. Düzeltildi (işlev artık bir şey
+    döndürmüyor) ve `test/bulanik_test.dart` kopyanın gerçekten hazır olduğunu denetliyor.
   - Web önizlemesi her derlemede `web-onizleme` dalına konur (örnek verili); görünüm yerelde
-    Playwright ile denenebilir (`?sekme=…&arka=hafif|orta|koyu&kalite=hafif|yuksek`). Web'de
-    uygulama `MC-TANI` satırları yazar; ekran görüntüsü adımı bunları `tani.txt`'ye toplar.
+    Playwright ile denenebilir (`?sekme=…&arka=hafif|orta|koyu&kalite=hafif|yuksek`; tarayıcı
+    dili verilmeli, ör. `locale='tr-TR'`). Uygulama konsola `MC-TANI` ile başlayan satır yazarsa
+    ekran görüntüsü adımı bunları `tani.txt`'ye toplar (tanı gerektiğinde kullanılır).
   - Okunabilirlik (Melih: "blur yetersiz, sayılar okunmuyor"): yazıların arkası daha koyu ve
     ayarlanabilir: Ayarlar → Dil ve görünüm → "Yazıların arkası" Hafif / Orta (varsayılan) / Koyu
     (`YaziArkasi`, ayar anahtarı `yaziArkasi`). Üst çubuktaki sekme adlarının ve "Mel Capital"
