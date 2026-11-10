@@ -9,7 +9,8 @@
 //
 // Her sekme bir sahnede açılır ([kSekmeSahnesi]). Paneller (GlassPanel, Kpi) bulundukları sahneye
 // göre çizilir: dergi ve sayfada düz bölüm (ince altın çizgi), kemerde kemer pencere, sakinde kutu
-// yok, yalnızca arkasında yumuşak kenarlı hafif bulanıklık ([HaleZemini]).
+// yok, yalnızca arkasında yumuşak kenarlı güçlü bulanıklık ve koyu ton ([HaleZemini]; koyuluğu
+// Ayarlar'dan seçilir: [YaziArkasi]).
 //
 // Melih'in kararı (06.11.2026): siyah sayfalar kalktı; bütün sekmeler ve giriş ekranları "sakin"
 // (Özet gibi, fotoğraf görünür). Açılır pencereler "pencere" kalır. Dergi, kemer ve sayfa
@@ -19,7 +20,9 @@ import 'package:flutter/material.dart';
 
 import 'background.dart' show PhotoBar;
 import 'bulanik.dart';
+import 'performans.dart';
 import 'state.dart';
+import 'theme.dart' show kNetYaziGolgesi;
 import 'ui.dart' show isPhoneLayout;
 
 enum Sahne { dergi, kemer, sakin, sayfa, pencere }
@@ -245,13 +248,29 @@ class KemerBorder extends ShapeBorder {
   ShapeBorder scale(double t) => KemerBorder(kemer: kemer * t, side: side.scale(t));
 }
 
-/// Hale: yazının tam arkasında, kenarları yumuşakça kaybolan hafif bulanıklık ve çok hafif koyu ton.
-/// Yazının çevresine kutu konmaz; yalnızca açık renkli fotoğrafta beyaz yazı okunsun diye.
+/// Yazıların arkasının koyuluğu (Ayarlar → Dil ve görünüm; varsayılan orta).
+enum YaziArkasi { hafif, orta, koyu }
+
+YaziArkasi yaziArkasiOku(Object? v) => switch (v) {
+      'hafif' => YaziArkasi.hafif,
+      'koyu' => YaziArkasi.koyu,
+      _ => YaziArkasi.orta,
+    };
+
+/// Koyu tonun gücü (0–1): hafifte fotoğrafın renkleri belirgin, koyuda neredeyse düz koyu.
+double yaziArkasiTonu(YaziArkasi a) => switch (a) {
+      YaziArkasi.hafif => 0.34,
+      YaziArkasi.orta => 0.54,
+      YaziArkasi.koyu => 0.78,
+    };
+
+/// Hale: yazının tam arkasında, kenarları yumuşakça kaybolan bulanıklık ve koyu ton.
+/// Yazının çevresine kutu konmaz; yalnızca fotoğrafın üstündeki yazı okunsun diye.
 class Hale extends StatelessWidget {
-  const Hale({super.key, required this.child, this.yatay = 14, this.dikey = 6});
+  const Hale({super.key, required this.child, this.yatay = 14, this.dikey = 8});
 
   /// Sakin sahnedeyse [Hale] ile sarar, değilse olduğu gibi bırakır.
-  static Widget sakinde(BuildContext context, Widget child, {double yatay = 14, double dikey = 6}) =>
+  static Widget sakinde(BuildContext context, Widget child, {double yatay = 14, double dikey = 8}) =>
       SahneScope.of(context) == Sahne.sakin ? Hale(yatay: yatay, dikey: dikey, child: child) : child;
 
   final Widget child;
@@ -273,46 +292,31 @@ class Hale extends StatelessWidget {
   }
 }
 
+/// Yazı arkasının çizimi: fotoğrafın (önceden hazırlanmış) bulanık kopyası ve üstünde koyu ton,
+/// kenarları yumuşak ([BulanikZemin]). Koyuluk Ayarlar'daki "Yazıların arkası" seçimine, bulanık
+/// kopyanın çizilip çizilmeyeceği görsel kaliteye bağlıdır. Burada bulanıklık hesaplanmaz.
 class _HaleArka extends StatelessWidget {
-  const _HaleArka({this.ton = const Color(0x2E081A2C), this.genis = false});
-
-  /// Yumuşak kenarlı koyu tonun rengi.
-  final Color ton;
+  const _HaleArka({this.genis = false});
 
   /// Bölüm (panel) için: kenar yumuşaması daha geniş.
   final bool genis;
 
   @override
   Widget build(BuildContext context) {
-    return Stack(fit: StackFit.expand, children: [
-      // Yumuşak kenarlı koyu ton (kutunun kendisi saydam; yalnızca bulanık gölgesi görünür)
-      Padding(
-        padding: genis ? const EdgeInsets.symmetric(horizontal: 18, vertical: 12) : const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-        child: DecoratedBox(
-          decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(genis ? 26 : 18),
-            boxShadow: [BoxShadow(color: ton, blurRadius: genis ? 30 : 20, spreadRadius: genis ? 8 : 4)],
-          ),
-        ),
-      ),
-      // Fotoğrafın bulanık kopyası (bir kez hazırlanır; canlı bulanıklık yok), kenarları yumuşak
-      Padding(
-        padding: genis ? const EdgeInsets.symmetric(horizontal: 4, vertical: 2) : const EdgeInsets.symmetric(horizontal: 2, vertical: 1),
-        child: BulanikZemin(yaricap: genis ? 26 : 18, yumusaklik: genis ? 7 : 4),
-      ),
-    ]);
+    final ton = yaziArkasiTonu(yaziArkasiOku(AppScope.of(context).settings['yaziArkasi']));
+    return BulanikZemin(
+      yaricap: genis ? 24 : 14,
+      yumusaklik: genis ? 16 : 9,
+      ton: ton,
+      resimli: KaliteScope.of(context) == GorselKalite.yuksek,
+    );
   }
 }
 
-/// Sakin sahnede bölümdeki yazıların hafif gölgesi (açık renkli fotoğrafta da okunsun). Koyu zeminli
-/// rozet yazıları gibi gölge istemeyenler kendi stillerinde `shadows: const []` verir.
-const List<Shadow> kHaleYaziGolgesi = [
-  Shadow(color: Color(0xCC000000), blurRadius: 3),
-  Shadow(color: Color(0x8C000000), blurRadius: 10),
-];
-
-/// Sakin sahnede bölüm (panel) zemini: kutu, kenar ya da düz renk yok; içeriğin arkasında kenarları
-/// yumuşakça kaybolan hafif bulanıklık ve hafif koyu ton. Fotoğraf görünür kalır, yazılar okunur.
+/// Sakin sahnede bölüm (panel) zemini: kutu ya da kenar çizgisi yok; içeriğin arkasında kenarları
+/// yumuşakça kaybolan güçlü bulanıklık ve koyu ton. Fotoğraf bölümlerin arasında net görünür.
+/// Yazılara bulanık gölge konmaz (her biri her karede ayrı bir bulanıklık işidir); okunabilirliği
+/// arkası sağlar. Yalnızca "hafif" koyulukta yazılara bulanık olmayan ince bir gölge eklenir.
 class HaleZemini extends StatelessWidget {
   const HaleZemini({super.key, required this.child});
 
@@ -320,15 +324,16 @@ class HaleZemini extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final hafif = yaziArkasiOku(AppScope.of(context).settings['yaziArkasi']) == YaziArkasi.hafif;
     return Stack(clipBehavior: Clip.none, children: [
       const Positioned(
-        left: -10,
-        right: -10,
-        top: -6,
-        bottom: -6,
-        child: IgnorePointer(child: _HaleArka(ton: Color(0x4D0C0A08), genis: true)),
+        left: -12,
+        right: -12,
+        top: -10,
+        bottom: -10,
+        child: IgnorePointer(child: _HaleArka(genis: true)),
       ),
-      DefaultTextStyle.merge(style: const TextStyle(shadows: kHaleYaziGolgesi), child: child),
+      hafif ? DefaultTextStyle.merge(style: const TextStyle(shadows: kNetYaziGolgesi), child: child) : child,
     ]);
   }
 }

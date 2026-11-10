@@ -10,6 +10,7 @@ import 'core/normalize.dart';
 import 'core/sample.dart';
 import 'core/update.dart';
 import 'core/util.dart';
+import 'src/performans.dart';
 import 'src/shell.dart';
 import 'src/state.dart';
 import 'src/theme.dart';
@@ -48,7 +49,8 @@ Future<void> main() async {
 /// Telefon eşitlemesi (bellekteki sunucuyla): `?cihaz=telefon` uygulamayı telefon gibi açar;
 /// `?telefon=eski` eski uygulamanın eşleştirmesini bulmuş, `?telefon=bagli` eşleşmiş hâli,
 /// `?panel=kod` eşleştirme kodunu gösterir. `?foto=1` arka planda Unsplash fotoğraflarını gösterir
-/// (yoksa gömülü kapaklar).
+/// (yoksa gömülü kapaklar). `?arka=koyu` yazıların arkasının koyuluğunu, `?kalite=hafif` görsel
+/// kaliteyi seçer.
 Future<AppState> previewState(Map<String, String> query) async {
   final lang = query['dil'];
   final screen = query['ekran'];
@@ -98,6 +100,11 @@ Future<AppState> previewState(Map<String, String> query) async {
   for (final tab in AppTab.values) {
     if (tab.name == query['sekme']) state.setTab(tab);
   }
+  // ?arka=hafif|orta|koyu: yazıların arkasının koyuluğu; ?kalite=hafif|yuksek: görsel kalite
+  final arka = query['arka'];
+  if (arka != null) state.settings['yaziArkasi'] = arka;
+  final kalite = query['kalite'];
+  if (kalite != null) state.settings['kalite'] = kalite;
   final bank = query['banka'];
   if (bank != null) state.preview['banka'] = bank;
   final panel = query['panel'];
@@ -223,10 +230,13 @@ class _MelCapitalAppState extends State<MelCapitalApp> {
           supportedLocales: const [Locale('tr'), Locale('en')],
           localizationsDelegates: GlobalMaterialLocalizations.delegates,
           // Dokunuşlar eşitlemenin yoklama sıklığını belirler (uzun süre dokunulmazsa seyrekleşir).
-          builder: (context, child) => Listener(
-            behavior: HitTestBehavior.translucent,
-            onPointerDown: (_) => state.touch(),
-            child: child,
+          // Görsel kalite (Performans Motoru) bütün sayfalara ve açılır pencerelere buradan iletilir.
+          builder: (context, child) => KaliteKapsami(
+            child: Listener(
+              behavior: HitTestBehavior.translucent,
+              onPointerDown: (_) => state.touch(),
+              child: child,
+            ),
           ),
           home: const Shell(),
         ),

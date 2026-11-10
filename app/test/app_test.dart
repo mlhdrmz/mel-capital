@@ -98,6 +98,26 @@ void main() {
     }
   });
 
+  testWidgets('Ayarlar: yazıların arkası ve görsel kalite seçilir', (tester) async {
+    final state = await openSample(tester, 'tr');
+    await tapTab(tester, AppTab.ayarlar);
+    final koyu = find.descendant(of: find.byKey(const ValueKey<String>('secim-yazi-arkasi')), matching: find.text('Koyu'));
+    await tester.ensureVisible(koyu);
+    await tester.tap(koyu);
+    await tester.pumpAndSettle();
+    expect(state.settings['yaziArkasi'], 'koyu');
+    final hafif = find.descendant(of: find.byKey(const ValueKey<String>('secim-kalite')), matching: find.text('Hafif'));
+    await tester.ensureVisible(hafif);
+    await tester.tap(hafif);
+    await tester.pumpAndSettle();
+    expect(state.settings['kalite'], 'hafif');
+    // Hafif kalitede ve koyu zeminde bütün sekmeler hatasız çizilir
+    for (final tab in AppTab.values) {
+      await tapTab(tester, tab);
+      expect(tester.takeException(), isNull, reason: tab.name);
+    }
+  });
+
   testWidgets('ekstre: PDF seçilir, okunur, karta eklenir', (tester) async {
     final state = await openSample(tester, 'tr');
     final eskiSec = pickBytesFile;

@@ -7,6 +7,7 @@
 //   plan.dart      Plan Motoru: aylık özet, harcanabilir para, devir, ödemeler, istek listesi
 //   ekstre.dart    Ekstre Motoru: PDF ekstreyi okur, bankayı ve kartı/hesabı bulur, eşleştirir, ekler
 //   uyum.dart      Uyum denetimi: motorların birbirini tuttuğunu denetler
+//   performans.dart Performans Motoru: hız bütçeleri ve otomatik görsel kalite (para hesabı yapmaz)
 //
 // Kurallar: sayfalar hesap yapmaz, motorlara sorar; veri yalnızca AppState.update içinde
 // motorların işlevleriyle değişir; hesap bakiyesine yalnızca Çekirdek'teki accAdjust yazar.
@@ -16,5 +17,6 @@ export 'cekirdek.dart';
 export 'ekstre.dart';
 export 'gelir.dart';
 export 'gider.dart';
+export 'performans.dart';
 export 'plan.dart';
 export 'uyum.dart';

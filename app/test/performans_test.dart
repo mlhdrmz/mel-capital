@@ -1,13 +1,20 @@
-// Performans: büyük veriyle (3 yıl, ~5.000 harcama, her ay abonelik ödemeleri ve aktarmalar)
-// motorların ve sekme geçişlerinin süresi. Süreler CI çıktısında "PERF" satırlarıyla görünür.
-// Testler hata ayıklama modunda koşar; gerçek uygulama birkaç kat hızlıdır. Sınırlar cömerttir:
-// amaç bir motorun yanlışlıkla yavaşlamasını (ör. iç içe döngü) yakalamak.
+// Performans Motoru'nun bütçe denetimi: büyük veriyle (3 yıl, ~5.000 harcama, her ay abonelik
+// ödemeleri ve aktarmalar) motorların ve sekme geçişlerinin süresi ile her sekmedeki pahalı çizim
+// sayısı. Bütçeler lib/motor/performans.dart'ta ([PerfButce]); aşılırsa derleme durur. Süreler CI
+// çıktısında "PERF" satırlarıyla görünür. Testler hata ayıklama modunda koşar; gerçek uygulama
+// birkaç kat hızlıdır.
+//
+// Yeni bir özellik eklenince:
+//   - yeni sekme ya da sekmeye yeni bölüm: aşağıdaki sekme döngüsü kendiliğinden denetler;
+//   - yeni motor işlevi: "motorlar büyük veriyle hızlı" testine bir [olc] satırı ve [PerfButce.motorMs]'e
+//     bütçesi eklenir.
 
 import 'dart:convert';
 import 'dart:io';
 
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/rendering.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mel_capital/core/model.dart';
 import 'package:mel_capital/core/normalize.dart';
@@ -75,7 +82,8 @@ Data buyukVeri() {
   return d;
 }
 
-/// [f]'yi bir kez ısıtıp [tekrar] kez çalıştırır; en kısa süreyi (ms) yazar ve döndürür.
+/// [f]'yi bir kez ısıtıp [tekrar] kez çalıştırır; en kısa süreyi (ms) yazar ve bütçesiyle
+/// ([PerfButce.motorMs]) karşılaştırır.
 double olc(String ad, void Function() f, {int tekrar = 5}) {
   f();
   var enKisa = double.infinity;
@@ -86,8 +94,35 @@ double olc(String ad, void Function() f, {int tekrar = 5}) {
     final ms = sw.elapsedMicroseconds / 1000;
     if (ms < enKisa) enKisa = ms;
   }
-  debugPrint('PERF $ad: ${enKisa.toStringAsFixed(1)} ms');
+  final butce = PerfButce.motorMs[ad];
+  debugPrint('PERF $ad: ${enKisa.toStringAsFixed(1)} ms (bütçe ${butce?.toStringAsFixed(0) ?? '?'} ms)');
+  expect(butce, isNotNull, reason: '"$ad" için PerfButce.motorMs\'e bütçe ekle');
+  expect(enKisa, lessThan(butce!), reason: '"$ad" bütçesini aştı');
   return enKisa;
+}
+
+bool _bulanik(List<Shadow>? golgeler) => golgeler != null && golgeler.any((g) => g.blurRadius > 0);
+
+/// Ekrandaki pahalı çizimler: her biri her karede ekran kartına ayrı bir bulanıklık işi çıkarır.
+({int bulanikGolgeliYazi, int canliBulaniklik, int yolGolgesi}) pahaliCizimler(WidgetTester tester) {
+  var yazi = 0;
+  for (final p in tester.allRenderObjects.whereType<RenderParagraph>()) {
+    var var_ = false;
+    p.text.visitChildren((span) {
+      if (_bulanik(span.style?.shadows)) var_ = true;
+      return !var_;
+    });
+    if (var_) yazi++;
+  }
+  var canli = 0, yol = 0;
+  for (final w in tester.allWidgets) {
+    if (w is BackdropFilter || w is ImageFiltered) canli++;
+    if (w is DecoratedBox) {
+      final d = w.decoration;
+      if (d is ShapeDecoration && _bulanik(d.shadows) && d.shape is! RoundedRectangleBorder && d.shape is! StadiumBorder && d.shape is! CircleBorder) yol++;
+    }
+  }
+  return (bulanikGolgeliYazi: yazi, canliBulaniklik: canli, yolGolgesi: yol);
 }
 
 void main() {
@@ -97,9 +132,9 @@ void main() {
   test('motorlar büyük veriyle hızlı', () {
     final d = buyukVeri();
     debugPrint('PERF veri: ${d.spends.length} harcama, ${d.payments.length} ödeme, ${d.transfers.length} aktarma');
-    final kur = olc('Ctx kurulumu (bütün motorlar)', () => Ctx(d));
+    olc('Ctx kurulumu (bütün motorlar)', () => Ctx(d));
     final ctx = Ctx(d);
-    final aylar = olc('Plan: 13 ayın kalemleri ve özetleri', () {
+    olc('Plan: 13 ayın kalemleri ve özetleri', () {
       final c = Ctx(d);
       for (var i = -1; i < 12; i++) {
         c.sum(addM(c.cur, i));
@@ -112,12 +147,9 @@ void main() {
     olc('Veri kopyası (her değişiklikte kayıt için)', () => deepCopy(d.j));
     olc('Veri JSON (dosyaya yazılan)', () => jsonEncode(d.j));
     expect(ctx.model.liquid, isNonZero);
-    // Hata ayıklama modunda bile kısa olmalı (gerçek uygulamada birkaç kat daha kısa)
-    expect(kur, lessThan(1500), reason: 'Ctx kurulumu yavaş');
-    expect(aylar, lessThan(3000), reason: 'Plan ayları yavaş');
   });
 
-  testWidgets('sekme geçişleri büyük veriyle', (tester) async {
+  testWidgets('sekme geçişleri büyük veriyle: süre ve çizim bütçesi', (tester) async {
     tester.view.physicalSize = const Size(2400, 1300);
     tester.view.devicePixelRatio = 1.0;
     addTearDown(tester.view.reset);
@@ -133,14 +165,26 @@ void main() {
       final ilkKare = sw.elapsedMicroseconds / 1000;
       await tester.pumpAndSettle();
       sw.stop();
-      debugPrint('PERF sekme ${tab.name}: ilk kare ${ilkKare.toStringAsFixed(1)} ms, toplam ${(sw.elapsedMicroseconds / 1000).toStringAsFixed(1)} ms');
+      final toplam = sw.elapsedMicroseconds / 1000;
+      final c = pahaliCizimler(tester);
+      debugPrint('PERF sekme ${tab.name}: ilk kare ${ilkKare.toStringAsFixed(1)} ms, toplam ${toplam.toStringAsFixed(1)} ms · '
+          'bulanık gölgeli yazı ${c.bulanikGolgeliYazi}, canlı bulanıklık ${c.canliBulaniklik}, yol gölgesi ${c.yolGolgesi}');
       expect(state.tab, tab);
       expect(tester.takeException(), isNull);
+      expect(ilkKare, lessThan(PerfButce.sekmeIlkKareMs), reason: '${tab.name}: ilk kare bütçesi');
+      expect(toplam, lessThan(PerfButce.sekmeToplamMs), reason: '${tab.name}: toplam süre bütçesi');
+      // Çizim bütçesi: bunların her biri her karede ayrı bir bulanıklık işidir
+      expect(c.bulanikGolgeliYazi, lessThanOrEqualTo(PerfButce.bulanikGolgeliYazi),
+          reason: '${tab.name}: yazıya bulanık gölge (blurRadius > 0) konmaz; yazının arkası için HaleZemini/Hale kullan');
+      expect(c.canliBulaniklik, lessThanOrEqualTo(PerfButce.canliBulaniklik), reason: '${tab.name}: BackdropFilter/ImageFiltered yerine BulanikZemin kullan');
+      expect(c.yolGolgesi, lessThanOrEqualTo(PerfButce.yolGolgesi), reason: '${tab.name}: özel biçime bulanık gölge konmaz; gölgeyi yuvarlak dikdörtgenden ver');
     }
     // Bir değişiklik (ör. harcama eklemek): motorlar yeniden kurulur, sayfa yenilenir
     final sw = Stopwatch()..start();
     state.update((d) => toggleSubscription(d, d.subscriptions.first.id));
     await tester.pump();
-    debugPrint('PERF değişiklik + yenileme: ${(sw.elapsedMicroseconds / 1000).toStringAsFixed(1)} ms');
+    final degisiklik = sw.elapsedMicroseconds / 1000;
+    debugPrint('PERF değişiklik + yenileme: ${degisiklik.toStringAsFixed(1)} ms');
+    expect(degisiklik, lessThan(PerfButce.degisiklikMs));
   });
 }

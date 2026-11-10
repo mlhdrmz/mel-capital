@@ -395,21 +395,28 @@ class _StepDot extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return AnimatedContainer(
-      duration: const Duration(milliseconds: 240),
-      width: 32,
-      height: 32,
-      alignment: Alignment.center,
-      decoration: ShapeDecoration(
-        color: state == 2 ? MC.gold : (state == 1 ? const Color(0x59000000) : const Color(0x33000000)),
-        shape: SignatureBorder(
-          cut: 9,
-          radius: 10,
-          side: BorderSide(color: state == 0 ? const Color(0x52FFFFFF) : MC.gold, width: state == 1 ? 2 : 1),
-        ),
-        shadows: const [BoxShadow(color: Color(0x59000000), blurRadius: 10)],
+    // Gölge yuvarlak dikdörtgenden (ucuz); kesik köşeli biçimin kendi gölgesi her karede
+    // bulanıklık hesaplatır (Performans Motoru: yol gölgesi bütçesi 0)
+    return DecoratedBox(
+      decoration: const BoxDecoration(
+        borderRadius: BorderRadius.all(Radius.circular(10)),
+        boxShadow: [BoxShadow(color: Color(0x59000000), blurRadius: 10)],
       ),
-      child: Icon(state == 2 ? Icons.check : icon, size: 17, color: state == 2 ? MC.ink : (state == 1 ? MC.gold : MC.dim)),
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 240),
+        width: 32,
+        height: 32,
+        alignment: Alignment.center,
+        decoration: ShapeDecoration(
+          color: state == 2 ? MC.gold : (state == 1 ? const Color(0x59000000) : const Color(0x33000000)),
+          shape: SignatureBorder(
+            cut: 9,
+            radius: 10,
+            side: BorderSide(color: state == 0 ? const Color(0x52FFFFFF) : MC.gold, width: state == 1 ? 2 : 1),
+          ),
+        ),
+        child: Icon(state == 2 ? Icons.check : icon, size: 17, color: state == 2 ? MC.ink : (state == 1 ? MC.gold : MC.dim)),
+      ),
     );
   }
 }

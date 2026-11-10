@@ -8,6 +8,7 @@ import '../core/constants.dart';
 import '../core/util.dart';
 import 'glass.dart';
 import 'i18n.dart';
+import 'performans.dart';
 import 'sahne.dart' show Hale;
 import 'state.dart';
 import 'theme.dart';
@@ -57,7 +58,7 @@ class MoneyText extends StatelessWidget {
     }
 
     // Rakamlar yalnızca Özet'te sayarak yükselir; başka yerde hemen görünür
-    if (!count || st.hidden || !SayarakYukselir.burada(context)) {
+    if (!count || st.hidden || !SayarakYukselir.burada(context) || KaliteScope.of(context) == GorselKalite.hafif) {
       return Text(text(k), style: base, maxLines: 1, softWrap: false, overflow: TextOverflow.fade);
     }
     // Ayrı katman: sayarken yalnızca rakam yeniden çizilir, sayfanın geri kalanı değil

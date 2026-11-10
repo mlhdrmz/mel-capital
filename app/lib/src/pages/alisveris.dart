@@ -511,29 +511,37 @@ class _ShopTileState extends State<_ShopTile> {
           width: 168,
           height: 92,
           transform: Matrix4.translationValues(0, _hover ? -3 : 0, 0),
-          padding: const EdgeInsets.fromLTRB(14, 12, 12, 10),
-          decoration: ShapeDecoration(
-            color: _hover ? const Color(0xF2FFFFFF) : const Color(0xE6FFFFFF),
-            shape: const SignatureBorder(cut: 14, radius: 14),
-            shadows: [BoxShadow(color: const Color(0x55000000), blurRadius: _hover ? 22 : 14, offset: const Offset(0, 8))],
+          // Gölge yuvarlak dikdörtgenden (ucuz); kesik köşeli biçimin kendi gölgesi her karede
+          // bulanıklık hesaplatır (Performans Motoru: yol gölgesi bütçesi 0)
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(14),
+            boxShadow: [BoxShadow(color: const Color(0x55000000), blurRadius: _hover ? 22 : 14, offset: const Offset(0, 8))],
           ),
-          child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-            // Eski uygulamadaki gibi sitenin kendi logosu (yoksa adı).
-            Expanded(
-              child: Center(
-                child: shopLogo(sh.id, maxWidth: 140, maxHeight: 40) ??
-                    Text(sh.name, style: serif(25, color: const Color(0xFF1B1712), weight: FontWeight.w700)),
-              ),
+          child: AnimatedContainer(
+            duration: const Duration(milliseconds: 180),
+            padding: const EdgeInsets.fromLTRB(14, 12, 12, 10),
+            decoration: ShapeDecoration(
+              color: _hover ? const Color(0xF2FFFFFF) : const Color(0xE6FFFFFF),
+              shape: const SignatureBorder(cut: 14, radius: 14),
             ),
-            Row(children: [
+            child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+              // Eski uygulamadaki gibi sitenin kendi logosu (yoksa adı).
               Expanded(
-                child: Text(Uri.parse(sh.url).host.replaceFirst('www.', ''),
-                    maxLines: 1, overflow: TextOverflow.ellipsis, style: sans(11, color: const Color(0xFF5A534A))),
+                child: Center(
+                  child: shopLogo(sh.id, maxWidth: 140, maxHeight: 40) ??
+                      Text(sh.name, style: serif(25, color: const Color(0xFF1B1712), weight: FontWeight.w700)),
+                ),
               ),
-              const SizedBox(width: 4),
-              const Icon(Icons.open_in_new, size: 14, color: Color(0xFF5A534A)),
+              Row(children: [
+                Expanded(
+                  child: Text(Uri.parse(sh.url).host.replaceFirst('www.', ''),
+                      maxLines: 1, overflow: TextOverflow.ellipsis, style: sans(11, color: const Color(0xFF5A534A))),
+                ),
+                const SizedBox(width: 4),
+                const Icon(Icons.open_in_new, size: 14, color: Color(0xFF5A534A)),
+              ]),
             ]),
-          ]),
+          ),
         ),
       ),
     );

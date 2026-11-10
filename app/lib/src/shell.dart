@@ -313,23 +313,28 @@ class TopBar extends StatelessWidget {
             child: Center(
               child: SingleChildScrollView(
                 scrollDirection: Axis.horizontal,
-                child: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    for (final tab in AppTab.values)
-                      Padding(
-                        padding: const EdgeInsets.symmetric(horizontal: 2),
-                        child: _TabButton(
-                          key: ValueKey<String>('tab-${tab.name}'),
-                          icon: _icons[tab] ?? Icons.circle_outlined,
-                          label: s.t('tab.${tab.name}'),
-                          selected: st.tab == tab,
-                          // Yeni sürüm varsa Ayarlar'ın yanında küçük bir nokta
-                          dot: tab == AppTab.ayarlar && st.newVersion != null,
-                          onTap: () => st.setTab(tab),
+                // Sekme adlarının arkasında yumuşak koyu zemin: açık renkli fotoğrafta da okunur
+                child: Hale(
+                  yatay: 10,
+                  dikey: 4,
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      for (final tab in AppTab.values)
+                        Padding(
+                          padding: const EdgeInsets.symmetric(horizontal: 2),
+                          child: _TabButton(
+                            key: ValueKey<String>('tab-${tab.name}'),
+                            icon: _icons[tab] ?? Icons.circle_outlined,
+                            label: s.t('tab.${tab.name}'),
+                            selected: st.tab == tab,
+                            // Yeni sürüm varsa Ayarlar'ın yanında küçük bir nokta
+                            dot: tab == AppTab.ayarlar && st.newVersion != null,
+                            onTap: () => st.setTab(tab),
+                          ),
                         ),
-                      ),
-                  ],
+                    ],
+                  ),
                 ),
               ),
             ),
@@ -396,7 +401,8 @@ class _Brand extends StatelessWidget {
           child: Text('MC', style: serif(15, color: MC.gold, weight: FontWeight.w700)),
         ),
         const SizedBox(width: 10),
-        Text('Mel Capital', style: serif(23, shadows: kPhotoTextShadow)),
+        // Yazının arkasında yumuşak koyu zemin (bulanık gölge yerine; Performans Motoru kuralı)
+        Hale(yatay: 8, dikey: 4, child: Text('Mel Capital', style: serif(23, shadows: kPhotoTextShadow))),
       ],
     );
   }

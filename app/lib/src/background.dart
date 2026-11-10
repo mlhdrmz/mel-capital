@@ -13,6 +13,7 @@ import '../storage/photos.dart';
 import 'bulanik.dart';
 import 'i18n.dart';
 import 'pages/alisveris.dart' show openLink;
+import 'performans.dart';
 import 'photo_image_stub.dart' if (dart.library.io) 'photo_image_io.dart';
 import 'state.dart';
 import 'ui.dart' show isPhoneLayout, toast;
@@ -172,8 +173,8 @@ class _BackgroundState extends State<Background> {
         // Diğer sekmelerin fotoğrafları da önceden: sekme değişince çözülmeyi beklemesin
         if (widget.rotate && st.photoStore != null) unawaited(_sekmeleriHazirla(st));
         return AnimatedSwitcher(
-          // Kısa geçiş: sayfa değişirken uygulama takılmasın
-          duration: const Duration(milliseconds: 400),
+          // Kısa geçiş: sayfa değişirken uygulama takılmasın; görsel kalite "hafif"ken geçiş yok
+          duration: KaliteScope.of(context) == GorselKalite.hafif ? Duration.zero : const Duration(milliseconds: 400),
           layoutBuilder: (current, previous) => Stack(
             fit: StackFit.expand,
             children: [...previous, if (current != null) current],
@@ -235,7 +236,7 @@ class _PhotoBarState extends State<PhotoBar> {
                       fontFamily: 'Inter',
                       fontSize: 10.5,
                       color: Color.fromRGBO(243, 236, 224, _hover ? 0.85 : 0.42),
-                      shadows: const [Shadow(color: Color(0xB3000000), blurRadius: 2, offset: Offset(0, 1))],
+                      shadows: const [Shadow(color: Color(0xB3000000), offset: Offset(0, 1))],
                     ),
                   ),
                 ),

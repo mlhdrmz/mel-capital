@@ -14,6 +14,9 @@ import '../dialogs.dart';
 import '../glass.dart';
 import '../i18n.dart';
 import '../olcum.dart';
+import '../performans.dart';
+import '../sahne.dart' show yaziArkasiOku;
+import '../sheet.dart' show Seg;
 import '../state.dart';
 import '../sync_ui.dart';
 import '../theme.dart';
@@ -48,6 +51,35 @@ class AyarlarPage extends StatelessWidget {
               : const Column(children: [_ViewPanel(), SizedBox(height: 14), _PhotosPanel(), SizedBox(height: 14), _DataPanel(), SizedBox(height: 14), _AboutPanel(), SizedBox(height: 14), _OlcumPanel()]),
         ),
       ],
+    );
+  }
+}
+
+/// Seçimli ayar: üstte başlık ve açıklama, altında yan yana seçenekler.
+class _SecimSatiri extends StatelessWidget {
+  const _SecimSatiri({required this.anahtar, required this.title, required this.help, required this.value, required this.options, required this.onChanged});
+
+  final String anahtar;
+  final String title;
+  final String help;
+  final String value;
+  final List<(String, String)> options;
+  final ValueChanged<String> onChanged;
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 10),
+      child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+        Text(title, style: sans(14.5, weight: FontWeight.w600)),
+        const SizedBox(height: 3),
+        Text(help, style: sans(12.5, color: MC.muted, height: 1.4)),
+        const SizedBox(height: 10),
+        ConstrainedBox(
+          constraints: const BoxConstraints(maxWidth: 380),
+          child: Seg<String>(key: ValueKey<String>('secim-$anahtar'), value: value, options: options, onChanged: onChanged),
+        ),
+      ]),
     );
   }
 }
@@ -111,8 +143,11 @@ class _OlcumPanel extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final st = AppScope.of(context);
     final s = S.of(context);
     final o = KareOlcumu.i;
+    final ayar = kaliteAyariOku(st.settings['kalite']);
+    final kalite = KaliteScope.of(context);
     return AnimatedBuilder(
       animation: o,
       builder: (context, _) {
@@ -122,11 +157,43 @@ class _OlcumPanel extends StatelessWidget {
           radius: 30,
           cut: 30,
           child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-            PanelHead(
-              s.pick('Performans ölçümü', 'Performance check'),
-              subtitle: s.pick('Uygulama takılıyorsa: ölçümü başlat, sekmeler arasında gez, sonra buraya dönüp rakamları söyle.',
-                  'If the app stutters: start the check, move between tabs, then come back here and share the numbers.'),
+            PanelHead(s.pick('Performans', 'Performance')),
+            _SecimSatiri(
+              anahtar: 'kalite',
+              title: s.pick('Görsel kalite', 'Visual quality'),
+              help: s.pick(
+                  'Otomatik: uygulama takılırsa efektleri kendiliğinden hafifletir, düzelince geri açar. Hafif: fotoğraf anında değişir, rakamlar sayarak yükselmez, yazıların arkası yalnızca koyu ton olur.',
+                  'Automatic: lightens the effects by itself if the app stutters and restores them later. Light: photos switch instantly, numbers do not count up, and the area behind text is a plain dark tone.'),
+              value: kaliteAyariYaz(ayar),
+              options: [('otomatik', s.pick('Otomatik', 'Automatic')), ('yuksek', s.pick('Yüksek', 'High')), ('hafif', s.pick('Hafif', 'Light'))],
+              onChanged: (v) {
+                if (v == 'otomatik') Performans.i.sifirla();
+                st.setSetting('kalite', v);
+              },
             ),
+            Padding(
+              padding: const EdgeInsets.only(bottom: 10),
+              child: Text(
+                ayar != KaliteAyari.otomatik
+                    ? s.pick('Şu an: ${kalite == GorselKalite.yuksek ? 'Yüksek' : 'Hafif'} (elle seçildi)', 'Now: ${kalite == GorselKalite.yuksek ? 'High' : 'Light'} (chosen by you)')
+                    : kalite == GorselKalite.yuksek
+                        ? s.pick('Şu an: Yüksek', 'Now: High')
+                        : Performans.i.denetci.kilitli
+                            ? s.pick('Şu an: Hafif. Takılma sürdüğü için bu oturumda hafifte kalacak.', 'Now: Light. It will stay light this session because the stutter continued.')
+                            : s.pick('Şu an: Hafif. Takılma görüldüğü için hafifletildi; düzelince yeniden denenecek.', 'Now: Light. Lightened because of stutter; it will try again later.'),
+                style: sans(12.5, color: MC.gold),
+              ),
+            ),
+            const Hairline(),
+            const SizedBox(height: 10),
+            Text(s.pick('Ölçüm', 'Measurement'), style: sans(14.5, weight: FontWeight.w600)),
+            const SizedBox(height: 3),
+            Text(
+              s.pick('Uygulama takılıyorsa: ölçümü başlat, sekmeler arasında gez, sonra buraya dönüp rakamları söyle.',
+                  'If the app stutters: start the check, move between tabs, then come back here and share the numbers.'),
+              style: sans(12.5, color: MC.muted, height: 1.4),
+            ),
+            const SizedBox(height: 10),
             if (o.kare > 0) ...[
               Text(
                 s.pick('${o.kare} kare · ${o.takilan(33)} tanesi 33 ms\'den uzun (takılma), ${o.takilan(16)} tanesi 16 ms\'den uzun',
@@ -319,6 +386,16 @@ class _ViewPanel extends StatelessWidget {
             title: s.t('settings.hidden'),
             help: s.t('settings.hiddenHelp'),
             trailing: GoldSwitch(value: st.hidden, onChanged: (_) => st.toggleHidden()),
+          ),
+          const Hairline(),
+          _SecimSatiri(
+            anahtar: 'yazi-arkasi',
+            title: s.pick('Yazıların arkası', 'Behind the text'),
+            help: s.pick('Yazı ve rakamların arkasındaki koyuluk. Fotoğraf yüzünden okumak zorlaşıyorsa koyulaştır; fotoğraf daha çok görünsün istersen hafiflet.',
+                'How dark the area behind text and numbers is. Make it darker if the photo makes reading hard; lighter to see more of the photo.'),
+            value: yaziArkasiOku(st.settings['yaziArkasi']).name,
+            options: [('hafif', s.pick('Hafif', 'Light')), ('orta', s.pick('Orta', 'Medium')), ('koyu', s.pick('Koyu', 'Dark'))],
+            onChanged: (v) => st.setSetting('yaziArkasi', v),
           ),
           const Hairline(),
           SettingRow(

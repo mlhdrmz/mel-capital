@@ -27,19 +27,25 @@ class MC {
   static const String numbers = 'Manrope';
 }
 
-/// Fotoğraf üzerindeki yazıların okunması için hafif gölge.
+/// Fotoğraf üzerindeki yazıların okunması için gölge: altta ince gölge ve dört yönde çok ince koyu
+/// kenar. Bulanık DEĞİL: bulanık her yazı gölgesi (blurRadius > 0) her karede ayrı bir bulanıklık
+/// işidir ve uygulamayı takar; Performans Motoru'nun bütçesi 0'dır (test bunu denetler).
 const List<Shadow> kPhotoTextShadow = [
-  Shadow(color: Color(0xF2000000), blurRadius: 2),
-  Shadow(color: Color(0xE6000000), offset: Offset(0, 1), blurRadius: 3),
-  Shadow(color: Color(0xBF000000), blurRadius: 16),
+  Shadow(color: Color(0xA6000000), offset: Offset(0, 1)),
+  Shadow(color: Color(0x59000000), offset: Offset(1, 0)),
+  Shadow(color: Color(0x59000000), offset: Offset(-1, 0)),
+  Shadow(color: Color(0x59000000), offset: Offset(0, -1)),
 ];
 
-/// Büyük rakamlar için daha güçlü gölge (Özet).
+/// Büyük başlık ve rakamların gölgesi (bulanık değil; yukarıdaki kural).
 const List<Shadow> kBigTextShadow = [
-  Shadow(color: Color(0xE6000000), blurRadius: 3),
-  Shadow(color: Color(0xCC000000), offset: Offset(0, 2), blurRadius: 6),
-  Shadow(color: Color(0xB3000000), blurRadius: 30),
-  Shadow(color: Color(0x73000000), blurRadius: 60),
+  Shadow(color: Color(0x99000000), offset: Offset(0, 2)),
+  Shadow(color: Color(0x4D000000), offset: Offset(0, 4)),
+];
+
+/// Bölümlerin içindeki yazılar için ince, bulanık olmayan gölge (yalnızca yazı arkası "hafif"ken).
+const List<Shadow> kNetYaziGolgesi = [
+  Shadow(color: Color(0x99000000), offset: Offset(0, 1)),
 ];
 
 TextStyle serif(double size,

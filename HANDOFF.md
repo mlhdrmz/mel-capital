@@ -61,8 +61,8 @@ yalnızca Melih'in onayıyla yapılır. İmzalı APK için `ANDROID_KEYSTORE` ve
 
 ## 3. Motorlar
 
-Uygulama 1 çekirdek + 5 ana motordan oluşur (`app/lib/motor/`, hepsi `motorlar.dart` ile
-içe aktarılır). Her dosyanın başında neyi yazdığı, neyi okuduğu ve kimlerin kullandığı yazar.
+Uygulama 1 çekirdek + 5 ana motor, Ekstre Motoru, uyum denetimi ve Performans Motoru'ndan oluşur
+(`app/lib/motor/`, hepsi `motorlar.dart` ile içe aktarılır). Her dosyanın başında neyi yazdığı, neyi okuduğu ve kimlerin kullandığı yazar.
 
 | Motor | Dosya | Sorumluluğu |
 |---|---|---|
@@ -73,6 +73,7 @@ içe aktarılır). Her dosyanın başında neyi yazdığı, neyi okuduğu ve kim
 | Plan Motoru | `plan.dart` | `buildModel` ve `Ctx`: ay kalemleri, aylık özet, harcanabilir para, devir, yaklaşan ödemeler, ödeme işaretleme, ay kapatma, istek listesi |
 | Ekstre Motoru | `ekstre.dart` | PDF ekstreyi okur (kart ekstresi ya da hesap dökümü), bankayı işaretlerinden tanır (`kBankaIzleri`), kartı son 4 haneden / hesabı IBAN son 4'ten bulur, elle girilenlerle eşleştirir, seçilenleri Gider Motoru ve Çekirdek üzerinden ekler, ekstreyi son güncel durum sayar |
 | Uyum denetimi | `uyum.dart` | Motorların birbirini tuttuğunu denetler |
+| Performans Motoru | `performans.dart` (+ `app/lib/src/performans.dart`) | Uygulamanın akıcı kalmasını denetler; para hesabı yapmaz. Hız bütçeleri (`PerfButce`: motor süreleri, sekme kurulumu, sayfa başına pahalı çizim sayısı) ve otomatik görsel kalite (`KaliteDenetcisi`) |
 
 Kurallar:
 
@@ -87,6 +88,20 @@ Kurallar:
    (elle bakiye düzeltme hariç), maaş girişi = gelirin o ayki tutarı, ödemelerin sahibi var,
    kimlikler tek. Yeni bir veri değişikliği yazınca `test/uyum_test.dart`'a da adım ekle.
 5. Tutarlar hesaplarda kuruş (tam sayı, `toK`/`fromK`), veride TL'dir. Aylar `YYYY-AA`.
+6. **Performans Motoru kuralları** (Melih'in isteği: sonraki eklentiler de akıcı kalsın). Ölçüm
+   (Melih'in bilgisayarı, s71): hesap ortalama 0,7 ms, çizim ortalama 23 ms; takılma motorlardan
+   değil, çizimden geliyordu. Bu yüzden:
+   - **Sayfalarda her karede bulanıklık hesaplanmaz.** Yazıya bulanık gölge (`Shadow.blurRadius >
+     0`), `BackdropFilter`/`ImageFiltered`, kenar yumuşatmak için `MaskFilter` ve özel biçime
+     (`ShapeDecoration` + `SignatureBorder`) bulanık gölge yasak; bütçeleri 0. Yazının arkası için
+     `HaleZemini` / `Hale`, gölge için yuvarlak dikdörtgen `BoxDecoration.boxShadow` kullanılır.
+   - `test/performans_test.dart` her derlemede büyük veriyle motor sürelerini, her sekmenin kurulum
+     süresini ve pahalı çizim sayısını bütçeyle karşılaştırır; aşılırsa derleme durur. Yeni sekme
+     ya da bölüm kendiliğinden denetlenir; **yeni motor işlevi eklenince teste bir `olc` satırı ve
+     `PerfButce.motorMs`'e bütçesi eklenir.**
+   - Yeni bir efekt (animasyon, geçiş, süs) eklenince `KaliteScope.of(context) ==
+     GorselKalite.hafif` iken kapanmalıdır.
+   - Uzun listeler `AzarAzar` ile, sayan/kıpırdayan küçük şeyler `RepaintBoundary` içinde çizilir.
 
 ## 4. Son durum
 
@@ -115,6 +130,24 @@ Kurallar:
   Ölçüm testi: `test/performans_test.dart` (büyük veriyle motorlar ve sekme geçişleri; CI
   çıktısında "PERF" satırları). Ödeme ↔ para bağlantısı testi: `test/odeme_nakit_test.dart`
   (CI çıktısında "ODEME" satırları).
+- Performans 4 (asıl düzeltme, Melih'in ölçümünden sonra): çizimi ağırlaştıran, bölümlerdeki her
+  yazıya konan 2–3 bulanık gölge ve her bölümün yumuşak kenarı için her karede yapılan
+  `MaskFilter` bulanıklığıydı. İkisi de kalktı:
+  - Yazı gölgeleri bulanık değil (`kPhotoTextShadow`, `kBigTextShadow`, `kNetYaziGolgesi`);
+    bölümlerin içindeki yazılarda gölge yok.
+  - `BulanikZemin` bulanıklık hesaplamaz: önceden hazırlanan bulanık kopyayı ve koyu tonu, kenarı
+    yumuşak bir kafesle çizer (`yumusakKafes` + `drawVertices`; kenar yumuşaklığı köşe
+    noktalarının görünürlüğü). Kopya daha güçlü bulanık (320 px, sigma 4).
+  - Okunabilirlik (Melih: "blur yetersiz, sayılar okunmuyor"): yazıların arkası daha koyu ve
+    ayarlanabilir: Ayarlar → Dil ve görünüm → "Yazıların arkası" Hafif / Orta (varsayılan) / Koyu
+    (`YaziArkasi`, ayar anahtarı `yaziArkasi`). Üst çubuktaki sekme adlarının ve "Mel Capital"
+    yazısının arkasında da `Hale` var.
+  - Otomatik kalite: Ayarlar → Performans → "Görsel kalite" Otomatik (varsayılan) / Yüksek /
+    Hafif (ayar anahtarı `kalite`). Otomatikte art arda 2 × 90 karede karelerin %20'si 22 ms'den
+    uzunsa hafife iner; 8 temiz bloktan sonra bir kez yüksek yeniden denenir; ikinci inişte oturum
+    boyunca hafifte kalır. Hafifte: fotoğraf geçişi yok, Özet'te rakamlar saymaz, yazıların
+    arkasında yalnızca koyu ton (bulanık kopya çizilmez).
+  - Telefondaki alt menü hâlâ `BackdropFilter` kullanıyor (yalnızca telefonda; dokunulmadı).
 - Ölçüm sonucu (CI, hata ayıklama modu, 5.051 harcama): motorların hepsi (Ctx) 12 ms, 13 ayın
   planı 55 ms; yani takılma motorlardan değil. Sekme kurulumu ağırdı (Harcamalar ~1 sn,
   Alışveriş ~0,8 sn hata ayıklama modunda). Performans 3: uzun listeler kare kare kurulur
@@ -176,10 +209,15 @@ Kurallar:
    zaman dökümdeki "Kullanılabilir Bakiye" (alt hesaptaki para dahil). Alt hesaba giriş-çıkışlar
    harcama sayılmaz. Not: bazı bankalarda kullanılabilir bakiyeye artı hesap (KMH) limiti de
    girer; Melih'in hesabında yok, böyle bir durum çıkarsa sorulacak.
-3. **Tasarım** (6. bölüm): bütün sekmeler sakin sahneye geçti; Melih'in yorumu bekleniyor.
-4. Yatırımlar bölümü (henüz başlanmadı; sorular sorulacak).
-5. İçinde insan olan diğer fotoğrafların taranması (75 fotoğrafın hepsine bakılamadı).
-6. İmzalı APK (gizli anahtarlar eklenmedi; resmî sürümde yalnızca Windows dosyaları var).
+3. **Tasarım** (6. bölüm): bütün sekmeler sakin sahnede; yazı arkası koyuluğu ayarlanabilir.
+   Melih s71'den sonraki sürümde takılmayı yeniden ölçecek (Ayarlar → Performans → Ölçüm).
+4. **Borç kapatma hesaplayıcısı** (Melih'in sıradaki isteği, henüz başlanmadı): Borçlar'da ay,
+   vade vb. girilip borcun ne zaman ve nasıl kapanacağını gösteren hesaplayıcı. Başlamadan önce
+   Melih'e numaralı sorular sorulacak. Hesap Borç Motoru'na yazılır; Performans Motoru kuralları
+   (6. kural) geçerli: `performans_test.dart`'a ölçümü eklenir.
+5. Yatırımlar bölümü (henüz başlanmadı; sorular sorulacak).
+6. İçinde insan olan diğer fotoğrafların taranması (75 fotoğrafın hepsine bakılamadı).
+7. İmzalı APK (gizli anahtarlar eklenmedi; resmî sürümde yalnızca Windows dosyaları var).
 
 ## 6. Tasarım: sahneler
 
@@ -198,8 +236,9 @@ onarımı) da sakin. Açılır pencereler, düzenleme panelleri ve ipucu kartlar
 Dağıtım (Melih'in kararı, 06.11.2026): siyah sayfalar gereksiz bulundu ve ekranda çok yer
 kaplıyordu. Bütün sekmeler ve giriş ekranları (tanıtım, karşılama, kurulum, veri onarımı) 3
 (sakin). Sakin sahnede paneller `HaleZemini` ile çizilir: kutu ve kenar yok; arkalarında yumuşak
-kenarlı hafif bulanıklık (fotoğrafın bir kez hazırlanan bulanık kopyası, `BulanikZemin`) ve hafif
-koyu ton, yazılarda hafif gölge (`kHaleYaziGolgesi`). Sayfa
+kenarlı güçlü bulanıklık (fotoğrafın bir kez hazırlanan bulanık kopyası, `BulanikZemin`) ve koyu
+ton; koyuluğu Ayarlar'dan seçilir (`YaziArkasi`). Yazılarda bulanık gölge yok (3. bölüm, 6.
+kural). Sayfa
 başlıkları da `Hale` ile sarılır. Açılır pencereler "pencere" kalır. Dergi, kemer ve sayfa
 kodda duruyor ama kullanılmıyor. Gece modu yalnızca fotoğrafları değiştirir (19.00–07.00 gece
 fotoğrafları); renkler aynıdır.
@@ -229,3 +268,4 @@ tutarlar Manrope.
 | 2026-11-07 | Claude | Ölçüm: motorlar hızlı (Ctx 12 ms); Performans 3: uzun listeler kare kare (`AzarAzar`), marka araması önbellekte, `Ctx.spendsOf` |
 | 2026-11-07 | Claude | Karttan ödenen abonelik kart borcuna eklenir; hesabı bilinmeyen kalemde "Ödendi" hesap sorar; Ayarlar'a performans ölçümü (Melih'in onayıyla) |
 | 2026-11-07 | Claude | Resmî sürüm yayınlandı: s71 (Mel Capital 07.11.2026-04.21), Melih'in onayıyla; performans 1–3, kart aboneliği → kart borcu, hesap sorma, performans ölçümü içinde |
+| 2026-11-10 | Claude | Performans Motoru (`motor/performans.dart`, `src/performans.dart`): hız ve çizim bütçeleri, otomatik görsel kalite. Takılmanın asıl sebebi giderildi: bulanık yazı gölgeleri ve her karede kenar bulanıklığı kalktı (`yumusakKafes`). Yazıların arkası koyulaştı ve ayarlanabilir (Hafif/Orta/Koyu). Borç kapatma hesaplayıcısı kalan işlere yazıldı |

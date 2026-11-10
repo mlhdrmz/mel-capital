@@ -68,6 +68,12 @@ DESKTOP = (1600, 900)
 TARGETS += [
     ('foto_ozet_tr', 'sekme=ozet&dil=tr&foto=1', DESKTOP, 12000),
     ('foto_harcamalar_tr', 'sekme=harcamalar&dil=tr&foto=1', DESKTOP, 12000),
+    # Yazıların arkası: hafif ve koyu (varsayılan orta yukarıda); görsel kalite hafif
+    ('arka_hafif_bankalar_tr', 'sekme=bankalar&dil=tr&arka=hafif'),
+    ('arka_koyu_bankalar_tr', 'sekme=bankalar&dil=tr&arka=koyu'),
+    ('kalite_hafif_bankalar_tr', 'sekme=bankalar&dil=tr&kalite=hafif'),
+    # Ayarlar'ın tamamı (uzun pencere): "Yazıların arkası" ve "Performans" bölümleri
+    ('ayarlar_uzun_tr', 'sekme=ayarlar&dil=tr', (1600, 2000)),
     ('foto_ayarlar_tr', 'sekme=ayarlar&dil=tr&foto=1', DESKTOP, 12000),
     ('telefon_foto_ozet_tr', 'sekme=ozet&dil=tr&foto=1&cihaz=telefon', PHONE, 12000),
 ]

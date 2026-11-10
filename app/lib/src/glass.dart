@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 
 import 'format.dart';
 import 'i18n.dart';
+import 'performans.dart';
 import 'sahne.dart';
 import 'state.dart';
 import 'theme.dart';
@@ -378,7 +379,7 @@ class AnimatedMoney extends StatelessWidget {
     final hidden = AppScope.of(context).hidden;
     final lang = S.of(context).lang;
     // Rakamlar yalnızca Özet'te sayarak yükselir; başka yerde hemen görünür
-    if (!SayarakYukselir.burada(context)) {
+    if (!SayarakYukselir.burada(context) || KaliteScope.of(context) == GorselKalite.hafif) {
       return Text(money(value, lang: lang, hidden: hidden), maxLines: 1, softWrap: false, overflow: TextOverflow.fade, style: numStyle(style));
     }
     return RepaintBoundary(
