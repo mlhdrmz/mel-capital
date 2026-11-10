@@ -87,6 +87,7 @@ def main() -> None:
     port = server.server_address[1]
     threading.Thread(target=server.serve_forever, daemon=True).start()
     report = []
+    diag = []
     with sync_playwright() as pw:
         browser = pw.chromium.launch(args=['--use-angle=swiftshader', '--enable-unsafe-swiftshader'])
         for target in TARGETS:
@@ -107,11 +108,16 @@ def main() -> None:
             page.screenshot(path=os.path.join(out, name))
             problems = [line for line in logs if line.startswith(('error', 'pageerror', 'bekleme'))]
             report.append(f'{name}: ' + ('sorun yok' if not problems else ' | '.join(problems)[:600]))
+            # Uygulamanın tanı satırları (MC-TANI ...): tani.txt
+            diag.append(f'== {name}')
+            diag.extend(line for line in logs if 'MC-TANI' in line)
             page.close()
         browser.close()
     server.shutdown()
     with open(os.path.join(out, 'rapor.txt'), 'w', encoding='utf-8') as f:
         f.write('\n'.join(report) + '\n')
+    with open(os.path.join(out, 'tani.txt'), 'w', encoding='utf-8') as f:
+        f.write('\n'.join(diag) + '\n')
     print('\n'.join(report))
 
 

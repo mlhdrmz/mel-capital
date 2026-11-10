@@ -15,6 +15,7 @@ import 'dart:math' as math;
 import 'dart:typed_data';
 import 'dart:ui' as ui;
 
+import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
 
 import 'background.dart' show kPhotoAlignment;
@@ -36,6 +37,16 @@ final ValueNotifier<BulanikArka?> kBulanikArka = ValueNotifier<BulanikArka?>(nul
 
 String? _istenen;
 
+/// Tanı satırları (yalnızca web önizlemesinde, en çok 60 satır): ekran görüntüsü alınırken
+/// konsoldan toplanır (tool/screenshots.py → tani.txt). Bulanık kopyanın neden çizilmediğini
+/// derleme sunucusunda görmek için.
+int _taniSayisi = 0;
+void _tani(String s) {
+  if (!kIsWeb || _taniSayisi >= 60) return;
+  _taniSayisi++;
+  debugPrint('MC-TANI $s');
+}
+
 /// Hazırlanmış kopyalar (en son kullanılanlar; sekmelerin fotoğrafları): sekme değişince kopya
 /// yeniden hazırlanmaz.
 final Map<String, BulanikArka> _kopyalar = {};
@@ -52,12 +63,15 @@ const double _kopyaBulanikligi = 4.0;
 Future<void> bulanikKopyaHazirla(String anahtar, ImageProvider resim, ImageConfiguration ayar) async {
   if (_istenen == anahtar) return;
   _istenen = anahtar;
+  _tani('hazirla basla $anahtar');
   // Çizim sırasında çağrılır: değişiklik bu kare bittikten sonra
   final kopya = _kopyalar[anahtar] ?? await _kopya(anahtar, resim, ayar);
   await Future<void>.value();
+  _tani('hazirla bitti $anahtar kopya=${kopya == null ? 'yok' : '${kopya.resim.width}x${kopya.resim.height} kaynak=${kopya.kaynak}'} istenen=$_istenen');
   if (kopya == null || _istenen != anahtar) return;
   _kullanildi(anahtar);
   kBulanikArka.value = kopya;
+  _tani('gosterilen kopya $anahtar');
 }
 
 /// Kopyayı önceden hazırlar (gösterilmeden): sekmelerin fotoğrafları için, geçiş anında iş kalmasın.
@@ -71,6 +85,7 @@ Future<BulanikArka?> _kopya(String anahtar, ImageProvider resim, ImageConfigurat
 
 Future<BulanikArka?> _hazirla(String anahtar, ImageProvider resim, ImageConfiguration ayar) async {
   final kaynak = await _coz(resim, ayar);
+  _tani('cozuldu $anahtar ${kaynak == null ? 'YOK' : '${kaynak.width}x${kaynak.height}'}');
   if (kaynak == null) return null;
   try {
     final kopya = BulanikArka(anahtar, await _bulaniklastir(kaynak), Size(kaynak.width.toDouble(), kaynak.height.toDouble()));
@@ -300,6 +315,7 @@ class _RenderBulanik extends RenderBox {
   Size? _kafesBoyutu;
   Paint? _resimBoyasi;
   Offset? _resimYeri;
+  String? _taniDurumu;
   final Paint _beyaz = Paint()..color = const Color(0xFFFFFFFF);
 
   void _kafesiBirak() {
@@ -355,6 +371,11 @@ class _RenderBulanik extends RenderBox {
     canvas.translate(offset.dx, offset.dy);
     final k = _kopya;
     final boya = k == null || _ekran.isEmpty ? null : _resimBoyasiKur(k, localToGlobal(Offset.zero));
+    final durum = '${k?.anahtar}|${boya != null}';
+    if (durum != _taniDurumu) {
+      _taniDurumu = durum;
+      _tani('ciz boyut=$size ekran=$_ekran kopya=${k == null ? 'yok' : k.anahtar} boya=${boya == null ? 'yok' : 'var'} yer=${localToGlobal(Offset.zero)} f=$f ton=$_ton genelKopya=${kBulanikArka.value?.anahtar}');
+    }
     if (boya != null) {
       // Fotoğrafın bulanık kopyası: ortası tam, kenarda içten dışa giderek saydamlaşan halkalar.
       // Bulanıklık ya da ara katman yok; her halka tek bir çizimdir.

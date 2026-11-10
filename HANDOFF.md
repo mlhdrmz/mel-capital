@@ -140,8 +140,9 @@ Kurallar:
     kapalı), koyu tonu kenarı yumuşak bir kafesle (`yumusakKafes` + `drawVertices`, yalnızca renk)
     çizer. Kopya daha güçlü bulanık (320 px, sigma 4). Fotoğrafı da kafesle çizmek denendi, web
     önizlemesinde hiçbir şey çizmedi; kullanılmıyor.
-  - Web önizlemesi derlemede `web-onizleme` adıyla indirilebilir (5 gün); görünüm yerelde
-    Playwright ile denenebilir (`?sekme=…&arka=hafif|orta|koyu&kalite=hafif|yuksek`).
+  - Web önizlemesi her derlemede `web-onizleme` dalına konur (örnek verili); görünüm yerelde
+    Playwright ile denenebilir (`?sekme=…&arka=hafif|orta|koyu&kalite=hafif|yuksek`). Web'de
+    uygulama `MC-TANI` satırları yazar; ekran görüntüsü adımı bunları `tani.txt`'ye toplar.
   - Okunabilirlik (Melih: "blur yetersiz, sayılar okunmuyor"): yazıların arkası daha koyu ve
     ayarlanabilir: Ayarlar → Dil ve görünüm → "Yazıların arkası" Hafif / Orta (varsayılan) / Koyu
     (`YaziArkasi`, ayar anahtarı `yaziArkasi`). Üst çubuktaki sekme adlarının ve "Mel Capital"

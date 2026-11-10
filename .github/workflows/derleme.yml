@@ -105,13 +105,6 @@ jobs:
             python3 ../tool/annotate.py error "Web derlemesi" ../web.txt 80
             exit $status
           fi
-      # Web önizlemesi indirilebilir olsun (görünümü derleme sunucusu dışında da denemek için;
-      # resmî sürüme girmez: sürüm yalnızca "yayin-*" dosyalarını alır)
-      - uses: actions/upload-artifact@v5
-        with:
-          name: web-onizleme
-          path: app/build/web
-          retention-days: 5
       - name: Ekran görüntüleri
         continue-on-error: true
         run: |
@@ -152,6 +145,21 @@ jobs:
           git add -A
           git -c user.name="mel-capital-ci" -c user.email="ci@users.noreply.github.com" commit -qm "Ekran görüntüleri ${GITHUB_SHA::7}"
           git push -qf "https://x-access-token:${GH_TOKEN}@github.com/${GITHUB_REPOSITORY}.git" ekran-goruntuleri
+      # Web önizlemesinin kendisi de ayrı bir dalda durur (örnek verili; kişisel veri yok): görünüm
+      # ve çizim sorunları derleme sunucusu dışında, tarayıcıda denenebilsin.
+      - name: Web önizlemesini ayrı dala koy
+        if: github.event_name == 'push'
+        continue-on-error: true
+        working-directory: app/build/web
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          echo "${GITHUB_SHA}" > surum.txt
+          git init -q
+          git checkout -q -b web-onizleme
+          git add -A
+          git -c user.name="mel-capital-ci" -c user.email="ci@users.noreply.github.com" commit -qm "Web önizlemesi ${GITHUB_SHA::7}"
+          git push -qf "https://x-access-token:${GH_TOKEN}@github.com/${GITHUB_REPOSITORY}.git" web-onizleme
 
   windows:
     name: Windows
