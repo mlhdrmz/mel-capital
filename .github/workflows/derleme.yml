@@ -105,6 +105,13 @@ jobs:
             python3 ../tool/annotate.py error "Web derlemesi" ../web.txt 80
             exit $status
           fi
+      # Web önizlemesi indirilebilir olsun (görünümü derleme sunucusu dışında da denemek için;
+      # resmî sürüme girmez: sürüm yalnızca "yayin-*" dosyalarını alır)
+      - uses: actions/upload-artifact@v5
+        with:
+          name: web-onizleme
+          path: app/build/web
+          retention-days: 5
       - name: Ekran görüntüleri
         continue-on-error: true
         run: |

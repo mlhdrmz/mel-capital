@@ -135,9 +135,13 @@ Kurallar:
   `MaskFilter` bulanıklığıydı. İkisi de kalktı:
   - Yazı gölgeleri bulanık değil (`kPhotoTextShadow`, `kBigTextShadow`, `kNetYaziGolgesi`);
     bölümlerin içindeki yazılarda gölge yok.
-  - `BulanikZemin` bulanıklık hesaplamaz: önceden hazırlanan bulanık kopyayı ve koyu tonu, kenarı
-    yumuşak bir kafesle çizer (`yumusakKafes` + `drawVertices`; kenar yumuşaklığı köşe
-    noktalarının görünürlüğü). Kopya daha güçlü bulanık (320 px, sigma 4).
+  - `BulanikZemin` bulanıklık hesaplamaz, ara katman açmaz: önceden hazırlanan bulanık kopyayı
+    kenarda giderek saydamlaşan halkalarla (`drawDRRect` + `ImageShader`, kenar yumuşatma
+    kapalı), koyu tonu kenarı yumuşak bir kafesle (`yumusakKafes` + `drawVertices`, yalnızca renk)
+    çizer. Kopya daha güçlü bulanık (320 px, sigma 4). Fotoğrafı da kafesle çizmek denendi, web
+    önizlemesinde hiçbir şey çizmedi; kullanılmıyor.
+  - Web önizlemesi derlemede `web-onizleme` adıyla indirilebilir (5 gün); görünüm yerelde
+    Playwright ile denenebilir (`?sekme=…&arka=hafif|orta|koyu&kalite=hafif|yuksek`).
   - Okunabilirlik (Melih: "blur yetersiz, sayılar okunmuyor"): yazıların arkası daha koyu ve
     ayarlanabilir: Ayarlar → Dil ve görünüm → "Yazıların arkası" Hafif / Orta (varsayılan) / Koyu
     (`YaziArkasi`, ayar anahtarı `yaziArkasi`). Üst çubuktaki sekme adlarının ve "Mel Capital"

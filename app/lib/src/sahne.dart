@@ -16,6 +16,8 @@
 // (Özet gibi, fotoğraf görünür). Açılır pencereler "pencere" kalır. Dergi, kemer ve sayfa
 // kodda duruyor; istenirse yeniden kullanılabilir.
 
+import 'dart:math' as math;
+
 import 'package:flutter/material.dart';
 
 import 'background.dart' show PhotoBar;
@@ -304,11 +306,14 @@ class _HaleArka extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final ton = yaziArkasiTonu(yaziArkasiOku(AppScope.of(context).settings['yaziArkasi']));
+    final resimli = KaliteScope.of(context) == GorselKalite.yuksek;
     return BulanikZemin(
       yaricap: genis ? 24 : 14,
       yumusaklik: genis ? 16 : 9,
-      ton: ton,
-      resimli: KaliteScope.of(context) == GorselKalite.yuksek,
+      // Bulanık kopya çizilmiyorsa (görsel kalite "hafif") fotoğrafın ayrıntısı arkada net kalır:
+      // okunabilirlik için ton biraz güçlenir
+      ton: resimli ? ton : math.min(0.9, ton + 0.18),
+      resimli: resimli,
     );
   }
 }

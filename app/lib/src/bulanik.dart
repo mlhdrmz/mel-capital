@@ -7,7 +7,8 @@
 // (07.11.2026 ölçümü: çizim ortalama 23 ms). Bunun yerine:
 //   - fotoğraf değişince bulanık kopya bir kez hazırlanır ([bulanikKopyaHazirla]) ve saklanır;
 //   - bölümler arkalarına kopyanın ekranda kendilerine denk gelen yerini çizer ([BulanikZemin]);
-//   - yumuşak kenar, köşe noktalarının görünürlüğüyle çizilen bir kafestir ([yumusakKafes]).
+//   - yumuşak kenar: kopya kenarda giderek saydamlaşan halkalarla, koyu ton köşe noktalarının
+//     görünürlüğüyle çizilen bir kafesle ([yumusakKafes]) çizilir.
 
 import 'dart:async';
 import 'dart:math' as math;
@@ -190,9 +191,13 @@ Future<ui.Image> _bulaniklastir(ui.Image kaynak) async {
 /// Yazıların arkası: bulunduğu alana arka planın bulanık kopyasını (ekranda tam altındaki yeri) ve
 /// üstüne koyu tonu çizer; köşeleri yuvarlak, kenarları [yumusaklik] kadar yumuşakça kaybolur.
 ///
-/// Hiç bulanıklık hesaplanmaz: kopya önceden hazırdır, yumuşak kenar köşe noktalarının
-/// görünürlüğüyle (drawVertices) çizilir. Kopya hazır değilse ya da [resimli] değilse (görsel kalite
-/// "hafif") yalnızca koyu ton çizilir.
+/// Hiç bulanıklık hesaplanmaz ve ara katman açılmaz: kopya önceden hazırdır; kenarda birkaç
+/// halka hâlinde giderek saydamlaşarak çizilir, koyu ton yumuşak kenarlı bir kafestir
+/// ([yumusakKafes]). Kopya hazır değilse ya da [resimli] değilse (görsel kalite "hafif") yalnızca
+/// koyu ton çizilir.
+///
+/// Not: fotoğrafı da kafesle (drawVertices + ImageShader) çizmek denendi; web önizlemesinde hiçbir
+/// şey çizmedi (10.11.2026). Halkalar (drawDRRect + ImageShader) her yerde çalışan temel çizimlerdir.
 class BulanikZemin extends StatelessWidget {
   const BulanikZemin({super.key, this.yaricap = 18, this.yumusaklik = 10, this.ton = 0.5, this.resimli = true});
 
@@ -254,7 +259,6 @@ class _RenderBulanik extends RenderBox {
     if (identical(v, _kopya)) return;
     _kopya = v;
     _resimBoyasi = null;
-    _resimKafesiniBirak();
     markNeedsPaint();
   }
 
@@ -262,7 +266,7 @@ class _RenderBulanik extends RenderBox {
   set ekran(Size v) {
     if (v == _ekran) return;
     _ekran = v;
-    _resimKafesiniBirak();
+    _resimBoyasi = null;
     markNeedsPaint();
   }
 
@@ -286,32 +290,22 @@ class _RenderBulanik extends RenderBox {
   set ton(double v) {
     if (v == _ton) return;
     _ton = v;
-    _tonKafesi?.dispose();
-    _tonKafesi = null;
+    _kafesiBirak();
     markNeedsPaint();
   }
 
-  // Kafes boyuta bağlıdır; koyu tonun kafesi boyut değişmedikçe, fotoğrafın kafesi alan ekranda
-  // yer değiştirmedikçe (kaydırma) yeniden kurulmaz.
-  ({Float32List konumlar, Float32List alfalar, Uint16List ucgenler})? _kafes;
-  Size? _kafesBoyutu;
+  // Koyu tonun kafesi boyut ve ton değişmedikçe, fotoğrafın boyası alan ekranda yer
+  // değiştirmedikçe (kaydırma) yeniden kurulmaz.
   ui.Vertices? _tonKafesi;
-  ui.Vertices? _resimKafesi;
-  Offset? _resimYeri;
+  Size? _kafesBoyutu;
   Paint? _resimBoyasi;
+  Offset? _resimYeri;
   final Paint _beyaz = Paint()..color = const Color(0xFFFFFFFF);
 
   void _kafesiBirak() {
-    _kafes = null;
     _tonKafesi?.dispose();
     _tonKafesi = null;
-    _resimKafesiniBirak();
-  }
-
-  void _resimKafesiniBirak() {
-    _resimKafesi?.dispose();
-    _resimKafesi = null;
-    _resimYeri = null;
+    _kafesBoyutu = null;
   }
 
   @override
@@ -326,10 +320,9 @@ class _RenderBulanik extends RenderBox {
   @override
   Size computeDryLayout(BoxConstraints constraints) => constraints.biggest;
 
-  /// Fotoğrafın kafesi: her köşe noktası, bulanık kopyada ekranda tam altına düşen noktayı gösterir.
-  ui.Vertices? _resimKafesiKur(BulanikArka k, Offset ekranda) {
-    if (_resimKafesi != null && _resimYeri == ekranda) return _resimKafesi;
-    _resimKafesiniBirak();
+  /// Fotoğrafın boyası: bulanık kopya, ekrandaki fotoğrafla tam üst üste gelecek biçimde.
+  Paint? _resimBoyasiKur(BulanikArka k, Offset ekranda) {
+    if (_resimBoyasi != null && _resimYeri == ekranda) return _resimBoyasi;
     // Arka plan fotoğrafı ekranı kaplar (BoxFit.cover, kPhotoAlignment): fotoğrafın hangi parçası
     // ekranın neresine düşüyor
     final yerlesim = applyBoxFit(BoxFit.cover, k.kaynak, _ekran);
@@ -337,55 +330,68 @@ class _RenderBulanik extends RenderBox {
     final parca = kPhotoAlignment.inscribe(yerlesim.source, Offset.zero & k.kaynak);
     if (parca.width <= 0 || parca.height <= 0 || hedef.width <= 0) return null;
     final olcek = hedef.width / parca.width; // fotoğraf pikseli → ekran noktası
-    final kx = k.resim.width / k.kaynak.width, ky = k.resim.height / k.kaynak.height; // fotoğraf → kopya
-    final kafes = _kafes!;
-    final n = kafes.alfalar.length;
-    final doku = Float32List(n * 2);
-    final renk = Int32List(n);
-    for (var i = 0; i < n; i++) {
-      final gx = ekranda.dx + kafes.konumlar[i * 2], gy = ekranda.dy + kafes.konumlar[i * 2 + 1];
-      doku[i * 2] = ((gx - hedef.left) / olcek + parca.left) * kx;
-      doku[i * 2 + 1] = ((gy - hedef.top) / olcek + parca.top) * ky;
-      renk[i] = ((kafes.alfalar[i] * 255).round() << 24) | 0xFFFFFF;
-    }
+    final kx = k.kaynak.width / k.resim.width, ky = k.kaynak.height / k.resim.height; // kopya → fotoğraf
+    // Bu alanın (0,0)'ı ekranda [ekranda]'dadır: kopya pikseli → alanın kendi koordinatı
+    final m = Float64List(16)
+      ..[0] = olcek * kx
+      ..[5] = olcek * ky
+      ..[10] = 1
+      ..[12] = hedef.left - parca.left * olcek - ekranda.dx
+      ..[13] = hedef.top - parca.top * olcek - ekranda.dy
+      ..[15] = 1;
     _resimYeri = ekranda;
-    return _resimKafesi = ui.Vertices.raw(ui.VertexMode.triangles, kafes.konumlar, textureCoordinates: doku, colors: renk, indices: kafes.ucgenler);
-  }
-
-  ui.Vertices _tonKafesiKur() {
-    final hazir = _tonKafesi;
-    if (hazir != null) return hazir;
-    final kafes = _kafes!;
-    final n = kafes.alfalar.length;
-    final renk = Int32List(n);
-    for (var i = 0; i < n; i++) {
-      renk[i] = ((kafes.alfalar[i] * _ton.clamp(0.0, 1.0) * 255).round() << 24) | _tonRengi;
-    }
-    return _tonKafesi = ui.Vertices.raw(ui.VertexMode.triangles, kafes.konumlar, colors: renk, indices: kafes.ucgenler);
+    return _resimBoyasi = Paint()
+      ..shader = ImageShader(k.resim, TileMode.clamp, TileMode.clamp, m, filterQuality: FilterQuality.low)
+      // Halkalar yan yana tam otursun (kenar yumuşatma iki halkanın sınırında ince çizgi bırakır)
+      ..isAntiAlias = false;
   }
 
   @override
   void paint(PaintingContext context, Offset offset) {
     if (size.isEmpty) return;
-    if (_kafes == null || _kafesBoyutu != size) {
-      _kafesiBirak();
-      _kafes = yumusakKafes(size, _yaricap, _yumusaklik);
-      _kafesBoyutu = size;
-    }
+    final f = math.max(0.0, math.min(_yumusaklik, size.shortestSide / 2 - 0.5));
     final canvas = context.canvas;
     canvas.save();
     canvas.translate(offset.dx, offset.dy);
     final k = _kopya;
-    if (k != null && !_ekran.isEmpty) {
-      final kafes = _resimKafesiKur(k, localToGlobal(Offset.zero));
-      if (kafes != null) {
-        final boya = _resimBoyasi ??= Paint()
-          ..shader = ImageShader(k.resim, TileMode.clamp, TileMode.clamp, Matrix4.identity().storage, filterQuality: FilterQuality.low);
-        // Kaynak: fotoğraf, hedef: köşe noktasının rengi → fotoğraf × noktanın görünürlüğü
-        canvas.drawVertices(kafes, BlendMode.srcIn, boya);
+    final boya = k == null || _ekran.isEmpty ? null : _resimBoyasiKur(k, localToGlobal(Offset.zero));
+    if (boya != null) {
+      // Fotoğrafın bulanık kopyası: ortası tam, kenarda içten dışa giderek saydamlaşan halkalar.
+      // Bulanıklık ya da ara katman yok; her halka tek bir çizimdir.
+      RRect halka(double d) {
+        final r = (Offset.zero & size).deflate(d);
+        return RRect.fromRectAndRadius(r, Radius.circular(math.max(0.0, math.min(_yaricap + f - d, r.shortestSide / 2))));
       }
+
+      final adim = f <= 0 ? 0 : (f / 2).round().clamp(3, 10).toInt();
+      var dis = halka(0);
+      for (var i = 1; i <= adim; i++) {
+        final ic = halka(f * i / adim);
+        final t = (i - 0.5) / adim;
+        boya.color = Color.fromRGBO(255, 255, 255, t * t * (3 - 2 * t));
+        canvas.drawDRRect(dis, ic, boya);
+        dis = ic;
+      }
+      boya.color = const Color(0xFFFFFFFF);
+      canvas.drawRRect(dis, boya);
     }
-    if (_ton > 0) canvas.drawVertices(_tonKafesiKur(), BlendMode.modulate, _beyaz);
+    if (_ton > 0) {
+      // Koyu ton: kenarı yumuşak kafes (yalnızca renk; köşe noktalarının görünürlüğü)
+      var kafes = _tonKafesi;
+      if (kafes == null || _kafesBoyutu != size) {
+        _kafesiBirak();
+        final g = yumusakKafes(size, _yaricap, _yumusaklik);
+        final n = g.alfalar.length;
+        final renk = Int32List(n);
+        final ton = _ton.clamp(0.0, 1.0);
+        for (var i = 0; i < n; i++) {
+          renk[i] = ((g.alfalar[i] * ton * 255).round() << 24) | _tonRengi;
+        }
+        kafes = _tonKafesi = ui.Vertices.raw(ui.VertexMode.triangles, g.konumlar, colors: renk, indices: g.ucgenler);
+        _kafesBoyutu = size;
+      }
+      canvas.drawVertices(kafes, BlendMode.modulate, _beyaz);
+    }
     canvas.restore();
   }
 }
