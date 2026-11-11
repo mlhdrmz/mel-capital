@@ -234,7 +234,8 @@ Kurallar:
    harcama sayılmaz. Not: bazı bankalarda kullanılabilir bakiyeye artı hesap (KMH) limiti de
    girer; Melih'in hesabında yok, böyle bir durum çıkarsa sorulacak.
 3. **Tasarım** (6. bölüm): bütün sekmeler sakin sahnede; yazı arkası koyuluğu ayarlanabilir.
-   Melih s71'den sonraki sürümde takılmayı yeniden ölçecek (Ayarlar → Performans → Ölçüm).
+   Melih s78'de takılmayı yeniden ölçecek (Ayarlar → Performans → Ölçüm); çizim süresi burada
+   ölçülemedi, sonuç ondan beklenir.
 4. **Borç kapatma hesaplayıcısı** (Melih'in sıradaki isteği, henüz başlanmadı): Borçlar'da ay,
    vade vb. girilip borcun ne zaman ve nasıl kapanacağını gösteren hesaplayıcı. Başlamadan önce
    Melih'e numaralı sorular sorulacak. Hesap Borç Motoru'na yazılır; Performans Motoru kuralları
@@ -295,3 +296,4 @@ tutarlar Manrope.
 | 2026-11-10 | Claude | Performans Motoru (`motor/performans.dart`, `src/performans.dart`): hız ve çizim bütçeleri, otomatik görsel kalite. Takılmanın asıl sebebi giderildi: bulanık yazı gölgeleri ve her karede kenar bulanıklığı kalktı (`yumusakKafes`). Yazıların arkası koyulaştı ve ayarlanabilir (Hafif/Orta/Koyu). Borç kapatma hesaplayıcısı kalan işlere yazıldı |
 | 2026-11-10 | Claude | s71'deki "blur yetersiz"in sebebi bulundu: bulanık kopyanın hazırlığı kendini bekleyip hiç bitmiyordu (`bulanik.dart`); düzeltildi, testi eklendi. Web önizlemesi `web-onizleme` dalında |
 | 2026-11-11 | Claude | Fotoğrafın üstündeki küçük düğme ve etiketler "Yazıların arkası" seçimine göre koyulaşır (`kontrolZemini`, `HaleIci`); Alışveriş'teki bölüm başlıklarına hale (düğmeler Melih'in onayıyla; başlıklar aynı okunabilirlik şikâyeti kapsamında) |
+| 2026-11-11 | Claude | Resmî sürüm yayınlandı: s78 (Mel Capital 11.11.2026-19.37), Melih'in onayıyla; Performans Motoru, bulanık kopya düzeltmesi, ayarlanabilir yazı arkası, koyulaşan düğmeler, Alışveriş başlıklarına hale içinde |
