@@ -317,3 +317,4 @@ tutarlar Manrope.
 | 2026-11-11 | Claude | Fotoğrafın üstündeki küçük düğme ve etiketler "Yazıların arkası" seçimine göre koyulaşır (`kontrolZemini`, `HaleIci`); Alışveriş'teki bölüm başlıklarına hale (düğmeler Melih'in onayıyla; başlıklar aynı okunabilirlik şikâyeti kapsamında) |
 | 2026-11-11 | Claude | Resmî sürüm yayınlandı: s78 (Mel Capital 11.11.2026-19.37), Melih'in onayıyla; Performans Motoru, bulanık kopya düzeltmesi, ayarlanabilir yazı arkası, koyulaşan düğmeler, Alışveriş başlıklarına hale içinde |
 | 2026-11-11 | Claude | Borç kapatma hesabı: Borç Motoru'na `kapatmaHesapla` (aylık tutar / hedef süre / toplu ödeme, bütün borçlar birlikte, sıra seçimi), borç kaydına isteğe bağlı aylık faiz oranı (`rate`), Borçlar'da "Fazla ödersem?" yerine yeni panel ve ay ay tablo (Melih'in onayıyla) |
+| 2026-11-11 | Claude | Resmî sürüm yayınlandı: s81 (Mel Capital 11.11.2026-20.33), Melih'in onayıyla; borç kapatma hesabı ve borç kaydında aylık faiz oranı içinde |
