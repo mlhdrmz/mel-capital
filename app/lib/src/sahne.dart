@@ -266,6 +266,36 @@ double yaziArkasiTonu(YaziArkasi a) => switch (a) {
       YaziArkasi.koyu => 0.78,
     };
 
+/// Bulanık kopyanın çizilmediği yerde koyu tonun gücü: fotoğrafın ayrıntısı arkada net kaldığı
+/// için ton biraz güçlenir. İki yerde kullanılır: görsel kalite "hafif"ken bölümlerin arkası ve
+/// fotoğrafın doğrudan üstünde duran küçük düğmelerin zemini ([kontrolZemini]).
+double duzTon(double ton) => math.min(0.9, ton + 0.18);
+
+/// İçeriğin arkası zaten koyulaştırılmış mı (bir [Hale] ya da [HaleZemini] içinde).
+class HaleIci extends InheritedWidget {
+  const HaleIci({super.key, required super.child});
+
+  static bool of(BuildContext context) => context.dependOnInheritedWidgetOfExactType<HaleIci>() != null;
+
+  @override
+  bool updateShouldNotify(HaleIci oldWidget) => false;
+}
+
+/// Fotoğrafın doğrudan üstünde duran küçük düğme, arama kutusu ve etiketlerin zemin rengi.
+/// Koyuluğu Ayarlar'daki "Yazıların arkası" seçimine uyar (hafif / orta / koyu). Bir bölümün ya da
+/// halenin içinde (arkası zaten koyu) ve açılır pencerede [asil] döner; oralarda görünüm değişmez.
+/// Yalnızca düz renktir: bulanıklık, gölge ya da ek katman getirmez (Performans Motoru kuralı).
+Color kontrolZemini(BuildContext context, {Color asil = const Color(0x38000000)}) {
+  final sahne = SahneScope.of(context);
+  if ((sahne != null && sahne != Sahne.sakin) || HaleIci.of(context)) return asil;
+  // Uygulama kapsamı yoksa (tek başına çizilen parça) varsayılan seçim
+  final ayar = context.dependOnInheritedWidgetOfExactType<AppScope>()?.notifier?.settings['yaziArkasi'];
+  return kontrolRengi(yaziArkasiOku(ayar));
+}
+
+/// [kontrolZemini]'nin fotoğraf üstündeki rengi (seçime göre).
+Color kontrolRengi(YaziArkasi a) => Color(((duzTon(yaziArkasiTonu(a)) * 255).round() << 24) | kTonRengi);
+
 /// Hale: yazının tam arkasında, kenarları yumuşakça kaybolan bulanıklık ve koyu ton.
 /// Yazının çevresine kutu konmaz; yalnızca fotoğrafın üstündeki yazı okunsun diye.
 class Hale extends StatelessWidget {
@@ -289,7 +319,7 @@ class Hale extends StatelessWidget {
         bottom: -dikey,
         child: const IgnorePointer(child: _HaleArka()),
       ),
-      child,
+      HaleIci(child: child),
     ]);
   }
 }
@@ -312,7 +342,7 @@ class _HaleArka extends StatelessWidget {
       yumusaklik: genis ? 16 : 9,
       // Bulanık kopya çizilmiyorsa (görsel kalite "hafif") fotoğrafın ayrıntısı arkada net kalır:
       // okunabilirlik için ton biraz güçlenir
-      ton: resimli ? ton : math.min(0.9, ton + 0.18),
+      ton: resimli ? ton : duzTon(ton),
       resimli: resimli,
     );
   }
@@ -338,7 +368,7 @@ class HaleZemini extends StatelessWidget {
         bottom: -10,
         child: IgnorePointer(child: _HaleArka(genis: true)),
       ),
-      hafif ? DefaultTextStyle.merge(style: const TextStyle(shadows: kNetYaziGolgesi), child: child) : child,
+      HaleIci(child: hafif ? DefaultTextStyle.merge(style: const TextStyle(shadows: kNetYaziGolgesi), child: child) : child),
     ]);
   }
 }

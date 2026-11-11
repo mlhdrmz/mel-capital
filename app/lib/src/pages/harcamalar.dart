@@ -9,6 +9,7 @@ import '../../core/util.dart';
 import '../dialogs.dart';
 import '../glass.dart';
 import '../i18n.dart';
+import '../sahne.dart' show kontrolZemini;
 import '../state.dart';
 import '../theme.dart';
 import '../ui.dart';
@@ -109,7 +110,7 @@ class _HarcamalarPageState extends State<HarcamalarPage> {
         controller: _query,
         style: sans(14),
         onChanged: (_) => setState(() {}),
-        decoration: fieldDecoration(hint: s.pick('Ara: ad, yer, tutar', 'Search: name, place, amount')).copyWith(
+        decoration: fieldDecoration(hint: s.pick('Ara: ad, yer, tutar', 'Search: name, place, amount'), zemin: kontrolZemini(context)).copyWith(
           prefixIcon: const Icon(Icons.search, size: 18, color: MC.muted),
           prefixIconConstraints: const BoxConstraints(minWidth: 38),
           contentPadding: const EdgeInsets.symmetric(horizontal: 10, vertical: 12),
@@ -221,6 +222,7 @@ class _HarcamalarPageState extends State<HarcamalarPage> {
     final st = AppScope.of(context);
     final s = S.of(context);
     String money(int k) => fmtMoney(k, lang: s.lang, hidden: st.hidden);
+    final zemin = kontrolZemini(context);
     Widget chip({required String label, required bool on, required VoidCallback onTap, Color? dot, String? amount}) => Padding(
           padding: const EdgeInsets.only(right: 6),
           child: InkWell(
@@ -230,7 +232,7 @@ class _HarcamalarPageState extends State<HarcamalarPage> {
               duration: const Duration(milliseconds: 160),
               padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
               decoration: BoxDecoration(
-                color: on ? MC.gold : const Color(0x38000000),
+                color: on ? MC.gold : zemin,
                 borderRadius: BorderRadius.circular(20),
                 border: Border.all(color: on ? MC.gold : const Color(0x33FFFFFF)),
               ),
@@ -640,6 +642,7 @@ class _SegTabs extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final s = S.of(context);
+    final zemin = kontrolZemini(context);
     Widget tab(bool value, IconData icon, String label, {int? badge}) {
       final on = subs == value;
       return InkWell(
@@ -649,7 +652,7 @@ class _SegTabs extends StatelessWidget {
           duration: const Duration(milliseconds: 180),
           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
           decoration: ShapeDecoration(
-            color: on ? MC.gold : const Color(0x38000000),
+            color: on ? MC.gold : zemin,
             shape: SignatureBorder(cut: 10, radius: 12, side: BorderSide(color: on ? MC.gold : const Color(0x33FFFFFF))),
           ),
           child: Row(mainAxisSize: MainAxisSize.min, children: [
@@ -691,7 +694,7 @@ class _NavButton extends StatelessWidget {
         icon: Icon(icon, size: 20),
         style: IconButton.styleFrom(
           foregroundColor: MC.text,
-          backgroundColor: const Color(0x38000000),
+          backgroundColor: kontrolZemini(context),
           side: const BorderSide(color: Color(0x40FFFFFF)),
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
           fixedSize: const Size(46, 46),

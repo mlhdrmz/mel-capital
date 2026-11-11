@@ -9,7 +9,7 @@ import '../core/util.dart';
 import 'glass.dart';
 import 'i18n.dart';
 import 'performans.dart';
-import 'sahne.dart' show Hale;
+import 'sahne.dart' show Hale, kontrolZemini;
 import 'state.dart';
 import 'theme.dart';
 
@@ -224,7 +224,8 @@ class GlassButton extends StatelessWidget {
   Widget build(BuildContext context) {
     final style = OutlinedButton.styleFrom(
       foregroundColor: danger ? MC.rose : MC.text,
-      backgroundColor: const Color(0x38000000),
+      // Fotoğrafın üstündeyse "Yazıların arkası" seçimine göre koyulaşır
+      backgroundColor: kontrolZemini(context),
       side: BorderSide(color: danger ? MC.rose.withValues(alpha: 0.5) : const Color(0x40FFFFFF)),
       padding: const EdgeInsets.symmetric(horizontal: 15, vertical: 14),
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
@@ -628,7 +629,7 @@ class LangToggle extends StatelessWidget {
           onPressed: () => onChanged(code),
           style: TextButton.styleFrom(
             foregroundColor: lang == code ? MC.ink : MC.text,
-            backgroundColor: lang == code ? MC.gold : const Color(0x33000000),
+            backgroundColor: lang == code ? MC.gold : kontrolZemini(context, asil: const Color(0x33000000)),
             shape: const StadiumBorder(),
             padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
             textStyle: const TextStyle(fontFamily: MC.sans, fontSize: 13, fontWeight: FontWeight.w600),

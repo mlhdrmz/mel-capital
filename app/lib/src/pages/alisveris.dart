@@ -10,6 +10,7 @@ import '../../core/util.dart';
 import '../dialogs.dart';
 import '../glass.dart';
 import '../i18n.dart';
+import '../sahne.dart' show Hale;
 import '../state.dart';
 import '../theme.dart';
 import '../ui.dart';
@@ -456,11 +457,19 @@ class _Section extends StatelessWidget {
       child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
         Row(crossAxisAlignment: CrossAxisAlignment.end, children: [
           Expanded(
-            child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-              Text(title, style: serif(32, shadows: kBigTextShadow)),
-              const SizedBox(height: 3),
-              Text(sub, style: sans(13.5, color: MC.text, weight: FontWeight.w500, shadows: kBigTextShadow)),
-            ]),
+            // Başlık ve altındaki satır (içinde rakam da olur) fotoğrafın doğrudan üstünde: sayfa
+            // başlıklarındaki gibi arkasına hale konur; hale yazının genişliği kadardır
+            child: Align(
+              alignment: Alignment.centerLeft,
+              child: Hale.sakinde(
+                context,
+                Column(crossAxisAlignment: CrossAxisAlignment.start, mainAxisSize: MainAxisSize.min, children: [
+                  Text(title, style: serif(32, shadows: kPhotoTextShadow)),
+                  const SizedBox(height: 3),
+                  Text(sub, style: sans(13.5, color: MC.text, weight: FontWeight.w500, shadows: kPhotoTextShadow)),
+                ]),
+              ),
+            ),
           ),
           if (trailing != null) trailing!,
         ]),
@@ -845,8 +854,11 @@ class _Purchases extends StatelessWidget {
       sub: s.pick('Tutarın tamamı limitten düşer; taksitler ilgili ayın kart ödemesine eklenir.', 'The full amount comes off the limit; instalments are added to each month\'s card payment.'),
       trailing: GlassButton(label: s.pick('Taksitli alışveriş', 'Instalment purchase'), icon: Icons.add_shopping_cart, onTap: () => openSpendSheet(context, prefill: {'installments': 3})),
       child: list.isEmpty
-          ? Text(s.pick('Taksitli kart alışverişi yok. Tek çekim harcamalar Harcamalar sayfasında.', 'No card purchases in instalments. Single payments are on the Spending page.'),
-              style: sans(13, color: MC.muted, shadows: kPhotoTextShadow))
+          ? Hale.sakinde(
+              context,
+              Text(s.pick('Taksitli kart alışverişi yok. Tek çekim harcamalar Harcamalar sayfasında.', 'No card purchases in instalments. Single payments are on the Spending page.'),
+                  style: sans(13, color: MC.muted, shadows: kPhotoTextShadow)),
+            )
           : GlassPanel(
               radius: 26,
               cut: 26,

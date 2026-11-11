@@ -153,6 +153,19 @@ Kurallar:
     ayarlanabilir: Ayarlar → Dil ve görünüm → "Yazıların arkası" Hafif / Orta (varsayılan) / Koyu
     (`YaziArkasi`, ayar anahtarı `yaziArkasi`). Üst çubuktaki sekme adlarının ve "Mel Capital"
     yazısının arkasında da `Hale` var.
+  - Fotoğrafın doğrudan üstündeki küçük düğme ve etiketler de aynı seçime göre koyulaşır
+    (Melih'in kararı, 11.11.2026): arama kutusu, ‹ › düğmeleri, cam düğmeler ("Hızlı giriş",
+    "Hesap", "Ekstre ekle"…), kategori etiketleri, Harcamalar/Abonelikler seçimi, kaynak seçme
+    kutusu, zil, göz, eşitleme ve pencere düğmeleri, dil seçimi. Tek yerden: `kontrolZemini`
+    (`sahne.dart`); düz renktir (bulanıklık, gölge, katman yok), tonu bulanık kopyasız bölümlerle
+    aynıdır (`duzTon`: Hafif 0,52 · Orta 0,72 · Koyu 0,90). Bir bölümün ya da halenin içindeki
+    (`HaleIci`) ve açılır pencerelerdeki düğmeler eski saydam zeminde kalır. Fotoğrafın üstüne yeni
+    bir düğme ya da etiket konursa zemini `kontrolZemini(context)` ile verilir.
+  - Alışveriş'teki bölüm başlıkları ("Alışveriş siteleri", "Alabilir miyim?", "İstek listesi",
+    "Taksitli kart alışverişleri") ve altlarındaki satır fotoğrafın üstünde halesiz duruyordu
+    (İstek listesi satırında rakam var); sayfa başlıklarındaki gibi `Hale` ile sarıldı.
+  - Tanıtım, karşılama ve kurulum ekranlarındaki fotoğraf üstü yazılara dokunulmadı (yalnızca
+    bulanık olmayan ince gölgeleri var; Melih'e sorulacak).
   - Otomatik kalite: Ayarlar → Performans → "Görsel kalite" Otomatik (varsayılan) / Yüksek /
     Hafif (ayar anahtarı `kalite`). Otomatikte art arda 2 × 90 karede karelerin %20'si 22 ms'den
     uzunsa hafife iner; 8 temiz bloktan sonra bir kez yüksek yeniden denenir; ikinci inişte oturum
@@ -280,3 +293,5 @@ tutarlar Manrope.
 | 2026-11-07 | Claude | Karttan ödenen abonelik kart borcuna eklenir; hesabı bilinmeyen kalemde "Ödendi" hesap sorar; Ayarlar'a performans ölçümü (Melih'in onayıyla) |
 | 2026-11-07 | Claude | Resmî sürüm yayınlandı: s71 (Mel Capital 07.11.2026-04.21), Melih'in onayıyla; performans 1–3, kart aboneliği → kart borcu, hesap sorma, performans ölçümü içinde |
 | 2026-11-10 | Claude | Performans Motoru (`motor/performans.dart`, `src/performans.dart`): hız ve çizim bütçeleri, otomatik görsel kalite. Takılmanın asıl sebebi giderildi: bulanık yazı gölgeleri ve her karede kenar bulanıklığı kalktı (`yumusakKafes`). Yazıların arkası koyulaştı ve ayarlanabilir (Hafif/Orta/Koyu). Borç kapatma hesaplayıcısı kalan işlere yazıldı |
+| 2026-11-10 | Claude | s71'deki "blur yetersiz"in sebebi bulundu: bulanık kopyanın hazırlığı kendini bekleyip hiç bitmiyordu (`bulanik.dart`); düzeltildi, testi eklendi. Web önizlemesi `web-onizleme` dalında |
+| 2026-11-11 | Claude | Fotoğrafın üstündeki küçük düğme ve etiketler "Yazıların arkası" seçimine göre koyulaşır (`kontrolZemini`, `HaleIci`); Alışveriş'teki bölüm başlıklarına hale (düğmeler Melih'in onayıyla; başlıklar aynı okunabilirlik şikâyeti kapsamında) |

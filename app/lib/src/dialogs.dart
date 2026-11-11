@@ -134,8 +134,9 @@ Future<String?> promptText(
   ).whenComplete(controller.dispose);
 }
 
-/// Metin kutusu görünümü (cam üstünde koyu alan).
-InputDecoration fieldDecoration({String? hint, String? suffix, String? label}) {
+/// Metin kutusu görünümü (cam üstünde koyu alan). Kutu fotoğrafın doğrudan üstündeyse [zemin]
+/// olarak `kontrolZemini(context)` verilir.
+InputDecoration fieldDecoration({String? hint, String? suffix, String? label, Color? zemin}) {
   const edge = OutlineInputBorder(
     borderRadius: BorderRadius.all(Radius.circular(12)),
     borderSide: BorderSide(color: Color(0x33FFFFFF)),
@@ -148,7 +149,7 @@ InputDecoration fieldDecoration({String? hint, String? suffix, String? label}) {
     labelStyle: sans(14, color: MC.muted),
     suffixStyle: sans(14, color: MC.muted),
     filled: true,
-    fillColor: const Color(0x38000000),
+    fillColor: zemin ?? const Color(0x38000000),
     isDense: true,
     contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
     border: edge,
@@ -174,7 +175,7 @@ class GlassSelect<T> extends StatelessWidget {
     final field = Container(
       padding: const EdgeInsets.symmetric(horizontal: 12),
       decoration: BoxDecoration(
-        color: const Color(0x38000000),
+        color: kontrolZemini(context),
         borderRadius: BorderRadius.circular(12),
         border: Border.all(color: const Color(0x33FFFFFF)),
       ),

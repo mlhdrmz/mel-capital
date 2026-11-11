@@ -494,7 +494,7 @@ class _SquareButton extends StatelessWidget {
       icon: Icon(icon, size: 18),
       style: IconButton.styleFrom(
         foregroundColor: MC.text,
-        backgroundColor: const Color(0x2E000000),
+        backgroundColor: kontrolZemini(context, asil: const Color(0x2E000000)),
         hoverColor: danger ? MC.danger : const Color(0x22FFFFFF),
         side: const BorderSide(color: Color(0x38FFFFFF)),
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),

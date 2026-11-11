@@ -9,10 +9,12 @@ import 'package:mel_capital/src/format.dart';
 import 'package:mel_capital/src/pages/common.dart';
 import 'package:mel_capital/src/pages/intro.dart';
 import 'package:mel_capital/src/pages/setup.dart';
+import 'package:mel_capital/src/sahne.dart' show YaziArkasi, kontrolRengi, kontrolZemini;
 import 'package:mel_capital/src/sheet.dart';
 import 'package:mel_capital/src/sheets/ekstre.dart' show kOrnekEkstreSatirlari;
 import 'package:mel_capital/src/state.dart';
 import 'package:mel_capital/src/tips.dart';
+import 'package:mel_capital/src/ui.dart' show GlassButton;
 import 'package:mel_capital/storage/pdf_metin.dart';
 import 'package:mel_capital/storage/pick_file.dart';
 import 'package:mel_capital/storage/store_memory.dart';
@@ -116,6 +118,33 @@ void main() {
       await tapTab(tester, tab);
       expect(tester.takeException(), isNull, reason: tab.name);
     }
+  });
+
+  testWidgets('fotoğrafın üstündeki düğmeler "Yazıların arkası" seçimine göre koyulaşır; bölümdekiler ve açılır penceredekiler değişmez', (tester) async {
+    final state = await openSample(tester, 'tr');
+    await tapTab(tester, AppTab.borclar);
+    const asil = Color(0x38000000);
+    // Sayfa başlığındaki düğme fotoğrafın doğrudan üstünde
+    final ustte = find.widgetWithText(GlassButton, 'Borç / kart');
+    expect(ustte, findsOneWidget);
+    Color? cizilen() => tester.widget<Material>(find.descendant(of: ustte, matching: find.byType(Material)).first).color;
+    expect(kontrolZemini(tester.element(ustte)), kontrolRengi(YaziArkasi.orta));
+    expect(cizilen(), kontrolRengi(YaziArkasi.orta), reason: 'varsayılan: orta');
+    // Bölümün içinde yazının arkası zaten koyu: zemin değişmez
+    expect(kontrolZemini(tester.element(find.text('Kredi kartları').first)), asil);
+    // Seçim değişince düğme de değişir
+    state.setSetting('yaziArkasi', 'koyu');
+    await tester.pumpAndSettle();
+    expect(cizilen(), kontrolRengi(YaziArkasi.koyu));
+    state.setSetting('yaziArkasi', 'hafif');
+    await tester.pumpAndSettle();
+    expect(cizilen(), kontrolRengi(YaziArkasi.hafif));
+    // Açılır pencerede zemin değişmez
+    await tester.tap(ustte);
+    await tester.pumpAndSettle();
+    expect(find.byType(SheetFrame), findsOneWidget);
+    expect(kontrolZemini(tester.element(find.byType(SheetFrame))), asil);
+    expect(tester.takeException(), isNull);
   });
 
   testWidgets('ekstre: PDF seçilir, okunur, karta eklenir', (tester) async {

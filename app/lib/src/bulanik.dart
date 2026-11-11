@@ -246,8 +246,8 @@ class _BulanikBoya extends LeafRenderObjectWidget {
   }
 }
 
-/// Koyu tonun rengi (espresso siyahı).
-const int _tonRengi = 0x0C0A08;
+/// Koyu tonun rengi (espresso siyahı; saydamlık ayrıca verilir).
+const int kTonRengi = 0x0C0A08;
 
 class _RenderBulanik extends RenderBox {
   _RenderBulanik({required BulanikArka? kopya, required Size ekran, required double yaricap, required double yumusaklik, required double ton})
@@ -388,7 +388,7 @@ class _RenderBulanik extends RenderBox {
         final renk = Int32List(n);
         final ton = _ton.clamp(0.0, 1.0);
         for (var i = 0; i < n; i++) {
-          renk[i] = ((g.alfalar[i] * ton * 255).round() << 24) | _tonRengi;
+          renk[i] = ((g.alfalar[i] * ton * 255).round() << 24) | kTonRengi;
         }
         kafes = _tonKafesi = ui.Vertices.raw(ui.VertexMode.triangles, g.konumlar, colors: renk, indices: g.ucgenler);
         _kafesBoyutu = size;

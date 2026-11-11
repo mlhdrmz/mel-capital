@@ -10,6 +10,7 @@ import '../celebrate.dart';
 import '../dialogs.dart';
 import '../glass.dart';
 import '../i18n.dart';
+import '../sahne.dart' show kontrolZemini;
 import '../sheet.dart';
 import '../sheets/plans.dart';
 import '../state.dart';
@@ -463,7 +464,7 @@ class _IconBtn extends StatelessWidget {
         style: IconButton.styleFrom(
           foregroundColor: MC.text,
           disabledForegroundColor: MC.dim.withValues(alpha: 0.4),
-          backgroundColor: const Color(0x38000000),
+          backgroundColor: kontrolZemini(context),
           side: const BorderSide(color: Color(0x40FFFFFF)),
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
           fixedSize: const Size(46, 46),

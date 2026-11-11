@@ -82,6 +82,18 @@ void main() {
     expect(yaziArkasiTonu(YaziArkasi.koyu), lessThanOrEqualTo(1));
   });
 
+  test('fotoğrafın üstündeki düğme zemini: asıl saydam zeminden koyu; hafif < orta < koyu; hiçbiri tam kapatmaz', () {
+    double a(YaziArkasi y) => kontrolRengi(y).a;
+    expect(a(YaziArkasi.hafif), greaterThan(0x38 / 255 + 0.2));
+    expect(a(YaziArkasi.hafif), lessThan(a(YaziArkasi.orta)));
+    expect(a(YaziArkasi.orta), lessThan(a(YaziArkasi.koyu)));
+    expect(a(YaziArkasi.koyu), lessThanOrEqualTo(0.91));
+    // Bulanık kopya çizilmeyen bölümlerle (görsel kalite "hafif") aynı ton
+    for (final y in YaziArkasi.values) {
+      expect(a(y), closeTo(duzTon(yaziArkasiTonu(y)), 0.01));
+    }
+  });
+
   test('yumuşak kenar kafesi: noktalar alanın içinde, dış kenar görünmez, iç tam görünür, üçgenler geçerli', () {
     for (final (boyut, yaricap, yumusaklik) in const [(Size(400, 200), 24.0, 16.0), (Size(120, 28), 14.0, 9.0), (Size(10, 6), 14.0, 9.0), (Size(300, 80), 20.0, 0.0)]) {
       final k = yumusakKafes(boyut, yaricap, yumusaklik);

@@ -16,6 +16,7 @@ import '../core/util.dart';
 import 'dialogs.dart';
 import 'glass.dart';
 import 'i18n.dart';
+import 'sahne.dart' show kontrolZemini;
 import 'sheet.dart';
 import 'state.dart';
 import 'theme.dart';
@@ -200,7 +201,7 @@ class _SyncButtonState extends State<SyncButton> with SingleTickerProviderStateM
       icon: RotationTransition(turns: Tween<double>(begin: 1, end: 0).animate(_spin), child: Icon(icon, size: 18)),
       style: IconButton.styleFrom(
         foregroundColor: status == SyncStatus.ok || busy ? MC.text : _statusColor(status),
-        backgroundColor: const Color(0x2E000000),
+        backgroundColor: kontrolZemini(context, asil: const Color(0x2E000000)),
         hoverColor: const Color(0x22FFFFFF),
         side: const BorderSide(color: Color(0x38FFFFFF)),
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
