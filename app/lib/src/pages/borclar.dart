@@ -10,13 +10,14 @@ import '../card_art.dart';
 import '../dialogs.dart';
 import '../glass.dart';
 import '../i18n.dart';
+import '../sheet.dart' show Seg;
 import '../state.dart';
 import '../theme.dart';
 import '../ui.dart';
 import 'common.dart';
 import '../sheets/ekstre.dart' show openStatementImport;
 
-/// Borçlar: kredi kartları, krediler ve yapılandırmalar, Findeks notu, "Fazla ödersem?".
+/// Borçlar: kredi kartları, krediler ve yapılandırmalar, Findeks notu, borç kapatma hesabı.
 class BorclarPage extends StatelessWidget {
   const BorclarPage({super.key});
 
@@ -618,8 +619,11 @@ Future<void> showFindeksReport(BuildContext context, Json r) {
   );
 }
 
-// ---------------------------------------------------------------- Fazla ödersem?
+// ---------------------------------------------------------------- Borç kapatma hesabı
 
+enum _Kip { aylik, hedef, toplu }
+
+/// Borç kapatma hesabı (Borç Motoru: [kapatmaHesapla]). Yalnızca gösterir; veriye bir şey yazmaz.
 class _DebtCalcPanel extends StatefulWidget {
   const _DebtCalcPanel();
 
@@ -628,12 +632,14 @@ class _DebtCalcPanel extends StatefulWidget {
 }
 
 class _DebtCalcPanelState extends State<_DebtCalcPanel> {
-  String? _id;
-  final _amount = TextEditingController();
+  _Kip _kip = _Kip.aylik;
+  KapatmaSirasi _sira = KapatmaSirasi.faiz;
+  bool _tablo = false;
+  final _girdi = TextEditingController();
 
   @override
   void dispose() {
-    _amount.dispose();
+    _girdi.dispose();
     super.dispose();
   }
 
@@ -642,114 +648,233 @@ class _DebtCalcPanelState extends State<_DebtCalcPanel> {
     final st = AppScope.of(context);
     final s = S.of(context);
     final ctx = st.ctx;
-    final d = ctx.data;
-    final open = d.debts.where((x) => (ctx.model.debts[x.id]?.current ?? 0) > 0).toList();
-    if (open.isEmpty) return const SizedBox.shrink();
-    final sel = open.any((x) => x.id == _id) ? _id! : open.first.id;
+    final borclar = kapatmaBorclari(ctx);
+    if (borclar.isEmpty) return const SizedBox.shrink();
+    final (ipucu, ek) = switch (_kip) {
+      _Kip.aylik => (s.pick('Borçlara ayda ayıracağın tutar, ör. 10.000', 'Monthly amount for debts, e.g. 10,000'), 'TL'),
+      _Kip.hedef => (s.pick('Kaç ayda bitsin, ör. 12', 'Months until debt-free, e.g. 12'), s.pick('ay', 'mo')),
+      _Kip.toplu => (s.pick('Bir kerelik fazladan ödeme, ör. 20.000', 'One-off extra payment, e.g. 20,000'), 'TL'),
+    };
     return GlassPanel(
+      key: const ValueKey<String>('kapatma-paneli'),
       delay: const Duration(milliseconds: 260),
       radius: 30,
       cut: 30,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          PanelHead(s.pick('Fazla ödersem?', 'What if I pay extra?'),
-              subtitle: s.pick('Bir borca fazladan ödeme yaparsan ne değişir', 'What changes if you pay extra on a debt')),
-          GlassSelect<String>(
-            value: sel,
-            items: [
-              for (final x in open)
-                (x.id, '${x.creditor} · ${fmtMoney(ctx.model.debts[x.id]!.current, lang: s.lang, hidden: st.hidden)}'),
+          PanelHead(s.pick('Borç kapatma hesabı', 'Payoff calculator'),
+              subtitle: s.pick('Ne kadar ödersen borçların ne zaman biter', 'How much to pay and when your debts end')),
+          Seg<_Kip>(
+            value: _kip,
+            options: [
+              (_Kip.aylik, s.pick('Aylık tutar', 'Monthly amount')),
+              (_Kip.hedef, s.pick('Hedef süre', 'Target time')),
+              (_Kip.toplu, s.pick('Toplu ödeme', 'Lump sum')),
             ],
-            onChanged: (v) => setState(() => _id = v),
+            onChanged: (v) => setState(() {
+              _kip = v;
+              _girdi.clear();
+              _tablo = false;
+            }),
           ),
           const SizedBox(height: 10),
           TextField(
-            controller: _amount,
+            key: const ValueKey<String>('kapatma-girdi'),
+            controller: _girdi,
             keyboardType: const TextInputType.numberWithOptions(decimal: true),
             style: sans(15),
             onChanged: (_) => setState(() {}),
-            decoration: fieldDecoration(hint: s.pick('Fazladan ödeme, ör. 2.000', 'Extra payment, e.g. 2,000'), suffix: 'TL'),
+            decoration: fieldDecoration(hint: ipucu, suffix: ek),
           ),
+          if (borclar.length > 1) ...[
+            const SizedBox(height: 12),
+            Text(s.pick('Artan para önce hangi borca gitsin', 'Where spare money goes first'), style: sans(12, color: MC.muted)),
+            const SizedBox(height: 6),
+            Seg<KapatmaSirasi>(
+              value: _sira,
+              options: [
+                (KapatmaSirasi.faiz, s.pick('Faizi yüksek olana', 'Highest interest')),
+                (KapatmaSirasi.kucuk, s.pick('En küçük borca', 'Smallest debt')),
+              ],
+              onChanged: (v) => setState(() => _sira = v),
+            ),
+          ],
           const SizedBox(height: 12),
-          ..._out(context, ctx, sel, parseAmount(_amount.text)),
+          ..._sonuc(context, ctx, borclar),
         ],
       ),
     );
   }
 
-  List<Widget> _out(BuildContext context, Ctx ctx, String id, int? k) {
+  List<Widget> _sonuc(BuildContext context, Ctx ctx, List<KapatmaBorcu> borclar) {
     final st = AppScope.of(context);
     final s = S.of(context);
-    final debt = ctx.data.debt(id);
-    final info = ctx.model.debts[id];
-    if (debt == null || info == null) return const [];
-    if (k == null || k <= 0) {
-      return [
-        Text(s.pick('Tutarı yazınca kalan borç ve ödeme planındaki değişiklik burada görünür.', 'Type an amount to see how the debt and its plan change.'),
-            style: sans(12.5, color: MC.muted)),
-      ];
-    }
     String money(int v) => fmtMoney(v, lang: s.lang, hidden: st.hidden);
-    final pay = math.min(k, info.current);
-    final lines = <(String, String)>[];
-    lines.add((s.pick('Kalan borç', 'Remaining debt'), '${money(info.current)} → ${money(info.current - pay)}'));
-    if (debt.isCard) {
-      if (info.limit != null) lines.add((s.pick('Kullanılabilir limit', 'Available limit'), '${money(info.available!)} → ${money(info.available! + pay)}'));
-      int minOf(int x) => (x * kMinPayRate / 100).round() * 100;
-      lines.add((s.pick('Tahmini asgari ödeme', 'Estimated minimum'), '${money(minOf(info.current))} → ${money(minOf(info.current - pay))}'));
-      if (info.limit != null && info.limit! > 0) {
-        lines.add((
-          s.pick('Limit doluluğu', 'Limit used'),
-          '%${(info.current / info.limit! * 100).round()} → %${((info.current - pay) / info.limit! * 100).round()}',
-        ));
-      }
-    } else {
-      // Fazla ödeme son taksitlerden düşülür: plan sondan kısalır.
-      final fut = <(String, int)>[];
-      info.months.forEach((m, v) {
-        if (m.compareTo(ctx.cur) >= 0 && v.planned > 0 && v.direct == null && v.st == null) fut.add((m, v.planned));
-      });
-      var left = pay, n = 0;
-      for (var i = fut.length - 1; i >= 0 && left >= fut[i].$2; i--) {
-        left -= fut[i].$2;
-        n++;
-      }
-      if (fut.isNotEmpty) {
-        lines.add((
-          s.pick('Kalan taksit', 'Instalments left'),
-          '${fut.length} → ${fut.length - n}${n > 0 ? s.pick(' · $n taksit erken biter', ' · $n end early') : ''}',
-        ));
-        if (n > 0) {
-          lines.add((
-            s.pick('Son taksit', 'Last instalment'),
-            '${monthLabel(fut.last.$1, s.lang)} → ${fut.length - n > 0 ? monthLabel(fut[fut.length - n - 1].$1, s.lang) : s.pick('kalmaz', 'none')}',
-          ));
+    String ayAdi(int t) => monthLabel(addM(ctx.cur, t), s.lang);
+    String sure(int t) => t == 0 ? s.pick('bu ay', 'this month') : s.pick('$t ay sonra', 'in $t mo');
+    // Karşılaştırma: yalnızca taksitler ve kart asgarileri ödenirse
+    final temel = kapatmaHesapla(borclar, sira: _sira);
+    final temelBitis = temel.bitisAy;
+    final oranli = borclar.any((b) => b.oran > 0);
+    final toplamBorc = sumK(borclar, (KapatmaBorcu b) => b.kalanK);
+    final lines = <(String, String)>[
+      (
+        s.pick('Yalnızca taksit ve asgari ödenirse', 'Paying only instalments and minimums'),
+        temelBitis != null ? '${ayAdi(temelBitis)} · ${sure(temelBitis)}' : s.pick('bitmiyor (planı olmayan borç var)', 'never ends (a debt has no plan)'),
+      ),
+    ];
+    final notlar = <String>[];
+    KapatmaSonucu? senaryo;
+    final metin = _girdi.text.trim();
+    switch (_kip) {
+      case _Kip.aylik:
+        final k = parseAmount(metin);
+        if (k != null && k > 0) {
+          senaryo = kapatmaHesapla(borclar, aylikK: k, sira: _sira);
+          if (k < temel.ilkZorunluK) {
+            notlar.add(s.pick('Bu ayın taksit ve asgari ödemeleri ${money(temel.ilkZorunluK)}; yazdığın tutar bunun altında. Zorunlu ödemeler yine de ödenmiş sayıldı.',
+                'This month\'s instalments and minimums are ${money(temel.ilkZorunluK)}; your amount is below that. Required payments were still counted.'));
+          }
         }
-        if (left > 0 && fut.length - n > 0) {
-          final lastK = fut[fut.length - n - 1].$2;
-          lines.add((s.pick('Son taksit tutarı', 'Last instalment amount'), '${money(lastK)} → ${money(math.max(0, lastK - left))}'));
+      case _Kip.hedef:
+        final n = int.tryParse(metin);
+        if (n != null && n >= 1 && n <= 600) {
+          final k = kapatmaIcinAylik(borclar, n, sira: _sira);
+          if (k == null) {
+            notlar.add(s.pick('Bu süre için hesaplanamadı.', 'Could not be worked out for this time.'));
+          } else if (k == 0) {
+            senaryo = temel;
+            lines.add((s.pick('Ayda ayırman gereken', 'Needed per month'), s.pick('şimdiki ödemelerin yetiyor', 'your current payments are enough')));
+          } else {
+            senaryo = kapatmaHesapla(borclar, aylikK: k, sira: _sira);
+            lines.add((s.pick('Ayda ayırman gereken', 'Needed per month'), money(k)));
+            lines.add((s.pick('Bu ayın taksit ve asgarileri', 'This month\'s instalments and minimums'), money(temel.ilkZorunluK)));
+          }
         }
-      }
+      case _Kip.toplu:
+        final k = parseAmount(metin);
+        if (k != null && k > 0) {
+          senaryo = kapatmaHesapla(borclar, topluK: math.min(k, toplamBorc), sira: _sira);
+          if (k > toplamBorc) {
+            notlar.add(s.pick('Borçların toplamı ${money(toplamBorc)}; fazlası hesaba katılmadı.', 'Your debts total ${money(toplamBorc)}; the rest is ignored.'));
+          }
+        }
     }
-    if (k > info.current) lines.add((s.pick('Not', 'Note'), s.pick('Borç ${money(info.current)}; fazlası hesaba katılmadı', 'The debt is ${money(info.current)}; the rest is ignored')));
-    return [
-      for (final l in lines)
-        Padding(
+
+    Widget satir((String, String) l) => Padding(
           padding: const EdgeInsets.symmetric(vertical: 5),
           child: Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
             Expanded(child: Text(l.$1, style: sans(13, color: MC.muted))),
             const SizedBox(width: 10),
             Flexible(child: Text(l.$2, textAlign: TextAlign.right, style: sans(13.5, weight: FontWeight.w700))),
           ]),
+        );
+    final dipnot = Text(
+      s.pick(
+          'Yeni kart harcaması eklenmediği varsayılır; kartta her ay en az asgari (%20) ödenir. '
+              '${oranli ? 'Faiz oranı girilmemiş borçlar faizsiz sayıldı.' : 'Faiz oranı girilmediği için borçlar faizsiz sayıldı; oranı borcun kaydına (kalem simgesi) yazarsan faiz kazancı da hesaplanır.'} '
+              'Bankanın göstereceği tutar farklı olabilir.',
+          'Assumes no new card spending; cards get at least the minimum (20%) each month. '
+              '${oranli ? 'Debts without an interest rate are treated as interest-free.' : 'No interest rate is entered, so debts are treated as interest-free; add the rate in the debt record to see interest savings.'} '
+              'Your bank may show different amounts.'),
+      style: sans(11.5, color: MC.dim, height: 1.4),
+    );
+    final sonuc = senaryo;
+    if (sonuc == null) {
+      return [
+        satir(lines.first),
+        for (final n in notlar) Padding(padding: const EdgeInsets.only(top: 4), child: Text(n, style: sans(12.5, color: MC.rose, height: 1.4))),
+        const SizedBox(height: 4),
+        Text(
+          s.pick('Yukarıya yazınca borçsuz kalacağın ay, toplam ödeme ve ay ay tablo burada görünür.', 'Type above to see your debt-free month, the total and a month-by-month table.'),
+          style: sans(12.5, color: MC.muted),
         ),
-      const SizedBox(height: 6),
-      Text(s.pick('Faiz ve erken ödeme indirimi hesaba katılmadı; bankanın göstereceği tutar farklı olabilir.', 'Interest and early-payment discounts are not included; your bank may show a different figure.'),
-          style: sans(11.5, color: MC.dim, height: 1.4)),
-      if (debt.isCard) ...[
-        const SizedBox(height: 10),
-        SmallButton(label: s.pick('Kart borcu öde', 'Pay the card'), icon: Icons.payments_outlined, onTap: () => openCardPaySheet(context, debt: debt)),
-      ],
+        const SizedBox(height: 8),
+        dipnot,
+      ];
+    }
+
+    final bitis = sonuc.bitisAy;
+    if (bitis != null) {
+      final erken = temelBitis != null ? temelBitis - bitis : 0;
+      lines.add((
+        s.pick('Borçsuz kalacağın ay', 'Debt-free month'),
+        '${ayAdi(bitis)} · ${sure(bitis)}${erken > 0 ? s.pick(' · $erken ay erken', ' · $erken mo earlier') : ''}',
+      ));
+      lines.add((s.pick('Toplam ödeyeceğin', 'Total you will pay'), money(sonuc.toplamK)));
+      if (temel.bitti && temel.toplamK > sonuc.toplamK) {
+        lines.add((s.pick('Faizden kazancın', 'Interest saved'), money(temel.toplamK - sonuc.toplamK)));
+      }
+    } else {
+      lines.add((s.pick('Borçsuz kalacağın ay', 'Debt-free month'), s.pick('bununla bitmiyor', 'does not end with this')));
+      lines.add((s.pick('Kalan borç', 'Remaining debt'), '${money(toplamBorc)} → ${money(math.max(0, toplamBorc - sonuc.toplamK))}'));
+    }
+
+    // Borç borç: hangisi ne zaman kapanır
+    final adlar = {for (final b in borclar) b.id: b.ad};
+    final borcSatirlari = <Widget>[
+      for (final b in borclar)
+        satir((
+          b.oran > 0 ? '${b.ad} · ${s.pick('aylık %', 'monthly ')}${fmtNum((b.oran * 100).round(), lang: s.lang)}${s.pick('', '%')}' : b.ad,
+          () {
+            final k = sonuc.kapanis[b.id];
+            if (k == null) return s.pick('kapanmıyor', 'not paid off');
+            final t = temel.kapanis[b.id];
+            final erken = t != null ? t - k : 0;
+            return '${ayAdi(k)}${erken > 0 ? s.pick(' · $erken ay erken', ' · $erken mo earlier') : ''}';
+          }(),
+        )),
+    ];
+
+    // Ay ay tablo: ödeme ve o aydan sonra kalan ödeme
+    final tablo = <Widget>[];
+    if (_tablo) {
+      var kalan = sonuc.toplamK;
+      final baslik = sans(11.5, color: MC.muted, weight: FontWeight.w600);
+      tablo.add(Padding(
+        padding: const EdgeInsets.only(top: 6, bottom: 4),
+        child: Row(children: [
+          Expanded(flex: 4, child: Text(s.pick('Ay', 'Month'), style: baslik)),
+          Expanded(flex: 3, child: Text(s.pick('Ödeme', 'Payment'), textAlign: TextAlign.right, style: baslik)),
+          Expanded(flex: 3, child: Text(s.pick('Kalan ödeme', 'Left to pay'), textAlign: TextAlign.right, style: baslik)),
+        ]),
+      ));
+      final satirlar = <Widget>[];
+      for (final a in sonuc.aylar) {
+        kalan -= a.odemeK;
+        final kapanan = [for (final id in a.kapananlar) adlar[id] ?? id].join(', ');
+        satirlar.add(Padding(
+          padding: const EdgeInsets.symmetric(vertical: 4),
+          child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+            Row(children: [
+              Expanded(flex: 4, child: Text(ayAdi(a.ay), style: sans(12.5))),
+              Expanded(flex: 3, child: Text(money(a.odemeK), textAlign: TextAlign.right, style: sans(12.5, weight: FontWeight.w700))),
+              Expanded(flex: 3, child: Text(money(math.max(0, kalan)), textAlign: TextAlign.right, style: sans(12.5, color: MC.muted))),
+            ]),
+            if (kapanan.isNotEmpty) Text(s.pick('$kapanan kapanır', '$kapanan paid off'), style: sans(11.5, color: MC.mint)),
+          ]),
+        ));
+      }
+      // Uzun tablo kare kare kurulur (Performans Motoru kuralı)
+      tablo.add(AzarAzar(children: satirlar));
+    }
+
+    return [
+      for (final l in lines) satir(l),
+      for (final n in notlar) Padding(padding: const EdgeInsets.only(top: 4), child: Text(n, style: sans(12.5, color: MC.rose, height: 1.4))),
+      const Padding(padding: EdgeInsets.symmetric(vertical: 6), child: Hairline()),
+      ...borcSatirlari,
+      if (sonuc.aylar.isNotEmpty)
+        SmallButton(
+          key: const ValueKey<String>('kapatma-tablo'),
+          label: _tablo ? s.pick('Tabloyu gizle', 'Hide the table') : s.pick('Ay ay göster', 'Month by month'),
+          icon: _tablo ? Icons.expand_less : Icons.expand_more,
+          onTap: () => setState(() => _tablo = !_tablo),
+        ),
+      ...tablo,
+      const SizedBox(height: 8),
+      dipnot,
     ];
   }
 }

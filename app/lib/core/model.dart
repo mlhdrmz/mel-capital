@@ -161,6 +161,12 @@ extension type Debt(Json j) {
   String? get balanceDate => _so(j, 'balanceDate');
   String? get balanceAt => _so(j, 'balanceAt');
   String get payPlan => j['payPlan'] == 'tamami' ? 'tamami' : 'asgari';
+
+  /// Aylık faiz oranı, yüzde (ör. 3.49). İsteğe bağlı; yalnızca borç kapatma hesabında kullanılır.
+  double? get rate {
+    final v = _do(j, 'rate');
+    return v != null && v > 0 && v <= 100 ? v : null;
+  }
 }
 
 extension type RecurringExpense(Json j) {

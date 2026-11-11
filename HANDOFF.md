@@ -69,7 +69,7 @@ Uygulama 1 çekirdek + 5 ana motor, Ekstre Motoru, uyum denetimi ve Performans M
 | Çekirdek (Hareket Defteri) | `cekirdek.dart` | Hareketler listesi, hesap bakiyeleri (bakiyeye yazan **tek** işlev `accAdjust`), hesaplar, aktarmalar, bankalar, kaynak adları |
 | Gelir Motoru | `gelir.dart` | Maaş ve diğer gelirler, değişken gelir tahmini, "Maaşın yattı mı?" (yattı → çekirdeğe para girişi) |
 | Gider Motoru | `gider.dart` | Harcamalar (tek tek, hızlı giriş, taksit), abonelik ve faturalar, sabit giderler, günlük harcama tahmini, kategori öğrenme |
-| Borç Motoru | `borc.dart` | Kredi kartları (güncel borç, boş limit, ekstre, asgari), krediler, kart ödemesi, fiziksel kartlar, Findeks |
+| Borç Motoru | `borc.dart` | Kredi kartları (güncel borç, boş limit, ekstre, asgari), krediler, kart ödemesi, fiziksel kartlar, Findeks, borç kapatma hesabı (`kapatmaHesapla`) |
 | Plan Motoru | `plan.dart` | `buildModel` ve `Ctx`: ay kalemleri, aylık özet, harcanabilir para, devir, yaklaşan ödemeler, ödeme işaretleme, ay kapatma, istek listesi |
 | Ekstre Motoru | `ekstre.dart` | PDF ekstreyi okur (kart ekstresi ya da hesap dökümü), bankayı işaretlerinden tanır (`kBankaIzleri`), kartı son 4 haneden / hesabı IBAN son 4'ten bulur, elle girilenlerle eşleştirir, seçilenleri Gider Motoru ve Çekirdek üzerinden ekler, ekstreyi son güncel durum sayar |
 | Uyum denetimi | `uyum.dart` | Motorların birbirini tuttuğunu denetler |
@@ -186,6 +186,26 @@ Kurallar:
     sonraki aylarda varsayılan olur (`lastFromFor`). `markPaid(..., from:, hesapsiz:)`.
   - Denetim testi `test/odeme_nakit_test.dart`: her kalem işaretlenir/kaldırılır; hesap, Özet'teki
     para, borç, kart borcu ve ay özeti birlikte değişir.
+- Borç kapatma hesabı (Melih'in kararları, 11.11.2026): Borçlar'da eski "Fazla ödersem?" kutusunun
+  yerinde (`_DebtCalcPanel`). Yalnızca gösterir, veriye yazmaz. Hesap Borç Motoru'nda
+  (`borc.dart` sonu: `kapatmaBorclari`, `kapatmaHesapla`, `kapatmaIcinAylik`).
+  - Bütün açık borçlar (krediler, yapılandırmalar, kartlar) birlikte ay ay yürütülür. Üç yön:
+    aylık tutar → borçsuz kalınan ay; hedef süre (ay) → ayda ayrılması gereken tutar (ikili
+    arama); toplu ödeme → kaç ay erken. Karşılaştırma satırı: "yalnızca taksit ve asgari ödenirse".
+  - Zorunlu ödemeler: kredinin plan taksiti, kartın asgarisi (%20, en az 100 TL). Artan para
+    seçilen sıraya göre gider (`KapatmaSirasi`: faizi yüksek olana / en küçük borca); kapanan
+    borcun parası sıradakine geçer. Yazılan tutar zorunluların altındaysa zorunlular yine ödenir.
+  - Faiz: borç kaydına isteğe bağlı aylık faiz oranı eklendi (`rate`, yüzde; borç panelinde
+    "Aylık faiz oranı"). Kredide uygulamadaki kalan borç taksitlerin toplamıdır (faiz içinde);
+    oran varsa anapara kalan taksitlerin bugünkü değeri sayılır, erken ödeme kalan ayların
+    faizinden kurtarır ("Faizden kazancın"). Oran yoksa borç faizsiz sayılır (fazla ödeme son
+    taksitlerden düşer). Kartta oran varsa devreden borca faiz işler. Yeni kart harcaması
+    eklenmediği varsayılır. Vergiler (KKDF/BSMV) ayrıca hesaplanmaz; oran onlarla yazılırsa girer.
+  - Planı olmayan borç (taksitlerin toplamı kalan borçtan az) yalnızca zorunlularla bitmez; panel
+    bunu yazar. Örnek veride KYK böyle.
+  - "Ay ay göster": ödeme ve kalan ödeme tablosu, kapanan borçlar (`AzarAzar` ile).
+  - Testler: `test/kapatma_test.dart` (uydurma borçlar), `app_test.dart` (panel), bütçesi
+    `PerfButce.motorMs['Borç kapatma hesabı (üç yön)']`.
 - Ayarlar → "Performans ölçümü" (`olcum.dart`, `KareOlcumu`): açıkken her karenin hesap (UI) ve
   çizim (raster) süresi toplanır; takılan kare sayısı, en uzun ve ortalama süreler gösterilir.
   Melih takılma olursa bu rakamları söyleyecek.
@@ -236,10 +256,9 @@ Kurallar:
 3. **Tasarım** (6. bölüm): bütün sekmeler sakin sahnede; yazı arkası koyuluğu ayarlanabilir.
    Melih s78'de takılmayı yeniden ölçecek (Ayarlar → Performans → Ölçüm); çizim süresi burada
    ölçülemedi, sonuç ondan beklenir.
-4. **Borç kapatma hesaplayıcısı** (Melih'in sıradaki isteği, henüz başlanmadı): Borçlar'da ay,
-   vade vb. girilip borcun ne zaman ve nasıl kapanacağını gösteren hesaplayıcı. Başlamadan önce
-   Melih'e numaralı sorular sorulacak. Hesap Borç Motoru'na yazılır; Performans Motoru kuralları
-   (6. kural) geçerli: `performans_test.dart`'a ölçümü eklenir.
+4. **Borç kapatma hesabı** yapıldı (4. bölüm). Açık kalanlar: Melih'in ilk denemesinden sonra
+   istekleri; beğenilen senaryoyu Plan'a yazma ("Uygula") bilerek yok (Melih yalnızca gösteren
+   sürümü seçti).
 5. Yatırımlar bölümü (henüz başlanmadı; sorular sorulacak).
 6. İçinde insan olan diğer fotoğrafların taranması (75 fotoğrafın hepsine bakılamadı).
 7. İmzalı APK (gizli anahtarlar eklenmedi; resmî sürümde yalnızca Windows dosyaları var).
@@ -297,3 +316,4 @@ tutarlar Manrope.
 | 2026-11-10 | Claude | s71'deki "blur yetersiz"in sebebi bulundu: bulanık kopyanın hazırlığı kendini bekleyip hiç bitmiyordu (`bulanik.dart`); düzeltildi, testi eklendi. Web önizlemesi `web-onizleme` dalında |
 | 2026-11-11 | Claude | Fotoğrafın üstündeki küçük düğme ve etiketler "Yazıların arkası" seçimine göre koyulaşır (`kontrolZemini`, `HaleIci`); Alışveriş'teki bölüm başlıklarına hale (düğmeler Melih'in onayıyla; başlıklar aynı okunabilirlik şikâyeti kapsamında) |
 | 2026-11-11 | Claude | Resmî sürüm yayınlandı: s78 (Mel Capital 11.11.2026-19.37), Melih'in onayıyla; Performans Motoru, bulanık kopya düzeltmesi, ayarlanabilir yazı arkası, koyulaşan düğmeler, Alışveriş başlıklarına hale içinde |
+| 2026-11-11 | Claude | Borç kapatma hesabı: Borç Motoru'na `kapatmaHesapla` (aylık tutar / hedef süre / toplu ödeme, bütün borçlar birlikte, sıra seçimi), borç kaydına isteğe bağlı aylık faiz oranı (`rate`), Borçlar'da "Fazla ödersem?" yerine yeni panel ve ay ay tablo (Melih'in onayıyla) |

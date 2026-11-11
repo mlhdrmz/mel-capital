@@ -147,6 +147,43 @@ void main() {
     expect(tester.takeException(), isNull);
   });
 
+  testWidgets('Borçlar: borç kapatma hesabı üç yönde de sonuç verir, ay ay tablo açılır', (tester) async {
+    await openSample(tester, 'tr');
+    await tapTab(tester, AppTab.borclar);
+    expect(find.text('Borç kapatma hesabı'), findsOneWidget);
+    expect(find.text('Yalnızca taksit ve asgari ödenirse'), findsOneWidget);
+    expect(find.text('Borçsuz kalacağın ay'), findsNothing, reason: 'tutar yazılmadan sonuç yok');
+    // Aylık tutar → bitiş
+    await typeKey(tester, 'kapatma-girdi', '20000');
+    expect(find.text('Borçsuz kalacağın ay'), findsOneWidget);
+    expect(find.text('Toplam ödeyeceğin'), findsOneWidget);
+    await tapKey(tester, 'kapatma-tablo');
+    expect(find.text('Kalan ödeme'), findsOneWidget);
+    expect(tester.takeException(), isNull);
+    // Hedef süre → aylık tutar
+    final hedef = find.text('Hedef süre');
+    await reveal(tester, hedef);
+    await tester.tap(hedef);
+    await tester.pumpAndSettle();
+    expect(find.text('Borçsuz kalacağın ay'), findsNothing, reason: 'yön değişince girdi temizlenir');
+    await typeKey(tester, 'kapatma-girdi', '12');
+    expect(find.text('Ayda ayırman gereken'), findsOneWidget);
+    expect(find.text('Borçsuz kalacağın ay'), findsOneWidget);
+    // Toplu ödeme
+    final toplu = find.text('Toplu ödeme');
+    await reveal(tester, toplu);
+    await tester.tap(toplu);
+    await tester.pumpAndSettle();
+    await typeKey(tester, 'kapatma-girdi', '5000');
+    expect(find.text('Borçsuz kalacağın ay'), findsOneWidget);
+    // Sıra seçimi
+    final kucuk = find.text('En küçük borca');
+    await reveal(tester, kucuk);
+    await tester.tap(kucuk);
+    await tester.pumpAndSettle();
+    expect(tester.takeException(), isNull);
+  });
+
   testWidgets('ekstre: PDF seçilir, okunur, karta eklenir', (tester) async {
     final state = await openSample(tester, 'tr');
     final eskiSec = pickBytesFile;

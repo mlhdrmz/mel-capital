@@ -146,6 +146,13 @@ void main() {
     olc('Kategori öğrenme dizini', () => learnIndex(d));
     olc('Veri kopyası (her değişiklikte kayıt için)', () => deepCopy(d.j));
     olc('Veri JSON (dosyaya yazılan)', () => jsonEncode(d.j));
+    olc('Borç kapatma hesabı (üç yön)', () {
+      final b = kapatmaBorclari(ctx);
+      kapatmaHesapla(b);
+      kapatmaHesapla(b, aylikK: 1500000);
+      kapatmaHesapla(b, topluK: 2000000, sira: KapatmaSirasi.kucuk);
+      kapatmaIcinAylik(b, 24);
+    });
     expect(ctx.model.liquid, isNonZero);
   });
 

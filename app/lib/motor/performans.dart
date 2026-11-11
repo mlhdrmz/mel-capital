@@ -65,6 +65,7 @@ class PerfButce {
     'Kategori öğrenme dizini': 300,
     'Veri kopyası (her değişiklikte kayıt için)': 100,
     'Veri JSON (dosyaya yazılan)': 200,
+    'Borç kapatma hesabı (üç yön)': 100,
   };
 
   // ---- Sayfalar (ölçülen: en ağır sekmenin ilk karesi ~0,7–1 sn, toplam ~1,7 sn)

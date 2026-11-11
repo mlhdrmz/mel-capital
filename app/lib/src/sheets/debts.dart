@@ -128,6 +128,7 @@ class _DebtSheetState extends State<DebtSheet> {
   final _stDay = TextEditingController();
   final _dueDay = TextEditingController();
   final _payDay = TextEditingController();
+  final _rate = TextEditingController();
   final _note = TextEditingController();
   final List<SchedRow> _rows = [];
   String _type = '';
@@ -155,6 +156,7 @@ class _DebtSheetState extends State<DebtSheet> {
       _stDay.text = x.statementDay?.toString() ?? '';
       _dueDay.text = x.dueDay?.toString() ?? '';
       _payDay.text = x.payDay?.toString() ?? '';
+      if (x.rate != null) _rate.text = fmtNum((x.rate! * 100).round(), lang: lang);
       _note.text = x.note;
       _plan = x.payPlan;
       if (isDate(x.balanceDate)) _bDate = x.balanceDate!;
@@ -169,7 +171,7 @@ class _DebtSheetState extends State<DebtSheet> {
 
   @override
   void dispose() {
-    for (final c in [_cred, _rem, _limit, _stDay, _dueDay, _payDay, _note]) {
+    for (final c in [_cred, _rem, _limit, _stDay, _dueDay, _payDay, _rate, _note]) {
       c.dispose();
     }
     for (final r in _rows) {
@@ -214,6 +216,15 @@ class _DebtSheetState extends State<DebtSheet> {
       if (e4 != null) return Outcome.err(e4);
       sched = v;
     }
+    // Aylık faiz oranı (isteğe bağlı): "3,49" → 3.49
+    double? rate;
+    if (_rate.text.trim().isNotEmpty) {
+      final rk = parseAmount(_rate.text);
+      if (rk == null || rk <= 0 || rk > 10000) {
+        return Outcome.err(s.pick('Aylık faiz oranı geçerli değil (ör. 3,49). Bilmiyorsan boş bırak.', 'The monthly interest rate is not valid (e.g. 3.49). Leave it empty if unknown.'));
+      }
+      rate = rk / 100;
+    }
     final x = widget.debt;
     final changedBal = x == null || toK(x.remaining) != remK || x.balanceDate != balanceDate;
     final rec = <String, dynamic>{
@@ -229,6 +240,7 @@ class _DebtSheetState extends State<DebtSheet> {
       'dueDay': dueDay,
       'balanceDate': balanceDate,
       'payPlan': _plan,
+      'rate': rate,
       if (cc && changedBal) 'balanceAt': nowISO(),
     };
     final id = x?.id;
@@ -358,6 +370,15 @@ class _DebtSheetState extends State<DebtSheet> {
             help: s.pick('Her satır bir dönem ve o dönemdeki aylık tutar.', 'Each row is a period and its monthly amount.'),
             child: SchedEditor(rows: _rows, openEnd: false, defaultStart: maxMonth(currentMonth(), base), onChanged: () => setState(() {})),
           ),
+        FieldBox(
+          label: s.pick('Aylık faiz oranı (isteğe bağlı)', 'Monthly interest rate (optional)'),
+          help: cc
+              ? s.pick('Borç kapatma hesabında kullanılır: borcu devredersen kalan tutara bu oranla faiz işler. Boş bırakırsan faizsiz sayılır.',
+                  'Used by the payoff calculator: interest accrues on the balance you carry over. Left empty, no interest is assumed.')
+              : s.pick('Borç kapatma hesabında kullanılır: erken ödersen ne kadar faizden kurtulacağın bu oranla hesaplanır. Boş bırakırsan faizsiz sayılır.',
+                  'Used by the payoff calculator to work out the interest you save by paying early. Left empty, no interest is assumed.'),
+          child: TextInput(controller: _rate, number: true, suffix: '%', hint: s.pick('ör. 3,49', 'e.g. 3.49'), onChanged: (_) => setState(() => _error = null)),
+        ),
         FieldBox(label: s.pick('Not', 'Note'), child: TextInput(controller: _note, maxLines: 2)),
       ],
     );

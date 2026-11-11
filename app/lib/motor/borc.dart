@@ -556,3 +556,263 @@ void deleteFindeks(Data data, int index) {
   final list = data.findeks;
   if (index >= 0 && index < list.length) list.removeAt(index);
 }
+
+// ---------------------------------------------------------------- Borç kapatma hesabı
+//
+// "Ne kadar ödersem ne zaman biter?" Yalnızca hesaplar; veriye hiçbir şey yazmaz. Bütün açık
+// borçlar (krediler, yapılandırmalar, kredi kartları) birlikte, ay ay yürütülür:
+//   - Kredi: planındaki taksit her ay ödenir. Uygulamadaki "kalan borç" kalan taksitlerin toplamıdır
+//     (faiz taksitin içinde). Aylık faiz oranı girildiyse anapara, kalan taksitlerin bugünkü
+//     değeridir; fazladan ödeme anaparadan düşer ve kalan ayların faizi ödenmez. Oran yoksa borç
+//     faizsiz sayılır: fazladan ödeme son taksitlerden düşer.
+//   - Kart: her ay en az asgari ([kMinPayRate], en az [kKapatmaAsgariTabanK]) ödenir; oran
+//     girildiyse kalan borca faiz işler. Yeni kart harcaması eklenmediği varsayılır.
+//   - Zorunlu ödemelerden (taksitler, asgariler) artan para sıradaki borca gider ([KapatmaSirasi]);
+//     bir borç kapanınca ona giden para sıradakine geçer.
+// Hesap ondalıklı yürür; sonuçlar kuruşa yuvarlanır.
+
+/// Kart asgarisinin alt sınırı (100 TL): küçük borç sonsuza kadar %20'şer azalmasın.
+const int kKapatmaAsgariTabanK = 10000;
+
+/// Kapatma hesabına giren bir borç, bugünkü durumuyla.
+class KapatmaBorcu {
+  const KapatmaBorcu({required this.id, required this.ad, required this.kart, required this.kalanK, this.taksitler = const <int>[], this.oran = 0});
+
+  final String id;
+  final String ad;
+  final bool kart;
+
+  /// Uygulamadaki güncel borç (kredide kalan taksitlerin toplamı; faiz içinde).
+  final int kalanK;
+
+  /// Kredi: bu aydan başlayarak ay ay ödenmemiş plan taksiti (taksit olmayan ay 0). Kartta boş.
+  final List<int> taksitler;
+
+  /// Aylık faiz oranı, yüzde (0: girilmemiş; faizsiz sayılır).
+  final double oran;
+}
+
+/// Zorunlu ödemelerden artan paranın önce hangi borca gideceği.
+enum KapatmaSirasi {
+  /// Faizi en yüksek olana (eşitse küçük borca): en az faiz ödenir.
+  faiz,
+
+  /// En küçük borca: borçlar tek tek en hızlı kapanır.
+  kucuk,
+}
+
+/// Kapatma hesabının bir ayı.
+class KapatmaAyi {
+  const KapatmaAyi({required this.ay, required this.odemeK, required this.faizK, required this.kapananlar});
+
+  /// Bu aydan kaç ay sonra (0: bu ay).
+  final int ay;
+
+  /// O ay bütün borçlara ödenen.
+  final int odemeK;
+
+  /// O ay kalan borca işleyen faiz.
+  final int faizK;
+
+  /// O ay kapanan borçların kimlikleri.
+  final List<String> kapananlar;
+}
+
+class KapatmaSonucu {
+  const KapatmaSonucu({
+    required this.aylar,
+    required this.bitti,
+    required this.toplamK,
+    required this.faizK,
+    required this.kapanis,
+    required this.ilkZorunluK,
+  });
+
+  /// Ödeme yapılan aylar, sırayla.
+  final List<KapatmaAyi> aylar;
+
+  /// Bütün borçlar kapandı mı (kapanmadıysa: planı olmayan borç var ya da süre yetmedi).
+  final bool bitti;
+
+  /// Toplam ödenen.
+  final int toplamK;
+
+  /// Hesap süresince işleyen faiz.
+  final int faizK;
+
+  /// Borç kimliği → kapandığı ay (bu aydan kaç ay sonra).
+  final Map<String, int> kapanis;
+
+  /// İlk ayın zorunlu ödemeleri (taksitler + kart asgarileri).
+  final int ilkZorunluK;
+
+  /// Son ödemenin ayı (bu aydan kaç ay sonra); bitmediyse null.
+  int? get bitisAy => !bitti ? null : (aylar.isEmpty ? 0 : aylar.last.ay);
+}
+
+/// Açık borçları kapatma hesabına hazırlar (bugünkü kalan borç, kalan taksitler, faiz oranı).
+List<KapatmaBorcu> kapatmaBorclari(Ctx ctx) {
+  final out = <KapatmaBorcu>[];
+  final c0 = mIdx(ctx.cur);
+  for (final d in ctx.data.debts) {
+    final info = ctx.model.debts[d.id];
+    if (info == null || info.current <= 0) continue;
+    var taksitler = const <int>[];
+    if (!d.isCard) {
+      final aylik = <int, int>{};
+      var son = -1;
+      info.months.forEach((m, v) {
+        final t = mIdx(m) - c0;
+        if (t >= 0 && v.planned > 0 && v.direct == null && v.st == null) {
+          aylik[t] = v.planned;
+          if (t > son) son = t;
+        }
+      });
+      // Taksitlerin toplamı kalan borcu geçmez (fazlası son taksitlerden düşer)
+      var kalan = info.current;
+      final liste = List<int>.filled(son + 1, 0);
+      for (var t = 0; t <= son && kalan > 0; t++) {
+        final a = math.min(aylik[t] ?? 0, kalan);
+        liste[t] = a;
+        kalan -= a;
+      }
+      taksitler = liste;
+    }
+    out.add(KapatmaBorcu(id: d.id, ad: d.creditor, kart: d.isCard, kalanK: info.current, taksitler: taksitler, oran: d.rate ?? 0));
+  }
+  return out;
+}
+
+/// Borçları ay ay yürütür. [aylikK]: borçlara ayda ayrılan toplam tutar (zorunlu ödemelerin
+/// altındaysa zorunlu ödemeler yine de ödenir); 0 ise yalnızca zorunlu ödemeler. [topluK]: bu ay
+/// bir kerelik fazladan ödeme. En çok [enCokAy] ay yürütülür.
+KapatmaSonucu kapatmaHesapla(List<KapatmaBorcu> borclar, {int aylikK = 0, int topluK = 0, KapatmaSirasi sira = KapatmaSirasi.faiz, int enCokAy = 600}) {
+  const esik = 0.5; // yarım kuruşun altı kapanmış sayılır
+  final n = borclar.length;
+  final r = [for (final b in borclar) b.oran > 0 ? b.oran / 100 : 0.0];
+  // Anapara: kredide kalan taksitlerin bugünkü değeri (+ planı olmayan kısım), kartta güncel borç
+  final p = List<double>.filled(n, 0);
+  for (var i = 0; i < n; i++) {
+    final b = borclar[i];
+    if (b.kart || b.taksitler.isEmpty) {
+      p[i] = b.kalanK.toDouble();
+      continue;
+    }
+    var deger = 0.0, carpan = 1.0;
+    var toplam = 0;
+    for (final a in b.taksitler) {
+      deger += a / carpan;
+      toplam += a;
+      carpan *= 1 + r[i];
+    }
+    p[i] = deger + math.max(0, b.kalanK - toplam);
+  }
+  final sirali = List<int>.generate(n, (i) => i)
+    ..sort((a, b) {
+      if (sira == KapatmaSirasi.faiz) {
+        final c = r[b].compareTo(r[a]);
+        if (c != 0) return c;
+      }
+      final c = p[a].compareTo(p[b]);
+      return c != 0 ? c : a.compareTo(b);
+    });
+
+  final aylar = <KapatmaAyi>[];
+  final kapanis = <String, int>{};
+  var toplamOdeme = 0, toplamFaiz = 0.0, ilkZorunlu = 0;
+  for (var t = 0; t < enCokAy; t++) {
+    if (p.every((x) => x <= esik)) break;
+    // Zorunlu ödemeler
+    final ode = List<double>.filled(n, 0);
+    var zorunlu = 0.0;
+    for (var i = 0; i < n; i++) {
+      if (p[i] <= esik) continue;
+      final b = borclar[i];
+      double z;
+      if (b.kart) {
+        final asgari = math.max((p[i] * kMinPayRate / 100).roundToDouble() * 100, kKapatmaAsgariTabanK.toDouble());
+        z = math.min(p[i], asgari);
+      } else {
+        z = t < b.taksitler.length ? math.min(p[i], b.taksitler[t].toDouble()) : 0.0;
+      }
+      ode[i] = z;
+      zorunlu += z;
+    }
+    if (t == 0) ilkZorunlu = zorunlu.round();
+    // Artan para sıradaki borca
+    var ek = math.max(0.0, aylikK - zorunlu) + (t == 0 ? topluK : 0);
+    for (final i in sirali) {
+      if (ek <= 0) break;
+      final acik = p[i] - ode[i];
+      if (acik <= esik) continue;
+      final x = math.min(ek, acik);
+      ode[i] += x;
+      ek -= x;
+    }
+    // Ödemeler düşülür, kalan borca faiz işler
+    var ayOdeme = 0.0, ayFaiz = 0.0;
+    final kapananlar = <String>[];
+    for (var i = 0; i < n; i++) {
+      if (p[i] <= esik) continue;
+      p[i] -= ode[i];
+      ayOdeme += ode[i];
+      if (p[i] <= esik) {
+        p[i] = 0;
+        kapanis[borclar[i].id] = t;
+        kapananlar.add(borclar[i].id);
+      } else if (r[i] > 0) {
+        final f = p[i] * r[i];
+        p[i] += f;
+        ayFaiz += f;
+      }
+    }
+    toplamFaiz += ayFaiz;
+    if (ayOdeme <= 0) {
+      // Bu ay ödeme yok. İleride taksit de yoksa (planı olmayan borç, ayrılan para yok) hesap bitmez.
+      var ileride = false;
+      for (var i = 0; i < n && !ileride; i++) {
+        if (p[i] <= esik) continue;
+        final liste = borclar[i].taksitler;
+        for (var k = t + 1; k < liste.length; k++) {
+          if (liste[k] > 0) {
+            ileride = true;
+            break;
+          }
+        }
+      }
+      if (!ileride) break;
+      continue;
+    }
+    final odemeK = ayOdeme.round();
+    toplamOdeme += odemeK;
+    aylar.add(KapatmaAyi(ay: t, odemeK: odemeK, faizK: ayFaiz.round(), kapananlar: kapananlar));
+  }
+  return KapatmaSonucu(
+    aylar: aylar,
+    bitti: p.every((x) => x <= esik),
+    toplamK: toplamOdeme,
+    faizK: toplamFaiz.round(),
+    kapanis: kapanis,
+    ilkZorunluK: ilkZorunlu,
+  );
+}
+
+/// Bütün borçları [ay] ay içinde (bu ay dahil) bitirmek için ayda ayrılması gereken en küçük tutar
+/// (TL'ye yuvarlı). 0: zorunlu ödemeler zaten yetiyor. Hesaplanamıyorsa null.
+int? kapatmaIcinAylik(List<KapatmaBorcu> borclar, int ay, {KapatmaSirasi sira = KapatmaSirasi.faiz}) {
+  if (ay < 1 || borclar.isEmpty) return null;
+  bool yeter(int k) => kapatmaHesapla(borclar, aylikK: k, sira: sira, enCokAy: ay).bitti;
+  if (yeter(0)) return 0;
+  var alt = 0; // yetmeyen (TL)
+  var ust = (sumK(borclar, (KapatmaBorcu b) => b.kalanK) / 100).ceil() + 1; // yeten (TL): hepsi bu ay ödenir
+  if (!yeter(ust * 100)) return null;
+  while (ust - alt > 1) {
+    final orta = (alt + ust) ~/ 2;
+    if (yeter(orta * 100)) {
+      ust = orta;
+    } else {
+      alt = orta;
+    }
+  }
+  return ust * 100;
+}
